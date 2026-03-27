@@ -1,0 +1,108 @@
+.calendarCard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 32px;
+  background: #f3f4f5;
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendarTitle {
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: #191c1d;
+}
+
+.calendarNav {
+  display: flex;
+  gap: 8px;
+}
+
+.navButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: #5d6a68;
+  cursor: pointer;
+}
+
+.weekHeader,
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.weekCell {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.dayButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #191c1d;
+  font-size: 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+.dayButtonMuted {
+  color: #cbd5e1;
+}
+
+.dayButtonSelected {
+  background: #005048;
+  color: #ffffff;
+}
+
+.dayDot {
+  position: absolute;
+  bottom: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #9ff2e4;
+}
+
+.dayButtonSelected .dayDot {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.calendarStats {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.statRow strong {
+  color: #191c1d;
+}
+
+.statDanger {
+  color: #ba1a1a;
+}

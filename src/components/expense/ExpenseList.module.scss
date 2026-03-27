@@ -1,0 +1,115 @@
+.listCard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.listHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.listTitle {
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: #191c1d;
+}
+
+.listHint {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.emptyState {
+  padding: 32px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  color: #94a3b8;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  font-size: 22px;
+}
+
+.itemBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.itemCategory {
+  font-size: 16px;
+  font-weight: 600;
+  color: #191c1d;
+}
+
+.itemMeta {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.itemAmountWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.itemAmount {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.expenseAmount {
+  color: #191c1d;
+}
+
+.incomeAmount {
+  color: #005048;
+}
+
+.itemActions {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #f3f4f5;
+  color: #3e4947;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.actionButton:hover {
+  background: #e7e8e9;
+}

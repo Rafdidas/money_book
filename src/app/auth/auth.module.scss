@@ -1,0 +1,339 @@
+.authShell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(159, 242, 228, 0.18), transparent 24%),
+    radial-gradient(circle at 88% 82%, rgba(0, 80, 72, 0.08), transparent 26%),
+    #f8f9fa;
+  color: #191c1d;
+}
+
+.authShellCompact {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background:
+    radial-gradient(circle at 10% 90%, rgba(159, 242, 228, 0.2), transparent 24%),
+    radial-gradient(circle at 88% 12%, rgba(0, 80, 72, 0.06), transparent 26%),
+    #f8f9fa;
+  color: #191c1d;
+}
+
+.brandBar {
+  display: flex;
+  align-items: center;
+  padding: 40px 32px 24px;
+}
+
+.brandBar a,
+.brandMark {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #005048;
+}
+
+.signupStage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.signupCard {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
+  width: min(1152px, 100%);
+  min-height: 840px;
+  overflow: hidden;
+  border-radius: 32px;
+  background: #ffffff;
+  box-shadow: 0 25px 50px -12px rgba(0, 80, 72, 0.08);
+}
+
+.signupHero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px;
+  background: linear-gradient(160deg, #005048 0%, #0a655d 100%);
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.signupHero::before,
+.signupHero::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.signupHero::before {
+  inset: -8% 46% 62% -12%;
+  background: rgba(0, 106, 96, 0.55);
+  filter: blur(56px);
+}
+
+.signupHero::after {
+  inset: 74% 58% -8% -10%;
+  background: rgba(159, 242, 228, 0.18);
+  filter: blur(48px);
+}
+
+.signupHeroInner,
+.signupHeroFooter {
+  position: relative;
+  z-index: 1;
+}
+
+.signupHeroInner {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 420px;
+}
+
+.signupHeroTitle {
+  font-size: clamp(36px, 4vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+
+.signupHeroText {
+  font-size: 18px;
+  line-height: 1.65;
+  color: rgba(159, 242, 228, 0.85);
+}
+
+.authPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+  background: #ffffff;
+}
+
+.authPanelInner {
+  width: min(448px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.authHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.authTitle {
+  font-size: 32px;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+  color: #191c1d;
+}
+
+.authSubtitle {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #3e4947;
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  padding-left: 4px;
+  font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #51605d;
+}
+
+.fieldInput,
+.fieldTextarea {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid rgba(190, 201, 198, 0.45);
+  padding: 14px 4px 15px;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #191c1d;
+  outline: none;
+}
+
+.fieldInput::placeholder,
+.fieldTextarea::placeholder {
+  color: #c8cfce;
+}
+
+.fieldInput:focus,
+.fieldTextarea:focus {
+  border-bottom-color: #005048;
+}
+
+.primaryButton,
+.secondaryButton {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.primaryButton {
+  background: #005048;
+  color: #ffffff;
+  box-shadow: 0 10px 18px -10px rgba(0, 80, 72, 0.45);
+}
+
+.secondaryButton {
+  background: #e7e8e9;
+  color: #005048;
+}
+
+.primaryButton:hover,
+.secondaryButton:hover {
+  transform: translateY(-1px);
+}
+
+.authActions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.authLinkRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 4px;
+  font-size: 14px;
+  color: #3e4947;
+}
+
+.authLinkRow a {
+  color: #005048;
+}
+
+.loginMain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 24px;
+}
+
+.loginFrame {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.loginIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loginCard {
+  position: relative;
+  border: 1px solid rgba(190, 201, 198, 0.1);
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 40px;
+  box-shadow: 0 40px 80px -20px rgba(0, 80, 72, 0.08);
+}
+
+.loginActions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.dividerRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.dividerRow::before,
+.dividerRow::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid rgba(190, 201, 198, 0.32);
+}
+
+.metaFooter {
+  display: flex;
+  justify-content: center;
+  padding: 24px 32px 32px;
+  font-size: 11px;
+  color: rgba(62, 73, 71, 0.45);
+}
+
+.errorText {
+  margin-top: -8px;
+  font-size: 13px;
+  color: #ba1a1a;
+}
+
+@media (max-width: 980px) {
+  .signupCard {
+    grid-template-columns: 1fr;
+  }
+
+  .signupHero {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 640px) {
+  .brandBar {
+    padding: 24px 20px 12px;
+  }
+
+  .signupStage,
+  .loginMain {
+    padding: 16px;
+  }
+
+  .authPanel,
+  .loginCard {
+    padding: 28px 24px;
+  }
+
+  .signupHero {
+    padding: 32px 24px;
+  }
+
+  .authTitle,
+  .signupHeroTitle {
+    font-size: 30px;
+  }
+}

@@ -1,0 +1,210 @@
+.formShell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  border-radius: 48px;
+  background: #ffffff;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.formHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 32px 0;
+}
+
+.formTitle {
+  font-size: 24px;
+  line-height: 1.33;
+  letter-spacing: -0.03em;
+  color: #191c1d;
+}
+
+.closeButton {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #3e4947;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.formBody {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0 32px 32px;
+}
+
+.toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: #f3f4f5;
+}
+
+.toggleButton {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  background: transparent;
+  color: #3e4947;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.toggleActive {
+  background: #005048;
+  color: #ffffff;
+  box-shadow: 0 10px 15px -8px rgba(0, 80, 72, 0.35);
+}
+
+.fieldStack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  padding-left: 4px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6e7977;
+}
+
+.fieldInput,
+.fieldSelect,
+.fieldTextarea {
+  width: 100%;
+  border: 2px solid #e7e8e9;
+  border-radius: 32px;
+  background: #f3f4f5;
+  color: #191c1d;
+  outline: none;
+}
+
+.fieldInput,
+.fieldSelect {
+  min-height: 56px;
+  padding: 0 24px;
+  font-size: 14px;
+}
+
+.amountWrap {
+  position: relative;
+}
+
+.amountSymbol,
+.amountSuffix {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 24px;
+  font-weight: 700;
+  color: #005048;
+}
+
+.amountSymbol {
+  left: 24px;
+}
+
+.amountSuffix {
+  right: 24px;
+  font-size: 16px;
+  color: #3e4947;
+}
+
+.amountInput {
+  min-height: 84px;
+  padding-left: 58px;
+  padding-right: 72px;
+  font-size: 30px;
+  font-weight: 700;
+  background: #ffffff;
+}
+
+.fieldTextarea {
+  min-height: 124px;
+  resize: none;
+  padding: 18px 24px;
+  font-size: 14px;
+}
+
+.primaryAction,
+.secondaryAction,
+.dangerAction {
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.primaryAction {
+  width: 100%;
+  padding: 18px 24px;
+  background: #005048;
+  color: #ffffff;
+  font-size: 16px;
+  box-shadow: 0 20px 25px -12px rgba(0, 80, 72, 0.3);
+}
+
+.footerActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.dualActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.secondaryAction {
+  padding: 14px 18px;
+  background: #e7e8e9;
+  color: #3e4947;
+  font-size: 12px;
+}
+
+.dangerAction {
+  padding: 14px 18px;
+  background: #ffffff;
+  border: 2px solid rgba(186, 26, 26, 0.2);
+  color: #ba1a1a;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .formHeader {
+    padding: 24px 20px 0;
+  }
+
+  .formBody {
+    padding: 0 20px 24px;
+  }
+
+  .fieldRow,
+  .dualActions {
+    grid-template-columns: 1fr;
+  }
+}
