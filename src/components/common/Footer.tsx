@@ -5,18 +5,9 @@ import { usePathname } from "next/navigation";
 export default function Footer() {
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname.startsWith("/auth")) {
+  if (pathname.startsWith("/auth")) {
     return null;
   }
 
-  return (
-    <footer
-      style={{
-        padding: "20px 24px",
-        borderTop: "1px solid #e5e7eb",
-      }}
-    >
-      <h2>money book</h2>
-    </footer>
-  );
+  return <footer className="app-footer">MONEY BOOK · 당신의 자산 이야기를 기록합니다</footer>;
 }

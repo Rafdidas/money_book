@@ -1,0 +1,104 @@
+$fw-bold: 700;
+$fw-medium: 500;
+$fw-regular: 400;
+
+@mixin typo($size, $weight) {
+  font-size: $size;
+  font-weight: $weight;
+}
+
+.headline {
+  &--md {
+    @include typo(28px, $fw-bold);
+  }
+
+  &--sm {
+    @include typo(24px, $fw-bold);
+  }
+}
+
+.title {
+  &--lg {
+    @include typo(20px, $fw-bold);
+  }
+
+  &--md {
+    @include typo(18px, $fw-bold);
+  }
+
+  &--sm {
+    @include typo(16px, $fw-bold);
+  }
+
+  &--xs {
+    @include typo(14px, $fw-bold);
+  }
+}
+
+.bodyBold {
+  &--xl {
+    @include typo(18px, $fw-bold);
+  }
+
+  &--lg {
+    @include typo(16px, $fw-bold);
+  }
+
+  &--md {
+    @include typo(15px, $fw-bold);
+  }
+
+  &--sm {
+    @include typo(14px, $fw-bold);
+  }
+}
+
+.body {
+  &--lg {
+    @include typo(16px, $fw-regular);
+  }
+
+  &--md {
+    @include typo(15px, $fw-regular);
+  }
+
+  &--sm {
+    @include typo(14px, $fw-regular);
+  }
+
+  &--xs {
+    @include typo(12px, $fw-regular);
+  }
+}
+
+.label {
+  &--xl {
+    @include typo(16px, $fw-medium);
+  }
+
+  &--lg {
+    @include typo(14px, $fw-medium);
+  }
+
+  &--md {
+    @include typo(13px, $fw-medium);
+  }
+
+  &--sm {
+    @include typo(12px, $fw-medium);
+  }
+
+  &--xs {
+    @include typo(10px, $fw-medium);
+  }
+}
+
+.caption {
+  &--md {
+    @include typo(12px, $fw-regular);
+  }
+
+  &--sm {
+    @include typo(10px, $fw-regular);
+  }
+}

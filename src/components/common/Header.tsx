@@ -39,7 +39,7 @@ export default function Header() {
     };
   }, []);
 
-  if (pathname === "/" || pathname.startsWith("/auth")) {
+  if (pathname.startsWith("/auth")) {
     return null;
   }
 
@@ -49,41 +49,42 @@ export default function Header() {
     router.push("/auth/login");
   };
 
-  return (
-    <header
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "20px 24px",
-        borderBottom: "1px solid #e5e7eb",
-      }}
-    >
-      <h1>
-        <Link href="/">money book</Link>
-      </h1>
+  const dashboardActive = pathname === "/";
+  const analysisActive = pathname.startsWith("/analysis");
 
-      <nav style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+  return (
+    <header className="app-header">
+      <Link href="/" className="app-header__brand title--md">
+        MONEY BOOK
+      </Link>
+
+      <nav className="app-header__nav">
+        <Link
+          href="/"
+          className={`app-header__link bodyBold--sm ${dashboardActive ? "is-active" : ""}`}
+        >
+          대시보드
+        </Link>
+        <Link
+          href="/analysis"
+          className={`app-header__link bodyBold--sm ${analysisActive ? "is-active" : ""}`}
+        >
+          월별 분석
+        </Link>
+      </nav>
+
+      <div className="app-header__actions">
         {isLoggedIn ? (
-          <button
-            type="button"
-            onClick={handleLogout}
-            style={{
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              fontSize: "16px",
-            }}
-          >
+          <button type="button" onClick={handleLogout} className="app-header__button bodyBold--sm">
             로그아웃
           </button>
         ) : (
-          <>
+          <div className="app-header__guest-links bodyBold--sm">
             <Link href="/auth/login">로그인</Link>
             <Link href="/auth/signup">회원가입</Link>
-          </>
+          </div>
         )}
-      </nav>
+      </div>
     </header>
   );
 }

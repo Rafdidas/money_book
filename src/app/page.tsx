@@ -1,120 +1,166 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import styles from "./page.module.css";
-import CalendarView from "../components/calendar/CalendarView";
-import ExpenseList from "../components/expense/ExpenseList";
-import ExpenseForm from "../components/expense/ExpenseForm";
-import ExpensePieChart from "@/components/chart/ExpensePieChart";
-import Modal from "../components/common/Modal";
-import { createExpense, deleteExpense, getExpenses, updateExpense } from "../lib/api/expense";
-import { supabase } from "../lib/supabase/client";
-import type { Expense } from "../types/expense";
-import { formatDate } from "../utils/date";
+import ExpenseForm from "@/components/expense/ExpenseForm";
+import Modal from "@/components/common/Modal";
+import MonthlyFlowChart from "@/components/chart/MonthlyFlowChart";
+import {
+  createExpense,
+  deleteExpense,
+  getExpenses,
+  updateExpense,
+} from "@/lib/api/expense";
+import { supabase } from "@/lib/supabase/client";
+import type { Expense } from "@/types/expense";
+import { formatDate } from "@/utils/date";
 
 const formatCurrency = (value: number) => `₩ ${value.toLocaleString()}`;
-
-const monthTitle = (date: Date) => `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
-
-const chartLabels = ["1일", "5일", "10일", "15일", "20일", "25일", "31일"];
-
-const buildChartPoints = (expenses: Expense[], selectedDate: Date) => {
-  const year = selectedDate.getFullYear();
-  const month = selectedDate.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const totals = Array.from({ length: daysInMonth }, () => 0);
-
-  expenses.forEach((expense) => {
-    const date = new Date(expense.date);
-
-    if (
-      expense.type === "expense" &&
-      date.getFullYear() === year &&
-      date.getMonth() === month
-    ) {
-      totals[date.getDate() - 1] += expense.amount;
-    }
+const categoryBudgets: Record<string, number> = {
+  식비: 600000,
+  쇼핑: 300000,
+  교통: 150000,
+  문화: 100000,
+  문화생활: 100000,
+  급여: 4000000,
+  기타: 250000,
+};
+const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
+const weekdayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const toMonthKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+const getCalendarDays = (selectedDate: Date) => {
+  const firstDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const startDate = new Date(firstDay);
+  startDate.setDate(firstDay.getDate() - firstDay.getDay());
+  return Array.from({ length: 35 }, (_, index) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + index);
+    return date;
   });
-
-  const max = Math.max(...totals, 1);
-  const points = totals.map((value, index) => {
-    const x = (index / Math.max(daysInMonth - 1, 1)) * 100;
-    const y = 100 - (value / max) * 100;
-    return `${x},${y}`;
-  });
-
-  const areaPoints = [`0,100`, ...points, `100,100`].join(" ");
-
-  return {
-    max,
-    linePoints: points.join(" "),
-    areaPoints,
-  };
+};
+const getTrend = (current: number, previous: number) => {
+  if (previous === 0) return current === 0 ? 0 : 100;
+  return ((current - previous) / previous) * 100;
 };
 
 export default function Home() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const router = useRouter();
+  const today = new Date();
+  const [selectedDate, setSelectedDate] = useState(today);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [displayName, setDisplayName] = useState("게스트");
   const [showModal, setShowModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [displayName, setDisplayName] = useState("게스트");
+  const [isAuthResolved, setIsAuthResolved] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      const [data, userResult] = await Promise.all([
-        getExpenses(),
-        supabase.auth.getUser(),
-      ]);
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
 
-      setExpenses(data || []);
-
-      const user = userResult.data.user;
-      if (user) {
-        const metadataName = typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "";
-        setDisplayName(metadataName || user.email?.split("@")[0] || "게스트");
+      if (!user) {
+        router.replace("/auth/login");
+        return;
       }
+
+      const data = await getExpenses();
+      setExpenses(data || []);
+      const metadataName =
+        typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "";
+      setDisplayName(metadataName || user.email?.split("@")[0] || "게스트");
+      setIsAuthResolved(true);
     };
-
     fetchData();
-  }, []);
+  }, [router]);
 
-  const formattedSelectedDate = formatDate(selectedDate);
-  const monthlyExpenses = useMemo(() => {
+  const selectedDateKey = formatDate(selectedDate);
+  const currentYear = selectedDate.getFullYear();
+  const currentMonth = selectedDate.getMonth();
+  const monthlyExpenses = useMemo(
+    () =>
+      expenses.filter((item) => {
+        const date = new Date(item.date);
+        return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
+      }),
+    [currentMonth, currentYear, expenses],
+  );
+  const previousMonthlyExpenses = useMemo(() => {
+    const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
     return expenses.filter((item) => {
       const date = new Date(item.date);
       return (
-        date.getFullYear() === selectedDate.getFullYear() &&
-        date.getMonth() === selectedDate.getMonth()
+        date.getFullYear() === previousMonthDate.getFullYear() &&
+        date.getMonth() === previousMonthDate.getMonth()
       );
     });
-  }, [expenses, selectedDate]);
+  }, [currentMonth, currentYear, expenses]);
+  const monthlyBreakdown = useMemo(
+    () =>
+      monthNames.map((label, index) => {
+        const items = expenses.filter((item) => {
+          const date = new Date(item.date);
+          return date.getFullYear() === currentYear && date.getMonth() === index;
+        });
+        const expenseTotal = items
+          .filter((item) => item.type === "expense")
+          .reduce((sum, item) => sum + item.amount, 0);
+        const incomeTotal = items
+          .filter((item) => item.type === "income")
+          .reduce((sum, item) => sum + item.amount, 0);
+        return { label, month: index, expenseTotal, incomeTotal };
+      }),
+    [currentYear, expenses],
+  );
 
-  const filteredExpenses = useMemo(() => {
-    return expenses.filter((item) => item.date === formattedSelectedDate);
-  }, [expenses, formattedSelectedDate]);
-
-  const incomeTotal = monthlyExpenses
-    .filter((item) => item.type === "income")
-    .reduce((sum, item) => sum + item.amount, 0);
-  const expenseTotal = monthlyExpenses
+  const monthlyExpenseTotal = monthlyExpenses
     .filter((item) => item.type === "expense")
     .reduce((sum, item) => sum + item.amount, 0);
-  const netWorth = incomeTotal - expenseTotal;
-  const savingsDelta = Math.max(netWorth * 0.12, 0);
-  const goalAmount = 5_000_000;
-  const goalCurrent = Math.min(Math.max(netWorth, 0), goalAmount);
-  const goalRatio = goalAmount === 0 ? 0 : Math.round((goalCurrent / goalAmount) * 100);
-  const { max, linePoints, areaPoints } = buildChartPoints(monthlyExpenses, selectedDate);
+  const monthlyIncomeTotal = monthlyExpenses
+    .filter((item) => item.type === "income")
+    .reduce((sum, item) => sum + item.amount, 0);
+  const previousExpenseTotal = previousMonthlyExpenses
+    .filter((item) => item.type === "expense")
+    .reduce((sum, item) => sum + item.amount, 0);
+  const changeAmount = monthlyExpenseTotal - previousExpenseTotal;
+  const changeRate = getTrend(monthlyExpenseTotal, previousExpenseTotal);
+  const selectedDayItems = monthlyExpenses.filter(
+    (item) => item.date === selectedDateKey,
+  );
+  const dayMap = monthlyExpenses.reduce<Record<string, number>>((acc, item) => {
+    acc[item.date] = (acc[item.date] || 0) + 1;
+    return acc;
+  }, {});
+  const categoryRows = Object.entries(
+    monthlyExpenses
+      .filter((item) => item.type === "expense")
+      .reduce<Record<string, number>>((acc, item) => {
+        acc[item.category] = (acc[item.category] || 0) + item.amount;
+        return acc;
+      }, {}),
+  )
+    .sort(([, left], [, right]) => right - left)
+    .slice(0, 4);
+  const detailItems = [...monthlyExpenses]
+    .sort((left, right) => {
+      const dateDiff = new Date(right.date).getTime() - new Date(left.date).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return right.created_at.localeCompare(left.created_at);
+    })
+    .slice(0, 5);
+  const calendarDays = getCalendarDays(selectedDate);
 
-  const handleAdd = async (newData: Pick<Expense, "amount" | "category" | "memo" | "date" | "type">) => {
+  const handleAdd = async (
+    newData: Pick<Expense, "amount" | "category" | "memo" | "date" | "type">,
+  ) => {
     const saved = await createExpense(newData);
     setExpenses((prev) => [...prev, ...(saved || [])]);
     closeModal();
   };
-
-  const handleEdit = async (updatedData: Pick<Expense, "amount" | "category" | "memo" | "date" | "type">) => {
+  const handleEdit = async (
+    updatedData: Pick<Expense, "amount" | "category" | "memo" | "date" | "type">,
+  ) => {
     if (!editingExpense) return;
-
     await updateExpense(editingExpense.id, updatedData);
     setExpenses((prev) =>
       prev.map((item) =>
@@ -123,183 +169,235 @@ export default function Home() {
     );
     closeModal();
   };
-
   const handleDelete = async (id: string) => {
     await deleteExpense(id);
     setExpenses((prev) => prev.filter((item) => item.id !== id));
-    if (editingExpense?.id === id) {
-      closeModal();
-    }
+    if (editingExpense?.id === id) closeModal();
   };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/auth/login";
-  };
-
   const openCreateModal = () => {
     setEditingExpense(null);
     setShowModal(true);
   };
-
   const openEditModal = (expense: Expense) => {
     setEditingExpense(expense);
     setShowModal(true);
   };
-
   const closeModal = () => {
     setShowModal(false);
     setEditingExpense(null);
   };
 
+  if (!isAuthResolved) {
+    return null;
+  }
+
   return (
-    <div className={styles.dashboard}>
-      <div className={styles.shell}>
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarBrand}>Money Book</div>
-          <div className={styles.profileCard}>
-            <div className={styles.profileAvatar}>{displayName.slice(0, 1).toUpperCase()}</div>
-            <div className={styles.profileName}>{displayName} 님</div>
+    <div className="home-page">
+      <main className="main">
+        <section className="hero">
+          <div>
+            <p className="hero-eyebrow label--lg">MONTHLY OVERVIEW</p>
+            <h1 className="hero-title headline--md">
+              {currentYear}년 {currentMonth + 1}월
+            </h1>
+            <p className="hero-meta body--md">{displayName} 님의 이번 달 자산 흐름입니다.</p>
           </div>
+          <button
+            type="button"
+            className="add-button bodyBold--md"
+            onClick={openCreateModal}
+          >
+            <span className="add-button__icon">+</span>
+            내역 추가
+          </button>
+        </section>
 
-          <nav className={styles.sidebarNav}>
-            <div className={`${styles.navItem} ${styles.navItemActive}`}>대시보드</div>
-          </nav>
+        <section className="summary-grid">
+          <article className="summary-card">
+            <span className="summary-label label--md">이번 달 지출</span>
+            <strong className="summary-value summary-value-expense bodyBold--xl">
+              {formatCurrency(monthlyExpenseTotal)}
+            </strong>
+          </article>
+          <article className="summary-card">
+            <span className="summary-label label--md">이번 달 수입</span>
+            <strong className="summary-value bodyBold--xl">
+              {formatCurrency(monthlyIncomeTotal)}
+            </strong>
+          </article>
+          <article className="summary-card">
+            <span className="summary-label label--md">지난달 대비 증감</span>
+            <div className="summary-inline">
+              <strong className="summary-value bodyBold--xl">
+                {formatCurrency(Math.abs(changeAmount))}
+              </strong>
+              <span
+                className={`change-rate label--md ${changeAmount >= 0 ? "change-rate-up" : "change-rate-down"}`}
+              >
+                {changeAmount >= 0 ? "▲" : "▼"} {Math.abs(changeRate).toFixed(1)}%
+              </span>
+            </div>
+          </article>
+        </section>
 
-          <div className={styles.sidebarFooter}>
-            <div className={styles.navItem}>설정</div>
-            <button type="button" className={styles.navButton} onClick={handleLogout}>
-              로그아웃
-            </button>
+        <section className="content-grid">
+          <article className="panel">
+            <div className="panel-header">
+              <h2 className="panel-title title--sm">수입/지출 달력</h2>
+              <div className="calendar-nav">
+                <button
+                  type="button"
+                  className="calendar-nav__button bodyBold--md"
+                  onClick={() =>
+                    setSelectedDate(
+                      new Date(currentYear, currentMonth - 1, selectedDate.getDate()),
+                    )
+                  }
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="calendar-nav__button bodyBold--md"
+                  onClick={() =>
+                    setSelectedDate(
+                      new Date(currentYear, currentMonth + 1, selectedDate.getDate()),
+                    )
+                  }
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+            <div className="calendar-labels">
+              {weekdayLabels.map((label) => (
+                <span key={label} className="label--sm">
+                  {label}
+                </span>
+              ))}
+            </div>
+            <div className="calendar-grid">
+              {calendarDays.map((date) => {
+                const key = formatDate(date);
+                const isCurrentMonth = date.getMonth() === currentMonth;
+                const isSelected = key === selectedDateKey;
+                const hasEntries = Boolean(dayMap[key]);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`day-cell body--sm ${!isCurrentMonth ? "day-cell-muted" : ""} ${isSelected ? "day-cell-selected" : ""}`}
+                    onClick={() => setSelectedDate(date)}
+                  >
+                    <span>{date.getDate()}</span>
+                    {hasEntries ? <span className="day-dot" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="calendar-footer">
+              <span className="body--sm">{selectedDateKey}</span>
+              <strong className="bodyBold--sm">{selectedDayItems.length}건 기록됨</strong>
+            </div>
+          </article>
+          <article className="panel">
+            <div className="panel-header">
+              <h2 className="panel-title title--sm">카테고리별 지출</h2>
+            </div>
+            <div className="category-list">
+              {categoryRows.length === 0 ? (
+                <p className="empty-text body--sm">이번 달 지출 데이터가 아직 없습니다.</p>
+              ) : (
+                categoryRows.map(([label, amount]) => {
+                  const budget = categoryBudgets[label] ?? Math.max(amount, 1);
+                  const ratio = Math.min((amount / budget) * 100, 100);
+                  return (
+                    <div key={label} className="category-row">
+                      <div className="category-meta">
+                        <span className="category-label bodyBold--sm">{label}</span>
+                        <span className="category-amount body--xs">
+                          {amount.toLocaleString()} / {budget.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="category-track">
+                        <div
+                          className="category-fill"
+                          style={{ width: `${ratio}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </article>
+          <article className="panel">
+            <div className="panel-header">
+              <h2 className="panel-title title--sm">상세 내역</h2>
+            </div>
+            <div className="detail-list">
+              {detailItems.length === 0 ? (
+                <p className="empty-text body--sm">이번 달 등록된 내역이 아직 없습니다.</p>
+              ) : (
+                detailItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="detail-item"
+                    onClick={() => openEditModal(item)}
+                  >
+                    <div>
+                      <strong className="detail-name bodyBold--md">
+                        {item.memo || item.category}
+                      </strong>
+                      <p className="detail-meta body--xs">
+                        {new Date(item.date).getMonth() + 1}월{" "}
+                        {new Date(item.date).getDate()}일 · {item.category}
+                      </p>
+                    </div>
+                    <span
+                      className={`detail-amount bodyBold--md ${item.type === "expense" ? "detail-amount-expense" : "detail-amount-income"}`}
+                    >
+                      {item.type === "expense" ? "- " : "+ "}
+                      {formatCurrency(item.amount)}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </article>
+        </section>
+
+        <section className="flow-panel">
+          <div className="flow-header">
+            <div>
+              <h2 className="panel-title title--sm">월별 분석 그래프</h2>
+              <p className="flow-meta body--sm">
+                {currentYear}년 1월부터 12월까지 수입과 지출을 비교합니다.
+              </p>
+            </div>
+            <div className="flow-legend">
+              <span className="body--sm">
+                <i className="legend-dot legend-dot-income" />
+                수입
+              </span>
+              <span className="body--sm">
+                <i className="legend-dot legend-dot-expense" />
+                지출
+              </span>
+            </div>
           </div>
-        </aside>
-
-        <main className={styles.main}>
-          <div className={styles.headerRow}>
-            <div className={styles.pageTitle}>
-              <span>Selected Day</span>
-              <h1>{monthTitle(selectedDate)}</h1>
-            </div>
-            <button type="button" className={styles.addButton} onClick={openCreateModal}>
-              새 거래 추가
-            </button>
+          <div className="flow-chart-wrap">
+            <MonthlyFlowChart data={monthlyBreakdown} currentMonth={currentMonth} />
           </div>
-
-          <section className={styles.summaryGrid}>
-            <article className={styles.heroCard}>
-              <p className={styles.heroLabel}>이번 달 순 자산</p>
-              <h2 className={styles.heroValue}>{formatCurrency(netWorth)}</h2>
-              <div className={styles.heroStats}>
-                <div className={styles.heroStat}>
-                  <span>수입</span>
-                  <strong>{formatCurrency(incomeTotal)}</strong>
-                </div>
-                <div className={styles.heroDivider} />
-                <div className={styles.heroStat}>
-                  <span>지출</span>
-                  <strong>{formatCurrency(expenseTotal)}</strong>
-                </div>
-              </div>
-            </article>
-
-            <article className={styles.kpiCard}>
-              <div className={styles.kpiHeader}>
-                <div className={styles.kpiBadge}>↗</div>
-                <span className={styles.kpiTrend}>+12.5%</span>
-              </div>
-              <div>
-                <p className={styles.kpiLabel}>지난달 대비 저축액</p>
-                <strong className={styles.kpiValue}>{formatCurrency(savingsDelta)}</strong>
-              </div>
-            </article>
-          </section>
-
-          <section className={styles.workspace}>
-            <CalendarView
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              expenses={monthlyExpenses}
-            />
-
-            <div className={styles.feedColumn}>
-              <ExpenseList
-                items={filteredExpenses}
-                selectedDateLabel={formattedSelectedDate}
-                onDelete={handleDelete}
-                onEdit={openEditModal}
-              />
-            </div>
-
-            <div className={styles.feedColumn}>
-              <ExpensePieChart expenses={monthlyExpenses} />
-              <article className={styles.goalCard}>
-                <div>
-                  <p className={styles.goalLabel}>저축 목표</p>
-                  <p className={styles.goalMeta}>여름 휴가 준비 (유럽 여행)</p>
-                </div>
-                <div>
-                  <strong className={styles.goalValue}>{formatCurrency(goalCurrent)}</strong>
-                  <p className={styles.goalMeta}>목표액: {formatCurrency(goalAmount)}</p>
-                </div>
-                <div className={styles.goalTrack}>
-                  <div className={styles.goalFill} style={{ width: `${goalRatio}%` }} />
-                </div>
-                <p className={styles.goalHint}>
-                  현재 {goalRatio}% 달성 • {formatCurrency(goalAmount - goalCurrent)} 남음
-                </p>
-              </article>
-            </div>
-          </section>
-
-          <section className={styles.lineCard}>
-            <div className={styles.lineHeader}>
-              <h3 className={styles.lineTitle}>일별 지출 현황</h3>
-              <div className={styles.lineLegend}>
-                <span className={styles.lineLegendDot} /> 지출 금액
-              </div>
-            </div>
-            <div className={styles.lineChart}>
-              <div className={styles.lineYLabels}>
-                <span>{formatCurrency(max)}</span>
-                <span>{formatCurrency(Math.round(max / 2))}</span>
-                <span>0</span>
-              </div>
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className={styles.lineSvg}>
-                <defs>
-                  <linearGradient id="expenseArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="rgba(0,80,72,0.22)" />
-                    <stop offset="100%" stopColor="rgba(0,80,72,0.02)" />
-                  </linearGradient>
-                </defs>
-                <polyline
-                  fill="url(#expenseArea)"
-                  stroke="none"
-                  points={areaPoints}
-                />
-                <polyline
-                  fill="none"
-                  stroke="#005048"
-                  strokeWidth="0.6"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  points={linePoints}
-                />
-              </svg>
-              <div className={styles.lineAxis}>
-                {chartLabels.map((label) => (
-                  <span key={label}>{label}</span>
-                ))}
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
+        </section>
+      </main>
 
       {showModal ? (
         <Modal onClose={closeModal}>
           <ExpenseForm
-            key={editingExpense?.id ?? formattedSelectedDate}
-            selectedDate={formattedSelectedDate}
+            key={editingExpense?.id ?? `${toMonthKey(selectedDate)}-${selectedDateKey}`}
+            selectedDate={selectedDateKey}
             initialData={editingExpense}
             onCancel={closeModal}
             onDelete={handleDelete}

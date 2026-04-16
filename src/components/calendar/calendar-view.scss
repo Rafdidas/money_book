@@ -1,4 +1,4 @@
-.calendarCard {
+.calendar-view {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -7,25 +7,25 @@
   background: #f3f4f5;
 }
 
-.calendarHeader {
+.calendar-view__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.calendarTitle {
+.calendar-view__title {
   font-size: 28px;
   line-height: 1.1;
   letter-spacing: -0.04em;
   color: #191c1d;
 }
 
-.calendarNav {
+.calendar-view__nav {
   display: flex;
   gap: 8px;
 }
 
-.navButton {
+.calendar-view__nav-button {
   width: 28px;
   height: 28px;
   border: none;
@@ -35,21 +35,22 @@
   cursor: pointer;
 }
 
-.weekHeader,
-.calendarGrid {
+.calendar-view__week-header,
+.calendar-view__grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
 }
 
-.weekCell {
+.calendar-view__week-cell {
   text-align: center;
   font-size: 10px;
   font-weight: 600;
   color: #94a3b8;
 }
 
-.dayButton {
+.calendar-view__day-button {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,19 +62,18 @@
   color: #191c1d;
   font-size: 12px;
   cursor: pointer;
-  position: relative;
 }
 
-.dayButtonMuted {
+.calendar-view__day-button.is-muted {
   color: #cbd5e1;
 }
 
-.dayButtonSelected {
+.calendar-view__day-button.is-selected {
   background: #005048;
   color: #ffffff;
 }
 
-.dayDot {
+.calendar-view__day-dot {
   position: absolute;
   bottom: 6px;
   width: 6px;
@@ -82,27 +82,27 @@
   background: #9ff2e4;
 }
 
-.dayButtonSelected .dayDot {
+.calendar-view__day-button.is-selected .calendar-view__day-dot {
   background: rgba(255, 255, 255, 0.7);
 }
 
-.calendarStats {
+.calendar-view__stats {
   display: grid;
   gap: 8px;
   padding-top: 4px;
 }
 
-.statRow {
+.calendar-view__stat-row {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
   color: #64748b;
 }
 
-.statRow strong {
+.calendar-view__stat-row strong {
   color: #191c1d;
 }
 
-.statDanger {
+.calendar-view__stat-danger {
   color: #ba1a1a;
 }

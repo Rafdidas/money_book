@@ -1,4 +1,4 @@
-.modalOverlay {
+.modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -10,6 +10,6 @@
   backdrop-filter: blur(10px);
 }
 
-.modalContent {
+.modal-content {
   width: min(100%, 576px);
 }

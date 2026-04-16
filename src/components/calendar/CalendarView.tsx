@@ -3,7 +3,6 @@
 import type { Expense } from "@/types/expense";
 import { getDateMap } from "@/utils/calendar";
 import { formatDate } from "@/utils/date";
-import styles from "./CalendarView.module.scss";
 
 type Props = {
   selectedDate: Date;
@@ -39,15 +38,15 @@ export default function CalendarView({
     .reduce((max, item) => Math.max(max, item.amount), 0);
 
   return (
-    <section className={styles.calendarCard}>
-      <div className={styles.calendarHeader}>
-        <h3 className={styles.calendarTitle}>
+    <section className="calendar-view">
+      <div className="calendar-view__header">
+        <h3 className="calendar-view__title title--sm">
           {selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월
         </h3>
-        <div className={styles.calendarNav}>
+        <div className="calendar-view__nav">
           <button
             type="button"
-            className={styles.navButton}
+            className="calendar-view__nav-button bodyBold--md"
             onClick={() => {
               const next = new Date(selectedDate);
               next.setMonth(selectedDate.getMonth() - 1);
@@ -58,7 +57,7 @@ export default function CalendarView({
           </button>
           <button
             type="button"
-            className={styles.navButton}
+            className="calendar-view__nav-button bodyBold--md"
             onClick={() => {
               const next = new Date(selectedDate);
               next.setMonth(selectedDate.getMonth() + 1);
@@ -70,27 +69,27 @@ export default function CalendarView({
         </div>
       </div>
 
-      <div className={styles.weekHeader}>
+      <div className="calendar-view__week-header">
         {weekLabels.map((label, index) => (
-          <div key={`${label}-${index}`} className={styles.weekCell}>
+          <div key={`${label}-${index}`} className="calendar-view__week-cell label--sm">
             {label}
           </div>
         ))}
       </div>
 
-      <div className={styles.calendarGrid}>
+      <div className="calendar-view__grid">
         {calendarDays.map((date) => {
           const key = formatDate(date);
           const isSelected = key === selectedDateKey;
           const isMuted = date.getMonth() !== selectedDate.getMonth();
-          const classNames = [styles.dayButton];
+          const classNames = ["calendar-view__day-button"];
 
           if (isMuted) {
-            classNames.push(styles.dayButtonMuted);
+            classNames.push("is-muted");
           }
 
           if (isSelected) {
-            classNames.push(styles.dayButtonSelected);
+            classNames.push("is-selected");
           }
 
           return (
@@ -101,20 +100,20 @@ export default function CalendarView({
               onClick={() => setSelectedDate(date)}
             >
               {date.getDate()}
-              {dateMap[key] ? <span className={styles.dayDot} /> : null}
+              {dateMap[key] ? <span className="calendar-view__day-dot" /> : null}
             </button>
           );
         })}
       </div>
 
-      <div className={styles.calendarStats}>
-        <div className={styles.statRow}>
+      <div className="calendar-view__stats">
+        <div className="calendar-view__stat-row">
           <span>오늘 별 결제 지출</span>
           <strong>₩ {totalExpense.toLocaleString()}</strong>
         </div>
-        <div className={styles.statRow}>
+        <div className="calendar-view__stat-row">
           <span>최대 지출일</span>
-          <strong className={styles.statDanger}>₩ {maxExpense.toLocaleString()}</strong>
+          <strong className="calendar-view__stat-danger">₩ {maxExpense.toLocaleString()}</strong>
         </div>
       </div>
     </section>

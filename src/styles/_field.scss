@@ -1,0 +1,68 @@
+@mixin control-base {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #c9cdd4;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #222222;
+  font-size: 15px;
+  line-height: 1.5;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+  appearance: none;
+
+  &::placeholder {
+    color: #979ea8;
+  }
+
+  &:hover {
+    border-color: #979ea8;
+  }
+
+  &:focus {
+    border-color: #5991ff;
+    box-shadow: 0 0 0 3px rgba(89, 145, 255, 0.12);
+  }
+
+  &:read-only {
+    background: #f6f7f8;
+    color: #676c75;
+  }
+
+  &:disabled {
+    border-color: transparent;
+    background: rgba(55, 93, 137, 0.05);
+    color: #979ea8;
+    cursor: not-allowed;
+  }
+}
+
+@mixin control-area($min-height: 120px) {
+  @include control-base;
+  min-height: $min-height;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  resize: vertical;
+}
+
+@mixin action-base {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1.5;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}

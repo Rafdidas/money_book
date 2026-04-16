@@ -2,16 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { supabase } from "../../../lib/supabase/client";
-import styles from "../auth.module.scss";
+import { supabase } from "@/lib/supabase/client";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSignup = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -27,6 +26,7 @@ export default function SignupPage() {
     try {
       setPasswordError("");
       setIsSubmitting(true);
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -38,132 +38,111 @@ export default function SignupPage() {
       });
 
       if (error) {
-        alert("회원가입 실패: " + error.message);
+        alert(`회원가입 실패: ${error.message}`);
         return;
       }
 
-      alert("회원가입 성공! 이메일 확인하세요");
+      alert("회원가입 성공! 이메일을 확인해주세요.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className={styles.authShell}>
-      <main className={styles.signupStage}>
-        <section className={styles.signupCard}>
-          <aside className={styles.signupHero}>
-            <div className={styles.signupHeroInner}>
-              <Link href="/" className={styles.brandMark}>
-                Money Book
-              </Link>
-              <h1 className={styles.signupHeroTitle}>
-                재산의 흐름을
-                <br />
-                감각적으로 기록하다.
-              </h1>
-              <p className={styles.signupHeroText}>
-                단순한 소비 기록을 넘어, 당신의 라이프스타일을 완성하는
-                프리미엄 자산 관리 아틀리에.
-              </p>
+    <div className="auth-page">
+      <div className="signup-ornament-left" />
+      <div className="signup-ornament-right" />
+
+      <main className="signup-stage">
+        <section className="signup-wrap">
+          <div className="auth-brand-block">
+            <h1 className="auth-brand auth-brand-sm headline--sm">MONEY BOOK</h1>
+            <p className="auth-lead">새로운 금융 여정을 시작하세요</p>
+          </div>
+
+          <section className="signup-card">
+            <div className="auth-form">
+              <div className="field-group">
+                <label className="field-label label--sm" htmlFor="signup-name">
+                  이름
+                </label>
+                <input
+                  id="signup-name"
+                  className="field-input body--sm"
+                  type="text"
+                  placeholder="성함을 입력해주세요"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label label--sm" htmlFor="signup-email">
+                  이메일
+                </label>
+                <input
+                  id="signup-email"
+                  className="field-input body--sm"
+                  type="email"
+                  placeholder="example@moneybook.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label label--sm" htmlFor="signup-password">
+                  비밀번호
+                </label>
+                <input
+                  id="signup-password"
+                  className="field-input body--sm"
+                  type="password"
+                  placeholder="8자 이상 입력해주세요"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (passwordError) {
+                      setPasswordError("");
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label label--sm" htmlFor="signup-confirm-password">
+                  비밀번호 확인
+                </label>
+                <input
+                  id="signup-confirm-password"
+                  className="field-input body--sm"
+                  type="password"
+                  placeholder="비밀번호를 한번 더 입력해주세요"
+                  value={confirmPassword}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value);
+                    if (passwordError) {
+                      setPasswordError("");
+                    }
+                  }}
+                />
+              </div>
+
+              {passwordError ? <p className="error-text label--md">{passwordError}</p> : null}
+
+              <button
+                type="button"
+                className="primary-rect-button bodyBold--sm"
+                onClick={handleSignup}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "회원가입 중..." : "회원가입"}
+              </button>
             </div>
-            <div className={styles.signupHeroFooter} />
-          </aside>
 
-          <section className={styles.authPanel}>
-            <div className={styles.authPanelInner}>
-              <div className={styles.authHeader}>
-                <h1 className={styles.authTitle}>회원가입</h1>
-                <p className={styles.authSubtitle}>
-                  Money Book과 함께 새로운 자산 관리 여정을 시작하세요.
-                </p>
-              </div>
-
-              <div className={styles.authForm}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="signup-name">
-                    성함
-                  </label>
-                  <input
-                    id="signup-name"
-                    className={styles.fieldInput}
-                    type="text"
-                    placeholder="홍길동"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="signup-email">
-                    이메일 주소
-                  </label>
-                  <input
-                    id="signup-email"
-                    className={styles.fieldInput}
-                    type="email"
-                    placeholder="example@moneybook.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="signup-password">
-                    비밀번호
-                  </label>
-                  <input
-                    id="signup-password"
-                    className={styles.fieldInput}
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (passwordError) {
-                        setPasswordError("");
-                      }
-                    }}
-                  />
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel} htmlFor="signup-confirm-password">
-                    비밀번호 확인
-                  </label>
-                  <input
-                    id="signup-confirm-password"
-                    className={styles.fieldInput}
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (passwordError) {
-                        setPasswordError("");
-                      }
-                    }}
-                  />
-                </div>
-
-                {passwordError ? <p className={styles.errorText}>{passwordError}</p> : null}
-
-                <div className={styles.authActions}>
-                  <button
-                    type="button"
-                    className={styles.primaryButton}
-                    onClick={handleSignup}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "계정 생성 중..." : "계정 생성하기"}
-                  </button>
-
-                  <div className={styles.authLinkRow}>
-                    <span>이미 계정이 있으신가요?</span>
-                    <Link href="/auth/login">로그인으로 돌아가기</Link>
-                  </div>
-                </div>
-              </div>
+            <div className="signup-footer caption--md">
+              <span>이미 계정이 있으신가요?</span>
+              <Link href="/auth/login">로그인 페이지로 돌아가기</Link>
             </div>
           </section>
         </section>

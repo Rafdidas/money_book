@@ -1,4 +1,4 @@
-.chartCard {
+.expense-pie-chart {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -9,25 +9,25 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.chartTitle {
+.expense-pie-chart__title {
   font-size: 18px;
   line-height: 1.4;
   color: #191c1d;
 }
 
-.chartList {
+.expense-pie-chart__list {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.chartRow {
+.expense-pie-chart__row {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.chartMeta {
+.expense-pie-chart__meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -35,24 +35,24 @@
   color: #475569;
 }
 
-.chartLabel {
+.expense-pie-chart__label {
   display: inline-flex;
   align-items: center;
   gap: 12px;
 }
 
-.chartDot {
+.expense-pie-chart__dot {
   width: 8px;
   height: 8px;
   border-radius: 999px;
 }
 
-.chartValue {
+.expense-pie-chart__value {
   font-weight: 700;
   color: #191c1d;
 }
 
-.chartTrack {
+.expense-pie-chart__track {
   width: 100%;
   height: 6px;
   border-radius: 999px;
@@ -60,12 +60,12 @@
   overflow: hidden;
 }
 
-.chartFill {
+.expense-pie-chart__fill {
   height: 100%;
   border-radius: inherit;
 }
 
-.emptyState {
+.expense-pie-chart__empty {
   font-size: 13px;
   color: #94a3b8;
 }

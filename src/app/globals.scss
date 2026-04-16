@@ -1,58 +1,95 @@
+@use "../app/color_tokens.scss";
+@use "../components/common/header";
+@use "../components/common/footer";
+@use "../components/common/modal";
+@use "../components/expense/expense-form";
+@use "../components/expense/expense-list";
+@use "../components/calendar/calendar-view";
+@use "../components/chart/expense-pie-chart";
+@use "../styles/typography";
+@use "./page";
+@use "./analysis/analysis";
+@use "./auth/auth";
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html {
-  height: 100%;
-}
 
 html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
   min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
   font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  overscroll-behavior: none;
 }
 
 * {
-  box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  outline: none;
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
+*::after,
+*::before {
+  box-sizing: border-box;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+  cursor: pointer;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+button:active {
+  background: none;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+ul,
+li {
+  list-style: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+fieldset {
+  border: none;
+}
+
+canvas,
+img,
+picture,
+svg,
+video {
+  display: block;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.app-body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
 }
