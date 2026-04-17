@@ -85,13 +85,9 @@ export default function LoginPage() {
                   value={email}
                   autoComplete="email"
                   variant="outlined"
-                  className="form-input"
+                  
                   onChange={(event) => setEmail(event.target.value)}
-                  slotProps={{
-                    htmlInput: {
-                      className: "body--lg",
-                    },
-                  }}
+                  
                 />
               </div>
 
@@ -109,7 +105,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   variant="outlined"
-                  className="form-input"
+                  
                   slotProps={{
                     htmlInput: {
                       className: "body--lg",
@@ -123,7 +119,8 @@ export default function LoginPage() {
               </div>
               <Button
                 type="submit"
-                className="button button--full"
+                // className="button button--full"
+                variant="outlined"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "로그인 중..." : "로그인"}
