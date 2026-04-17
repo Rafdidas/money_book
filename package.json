@@ -9,8 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@mantine/core": "^9.0.2",
-    "@mantine/hooks": "^9.0.2",
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^9.0.0",
+    "@mui/material-nextjs": "^9.0.0",
     "@supabase/supabase-js": "^2.100.0",
     "chart.js": "^4.5.1",
     "next": "16.2.1",

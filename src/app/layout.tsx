@@ -1,6 +1,5 @@
-import "@mantine/core/styles.css";
 import type { Metadata } from "next";
-import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import Providers from "./providers";
@@ -17,16 +16,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" {...mantineHtmlProps}>
-      <head>
-        <ColorSchemeScript defaultColorScheme="light" />
-      </head>
+    <html lang="ko">
       <body className="app-body">
-        <Providers>
-          <Header />
-          <main className="app-main">{children}</main>
-          <Footer />
-        </Providers>
+        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+          <Providers>
+            <Header />
+            <main className="app-main">{children}</main>
+            <Footer />
+          </Providers>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

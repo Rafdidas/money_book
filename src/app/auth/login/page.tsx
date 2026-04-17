@@ -1,10 +1,11 @@
 "use client";
 
-import { PasswordInput, TextInput } from "@mantine/core";
+import TextField from "@mui/material/TextField";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { Button } from "@mui/material";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -66,67 +67,69 @@ export default function LoginPage() {
 
       <main className="login-stage">
         <section className="login-wrap">
-          <div className="auth-brand-block">
-            <h1 className="auth-brand headline--md">MONEY BOOK</h1>
-            <p className="auth-lead">당신의 자산 이야기를 기록합니다</p>
-          </div>
-
           <section className="login-card">
+            <div className="auth-brand-block">
+              <h1 className="auth-brand headline--md">MONEY BOOK</h1>
+              <p className="auth-lead">당신의 자산 이야기를 기록합니다</p>
+            </div>
             <form ref={formRef} className="auth-form" onSubmit={handleLogin}>
               <div className="field-group">
-                <label className="field-label label--sm" htmlFor="login-email">
+                <label className="field-label label--lg" htmlFor="login-email">
                   이메일
                 </label>
-                <TextInput
+                <TextField
                   id="login-email"
                   name="email"
                   type="email"
                   placeholder="example@moneybook.com"
                   value={email}
                   autoComplete="email"
-                  onChange={(event) => setEmail(event.currentTarget.value)}
-                  classNames={{
-                    input: "field-input-large body--lg",
+                  variant="outlined"
+                  className="form-input"
+                  onChange={(event) => setEmail(event.target.value)}
+                  slotProps={{
+                    htmlInput: {
+                      className: "body--lg",
+                    },
                   }}
                 />
               </div>
 
               <div className="field-group">
                 <div className="label-row">
-                  <label className="field-label label--sm" htmlFor="login-password">
+                  <label className="field-label label--lg" htmlFor="login-password">
                     비밀번호
                   </label>
-                  <button type="button" className="inline-link label--sm">
-                    비밀번호 찾기
-                  </button>
                 </div>
 
-                <PasswordInput
+                <TextField
                   id="login-password"
                   name="password"
+                  type="password"
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  classNames={{
-                    input: "field-input-large body--lg",
+                  variant="outlined"
+                  className="form-input"
+                  slotProps={{
+                    htmlInput: {
+                      className: "body--lg",
+                    },
                   }}
                 />
               </div>
-
-              <button
+              <div className="login-footer body--sm">
+                <span>아직 회원이 아니신가요?</span>
+                <Link href="/auth/signup">회원가입</Link>
+              </div>
+              <Button
                 type="submit"
-                className="primary-pill-button bodyBold--lg"
+                className="button button--full"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "로그인 중..." : "로그인"}
-                <span aria-hidden="true">→</span>
-              </button>
+              </Button>
             </form>
           </section>
-
-          <div className="login-footer body--sm">
-            <span>아직 회원이 아니신가요?</span>
-            <Link href="/auth/signup">회원가입</Link>
-          </div>
         </section>
       </main>
     </div>

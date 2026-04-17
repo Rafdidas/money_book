@@ -7,6 +7,8 @@
 @use "../components/calendar/calendar-view";
 @use "../components/chart/expense-pie-chart";
 @use "../styles/typography";
+@use "../styles/input";
+@use "../styles/button";
 @use "./page";
 @use "./analysis/analysis";
 @use "./auth/auth";

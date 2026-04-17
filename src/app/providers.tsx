@@ -1,12 +1,19 @@
 "use client";
 
-import { MantineProvider, createTheme } from "@mantine/core";
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
-  fontFamily: '"Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  defaultRadius: "md",
+  palette: {
+    mode: "dark",
+  },
 });
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  return <MantineProvider theme={theme}>{children}</MantineProvider>;
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      {children}
+    </ThemeProvider>
+  );
 }

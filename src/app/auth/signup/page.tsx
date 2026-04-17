@@ -1,5 +1,6 @@
 "use client";
 
+import TextField from "@mui/material/TextField";
 import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/client";
@@ -66,13 +67,21 @@ export default function SignupPage() {
                 <label className="field-label label--sm" htmlFor="signup-name">
                   이름
                 </label>
-                <input
+                <TextField
                   id="signup-name"
-                  className="field-input body--sm"
+                  name="name"
                   type="text"
                   placeholder="성함을 입력해주세요"
                   value={name}
+                  autoComplete="name"
+                  variant="outlined"
+                  className="form-input"
                   onChange={(event) => setName(event.target.value)}
+                  slotProps={{
+                    htmlInput: {
+                      className: "body--sm",
+                    },
+                  }}
                 />
               </div>
 
@@ -80,13 +89,21 @@ export default function SignupPage() {
                 <label className="field-label label--sm" htmlFor="signup-email">
                   이메일
                 </label>
-                <input
+                <TextField
                   id="signup-email"
-                  className="field-input body--sm"
+                  name="email"
                   type="email"
                   placeholder="example@moneybook.com"
                   value={email}
+                  autoComplete="email"
+                  variant="outlined"
+                  className="form-input"
                   onChange={(event) => setEmail(event.target.value)}
+                  slotProps={{
+                    htmlInput: {
+                      className: "body--sm",
+                    },
+                  }}
                 />
               </div>
 
@@ -94,45 +111,66 @@ export default function SignupPage() {
                 <label className="field-label label--sm" htmlFor="signup-password">
                   비밀번호
                 </label>
-                <input
+                <TextField
                   id="signup-password"
-                  className="field-input body--sm"
+                  name="password"
                   type="password"
                   placeholder="8자 이상 입력해주세요"
                   value={password}
+                  autoComplete="new-password"
+                  variant="outlined"
+                  className="form-input"
                   onChange={(event) => {
                     setPassword(event.target.value);
                     if (passwordError) {
                       setPasswordError("");
                     }
                   }}
+                  slotProps={{
+                    htmlInput: {
+                      className: "body--sm",
+                    },
+                  }}
                 />
               </div>
 
               <div className="field-group">
-                <label className="field-label label--sm" htmlFor="signup-confirm-password">
+                <label
+                  className="field-label label--sm"
+                  htmlFor="signup-confirm-password"
+                >
                   비밀번호 확인
                 </label>
-                <input
+                <TextField
                   id="signup-confirm-password"
-                  className="field-input body--sm"
+                  name="confirmPassword"
                   type="password"
                   placeholder="비밀번호를 한번 더 입력해주세요"
                   value={confirmPassword}
+                  autoComplete="new-password"
+                  variant="outlined"
+                  className="form-input"
                   onChange={(event) => {
                     setConfirmPassword(event.target.value);
                     if (passwordError) {
                       setPasswordError("");
                     }
                   }}
+                  slotProps={{
+                    htmlInput: {
+                      className: "body--sm",
+                    },
+                  }}
                 />
               </div>
 
-              {passwordError ? <p className="error-text label--md">{passwordError}</p> : null}
+              {passwordError ? (
+                <p className="error-text label--md">{passwordError}</p>
+              ) : null}
 
               <button
                 type="button"
-                className="primary-rect-button bodyBold--sm"
+                className="button bodyBold--sm"
                 onClick={handleSignup}
                 disabled={isSubmitting}
               >
@@ -140,9 +178,11 @@ export default function SignupPage() {
               </button>
             </div>
 
-            <div className="signup-footer caption--md">
-              <span>이미 계정이 있으신가요?</span>
-              <Link href="/auth/login">로그인 페이지로 돌아가기</Link>
+            <div className="signup-footer ">
+              <span className="body--md">이미 계정이 있으신가요?</span>
+              <Link href="/auth/login" className="body--md">
+                로그인 페이지로 돌아가기
+              </Link>
             </div>
           </section>
         </section>

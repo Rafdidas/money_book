@@ -2,58 +2,23 @@
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: #f8fafb;
+  background: hsl(220, 35%, 3%);
   color: #2a3437;
+
+  &::before {
+    content: "";
+    display: block;
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background-image: radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%));
+    background-repeat: no-repeat;
+  }
 
   &.auth-page-login {
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .login-ornament-top,
-  .login-ornament-bottom,
-  .signup-ornament-left,
-  .signup-ornament-right {
-    position: absolute;
-    border-radius: 999px;
-    pointer-events: none;
-  }
-
-  .login-ornament-top {
-    top: -97px;
-    right: -128px;
-    width: 512px;
-    height: 390px;
-    background: rgba(212, 229, 239, 0.24);
-    filter: blur(60px);
-  }
-
-  .login-ornament-bottom {
-    left: -64px;
-    bottom: -48px;
-    width: 384px;
-    height: 293px;
-    background: rgba(205, 230, 244, 0.3);
-    filter: blur(50px);
-  }
-
-  .signup-ornament-left {
-    top: -103px;
-    left: -128px;
-    width: 512px;
-    height: 412px;
-    background: rgba(212, 229, 239, 0.24);
-    filter: blur(60px);
-  }
-
-  .signup-ornament-right {
-    right: -128px;
-    bottom: -103px;
-    width: 512px;
-    height: 412px;
-    background: rgba(205, 230, 244, 0.24);
-    filter: blur(60px);
   }
 
   .login-stage,
@@ -86,28 +51,31 @@
   .auth-brand-block {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
+    margin-bottom: 24px;
   }
 
   .auth-brand {
-    color: #506169;
+    color: var(--surface-ultra-low);
   }
   .auth-lead {
-    color: #566164;
+    color: var(--surface-ultra-low);
   }
 
   .login-card,
   .signup-card {
     width: 100%;
-    background: #ffffff;
-    box-shadow: 0 8px 32px rgba(42, 52, 55, 0.04);
+    background: hsla(220, 35%, 3%, 0.4);
+    border: 1px solid hsla(220, 20%, 25%, 0.6);
+    box-shadow: hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px,
+      hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px;
   }
 
   .login-card {
-    margin-top: 48px;
     padding: 32px;
     border-radius: 12px;
+    
   }
 
   .signup-card {
@@ -118,7 +86,7 @@
   .auth-form {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
   }
 
   .field-group {
@@ -136,97 +104,23 @@
   }
 
   .field-label {
-    padding-left: 4px;
-    color: #566164;
+    color: hsl(220, 20%, 65%);
   }
 
   .inline-link {
-    color: #506169;
-  }
-
-  // .field-input-large,
-  // .field-input {
-  //   width: 100%;
-  //   border: 1px solid rgba(169, 180, 183, 0.2);
-  //   background: #f0f4f6;
-  //   color: #2a3437;
-  //   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  // }
-
-  // .field-input-large::placeholder,
-  // .field-input::placeholder {
-  //   color: #727d80;
-  // }
-
-  // .field-input-large:focus,
-  // .field-input:focus {
-  //   border-color: rgba(80, 97, 105, 0.35);
-  //   box-shadow: 0 0 0 4px rgba(80, 97, 105, 0.08);
-  // }
-
-  // .field-input-large {
-  //   min-height: 56px;
-  //   padding: 18px 20px;
-  //   border-radius: 12px;
-  //   font-size: 16px;
-  // }
-
-  // .field-input {
-  //   min-height: 46px;
-  //   padding: 15px 17px;
-  //   border-radius: 8px;
-  //   font-size: 14px;
-  // }
-
-  .primary-pill-button,
-  .primary-rect-button {
-    width: 100%;
-    border: none;
-    background: linear-gradient(90deg, #506169 0%, #45555d 100%);
-    color: #f0f9ff;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-  }
-
-  .primary-pill-button:disabled,
-  .primary-rect-button:disabled {
-    opacity: 0.7;
-    cursor: wait;
-  }
-
-  .primary-pill-button:hover,
-  .primary-rect-button:hover {
-    transform: translateY(-1px);
-  }
-
-  .primary-pill-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 57px;
-    margin-top: -1px;
-    border-radius: 999px;
-    box-shadow:
-      0 10px 15px -3px rgba(80, 97, 105, 0.1),
-      0 4px 6px -4px rgba(80, 97, 105, 0.1);
-  }
-
-  .primary-rect-button {
-    min-height: 52px;
-    border-radius: 12px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: var(--surface-ultra-low);
   }
 
   .login-footer {
     display: flex;
-    gap: 12px;
-    margin-top: 32px;
-    color: #566164;
+    justify-content: space-between;
+    margin-top: 16px;
+    color: var(--surface-ultra-low);
   }
 
   .login-footer a,
   .signup-footer a {
-    color: #506169;
+    color: var(--surface-ultra-low);
   }
 
   .signup-footer {
