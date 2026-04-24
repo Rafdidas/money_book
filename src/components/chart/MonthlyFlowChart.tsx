@@ -32,7 +32,7 @@ export default function MonthlyFlowChart({
           backgroundColor: data.map((_, index) =>
             index === currentMonth ? "#45555d" : "#506169",
           ),
-          borderRadius: 999,
+          // borderRadius: 999,
           borderSkipped: false as const,
           barThickness: 16,
           maxBarThickness: 18,
@@ -43,7 +43,7 @@ export default function MonthlyFlowChart({
           backgroundColor: data.map((_, index) =>
             index === currentMonth ? "#8b3432" : "#9f403d",
           ),
-          borderRadius: 999,
+          // borderRadius: 999,
           borderSkipped: false as const,
           barThickness: 16,
           maxBarThickness: 18,

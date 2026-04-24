@@ -1,41 +1,101 @@
 .form-input {
-  .MuiOutlinedInput-root {
-    min-height: 40px;
-    border-radius: 8px;
-    background: hsl(220, 35%, 3%);
+  width: 100%;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--surface-ultra-low);
+  color: var(--on-surface-ultra-high);
+  caret-color: var(--primary-high);
+  transition:
+    border-color 120ms ease-in,
+    background-color 120ms ease-in,
+    color 120ms ease-in,
+    box-shadow 120ms ease-in;
+
+  &::placeholder {
+    color: var(--on-surface-high);
+  }
+
+  &:hover:not(:disabled):not([readonly]) {
+    border-color: var(--outline-high);
+  }
+
+  &:focus,
+  &:focus-visible {
+    border-color: var(--primary-high);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary-high) 18%, transparent);
+  }
+
+  &:disabled,
+  &--disabled {
+    border-color: var(--outline-low, #dfe3ea);
+    background: var(--overlay-gray, rgba(55, 93, 137, 0.05));
+    color: var(--on-surface-low, #a1a8b3);
+    cursor: not-allowed;
+
+    &::placeholder {
+      color: var(--on-surface-low, #a1a8b3);
+    }
+  }
+
+  &[readonly],
+  &--readonly {
+    border-color: var(--outline-low, #dfe3ea);
+    background: var(--overlay-gray, rgba(55, 93, 137, 0.05));
+    color: var(--on-surface);
+  }
+
+  &--invalid,
+  &[aria-invalid="true"] {
+    border-color: #ff5e66;
+  }
+
+  &--valid {
+    border-color: #52c26d;
+  }
+
+  &--borderless {
+    border-color: transparent;
+    background: transparent;
+
+    &:hover:not(:disabled):not([readonly]) {
+      border-color: var(--overlay-gray-higher, rgba(100, 109, 129, 0.34));
+    }
+  }
+
+  &--sm,
+  &--md,
+  &--lg {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  &--sm {
+    height: 32px;
+    padding: 4px 8px;
+  }
+
+  &--md {
+    height: 40px;
     padding: 8px 12px;
-    border: 1px solid hsla(220, 20%, 25%, 0.6);
-    color: hsl(0, 0%, 100%);
-    transition: border 120ms ease-in;
   }
 
-  .MuiOutlinedInput-notchedOutline {
-    border-color: rgba(169, 180, 183, 0.2);
+  &--lg {
+    height: 48px;
+    padding: 10px 16px;
+    font-size: 18px;
+  }
+}
+
+.form-input-helper {
+  color: var(--on-surface);
+  font-size: 12px;
+  line-height: 1.5;
+
+  &--invalid {
+    color: #d84f57;
   }
 
-  .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-    border-color: rgba(80, 97, 105, 0.28);
+  &--valid {
+    color: #2d9f57;
   }
-
-  .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-    border-color: rgba(80, 97, 105, 0.35);
-    border-width: 1px;
-  }
-
-  .MuiOutlinedInput-root.Mui-focused {
-    box-shadow: 0 0 0 4px rgba(80, 97, 105, 0.08);
-  }
-
-  // .MuiOutlinedInput-input {
-  //   color: inherit;
-  // }
-
-  // .MuiOutlinedInput-input::placeholder {
-  //   color: #727d80;
-  //   opacity: 1;
-  // }
-
-  // .MuiInputBase-input.body--sm {
-  //   padding: 15px 17px;
-  // }
 }

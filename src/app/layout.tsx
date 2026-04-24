@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import Header from "@/components/common/Header";
-import Footer from "@/components/common/Footer";
-import Providers from "./providers";
 import "./globals.scss";
 
 export const metadata: Metadata = {
@@ -17,14 +14,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+          rel="stylesheet"
+        />
+      </head>
       <body className="app-body">
-        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-          <Providers>
-            <Header />
-            <main className="app-main">{children}</main>
-            <Footer />
-          </Providers>
-        </AppRouterCacheProvider>
+        <div className="wrapper">
+          <Header />
+          <main className="app-main">{children}</main>
+          {/* <Footer /> */}
+        </div>
       </body>
     </html>
   );

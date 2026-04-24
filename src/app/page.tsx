@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ExpenseForm from "@/components/expense/ExpenseForm";
 import Modal from "@/components/common/Modal";
 import MonthlyFlowChart from "@/components/chart/MonthlyFlowChart";
@@ -50,9 +50,12 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [displayName, setDisplayName] = useState("게스트");
+  const [displayEmail, setDisplayEmail] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isAuthResolved, setIsAuthResolved] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,10 +72,31 @@ export default function Home() {
       const metadataName =
         typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "";
       setDisplayName(metadataName || user.email?.split("@")[0] || "게스트");
+      setDisplayEmail(user.email || "");
       setIsAuthResolved(true);
     };
     fetchData();
   }, [router]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: globalThis.MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const selectedDateKey = formatDate(selectedDate);
   const currentYear = selectedDate.getFullYear();
@@ -186,6 +210,17 @@ export default function Home() {
     setShowModal(false);
     setEditingExpense(null);
   };
+  const handleMenuClose = () => {
+    setIsMenuOpen(false);
+  };
+  const handleMenuToggle = () => {
+    setIsMenuOpen((prev) => !prev);
+  };
+  const handleLogout = async () => {
+    handleMenuClose();
+    await supabase.auth.signOut();
+    router.replace("/auth/login");
+  };
 
   if (!isAuthResolved) {
     return null;
@@ -193,6 +228,47 @@ export default function Home() {
 
   return (
     <div className="home-page">
+      <div className="side-menu">
+        <div className="side-menu--inner">
+          <div className="side-menu--avatar row-group row-group--center row-group--gap-8">
+            <span className="material-symbols-outlined" aria-hidden="true">
+              account_circle
+            </span>
+            <div className="column-group">
+              <span className="bodyBold--sm">{displayName}</span>
+              <span className="label--sm">{displayEmail}</span>
+            </div>
+            <div className="side-menu--menu" ref={menuRef}>
+              <button
+                type="button"
+                aria-label="Open menu"
+                aria-controls="side-menu-actions"
+                aria-expanded={isMenuOpen ? "true" : "false"}
+                aria-haspopup="menu"
+                className="button button--icon-only button--md button--subtle side-menu--more"
+                onClick={handleMenuToggle}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  more_vert
+                </span>
+              </button>
+              {isMenuOpen ? (
+                <div
+                  className="side-menu--dropdown column-group"
+                  id="side-menu-actions"
+                  role="menu"
+                >
+                  <ul className="side-menu--dropdown-item" role="menuitem">
+                    <li className="side-menu--dropdown__text" onClick={handleLogout}>
+                      로그아웃
+                    </li>
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
       <main className="main">
         <section className="hero">
           <div>
@@ -200,7 +276,9 @@ export default function Home() {
             <h1 className="hero-title headline--md">
               {currentYear}년 {currentMonth + 1}월
             </h1>
-            <p className="hero-meta body--md">{displayName} 님의 이번 달 자산 흐름입니다.</p>
+            <p className="hero-meta body--md">
+              {displayName} 님의 이번 달 자산 흐름입니다.
+            </p>
           </div>
           <button
             type="button"
@@ -306,7 +384,9 @@ export default function Home() {
             </div>
             <div className="category-list">
               {categoryRows.length === 0 ? (
-                <p className="empty-text body--sm">이번 달 지출 데이터가 아직 없습니다.</p>
+                <p className="empty-text body--sm">
+                  이번 달 지출 데이터가 아직 없습니다.
+                </p>
               ) : (
                 categoryRows.map(([label, amount]) => {
                   const budget = categoryBudgets[label] ?? Math.max(amount, 1);
@@ -320,10 +400,7 @@ export default function Home() {
                         </span>
                       </div>
                       <div className="category-track">
-                        <div
-                          className="category-fill"
-                          style={{ width: `${ratio}%` }}
-                        />
+                        <div className="category-fill" style={{ width: `${ratio}%` }} />
                       </div>
                     </div>
                   );
@@ -337,7 +414,9 @@ export default function Home() {
             </div>
             <div className="detail-list">
               {detailItems.length === 0 ? (
-                <p className="empty-text body--sm">이번 달 등록된 내역이 아직 없습니다.</p>
+                <p className="empty-text body--sm">
+                  이번 달 등록된 내역이 아직 없습니다.
+                </p>
               ) : (
                 detailItems.map((item) => (
                   <button

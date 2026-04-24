@@ -1,8 +1,7 @@
 "use client";
 
-import TextField from "@mui/material/TextField";
 import Link from "next/link";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 export default function SignupPage() {
@@ -13,7 +12,9 @@ export default function SignupPage() {
   const [passwordError, setPasswordError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSignup = async () => {
+  const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     if (!name || !email || !password || !confirmPassword) {
       alert("이름, 이메일, 비밀번호를 모두 입력해주세요.");
       return;
@@ -62,104 +63,84 @@ export default function SignupPage() {
           </div>
 
           <section className="signup-card">
-            <div className="auth-form">
+            <div className="auth-brand-block">
+              <h1 className="auth-brand auth-brand-sm headline--sm">Sign up</h1>
+              {/* <p className="auth-lead">새로운 금융 여정을 시작하세요</p> */}
+            </div>
+            <form className="auth-form" onSubmit={handleSignup}>
               <div className="field-group">
-                <label className="field-label label--sm" htmlFor="signup-name">
+                <label className="field-label label--lg" htmlFor="signup-name">
                   이름
                 </label>
-                <TextField
+                <input
+                  className="form-input form-input--md"
                   id="signup-name"
                   name="name"
                   type="text"
                   placeholder="성함을 입력해주세요"
                   value={name}
                   autoComplete="name"
-                  variant="outlined"
-                  className="form-input"
                   onChange={(event) => setName(event.target.value)}
-                  slotProps={{
-                    htmlInput: {
-                      className: "body--sm",
-                    },
-                  }}
                 />
               </div>
 
               <div className="field-group">
-                <label className="field-label label--sm" htmlFor="signup-email">
+                <label className="field-label label--lg" htmlFor="signup-email">
                   이메일
                 </label>
-                <TextField
+                <input
+                  className="form-input form-input--md"
                   id="signup-email"
                   name="email"
                   type="email"
                   placeholder="example@moneybook.com"
                   value={email}
                   autoComplete="email"
-                  variant="outlined"
-                  className="form-input"
                   onChange={(event) => setEmail(event.target.value)}
-                  slotProps={{
-                    htmlInput: {
-                      className: "body--sm",
-                    },
-                  }}
                 />
               </div>
 
               <div className="field-group">
-                <label className="field-label label--sm" htmlFor="signup-password">
+                <label className="field-label label--lg" htmlFor="signup-password">
                   비밀번호
                 </label>
-                <TextField
+                <input
+                  className="form-input form-input--md"
                   id="signup-password"
                   name="password"
                   type="password"
                   placeholder="8자 이상 입력해주세요"
                   value={password}
                   autoComplete="new-password"
-                  variant="outlined"
-                  className="form-input"
                   onChange={(event) => {
                     setPassword(event.target.value);
                     if (passwordError) {
                       setPasswordError("");
                     }
                   }}
-                  slotProps={{
-                    htmlInput: {
-                      className: "body--sm",
-                    },
-                  }}
                 />
               </div>
 
               <div className="field-group">
                 <label
-                  className="field-label label--sm"
+                  className="field-label label--lg"
                   htmlFor="signup-confirm-password"
                 >
                   비밀번호 확인
                 </label>
-                <TextField
+                <input
+                  className="form-input form-input--md"
                   id="signup-confirm-password"
                   name="confirmPassword"
                   type="password"
                   placeholder="비밀번호를 한번 더 입력해주세요"
                   value={confirmPassword}
                   autoComplete="new-password"
-                  variant="outlined"
-                  className="form-input"
                   onChange={(event) => {
                     setConfirmPassword(event.target.value);
                     if (passwordError) {
                       setPasswordError("");
                     }
-                  }}
-                  slotProps={{
-                    htmlInput: {
-                      className: "body--sm",
-                    },
                   }}
                 />
               </div>
@@ -167,16 +148,14 @@ export default function SignupPage() {
               {passwordError ? (
                 <p className="error-text label--md">{passwordError}</p>
               ) : null}
-
               <button
-                type="button"
-                className="button bodyBold--sm"
-                onClick={handleSignup}
+                type="submit"
+                className="button button--primary button--lg button--full"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "회원가입 중..." : "회원가입"}
+                {isSubmitting ? "가입 중..." : "회원가입"}
               </button>
-            </div>
+            </form>
 
             <div className="signup-footer ">
               <span className="body--md">이미 계정이 있으신가요?</span>

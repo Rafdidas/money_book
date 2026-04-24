@@ -2,7 +2,7 @@
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: hsl(220, 35%, 3%);
+  background: var(--surface-ultra-low);
   color: #2a3437;
 
   &::before {
@@ -11,7 +11,7 @@
     position: absolute;
     z-index: 1;
     inset: 0;
-    background-image: radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%));
+    background-image: radial-gradient(rgb(240, 247, 255), rgb(255, 255, 255));
     background-repeat: no-repeat;
   }
 
@@ -45,7 +45,6 @@
     flex-direction: column;
     align-items: center;
     width: min(448px, 100%);
-    gap: 40px;
   }
 
   .auth-brand-block {
@@ -57,19 +56,19 @@
   }
 
   .auth-brand {
-    color: var(--surface-ultra-low);
+    color: var(--on-surface-ultra-high);
   }
   .auth-lead {
-    color: var(--surface-ultra-low);
+    color: var(--on-surface-ultra-high);
   }
 
   .login-card,
   .signup-card {
     width: 100%;
-    background: hsla(220, 35%, 3%, 0.4);
-    border: 1px solid hsla(220, 20%, 25%, 0.6);
-    box-shadow: hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px,
-      hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px;
+    background: var(--surface-ultra-low);
+    border: 1px solid var(--outline);
+    box-shadow: rgba(9, 11, 17, 0.05) 0px 5px 15px 0px,
+      rgba(19, 23, 32, 0.05) 0px 15px 35px -5px;
   }
 
   .login-card {
@@ -104,23 +103,24 @@
   }
 
   .field-label {
-    color: hsl(220, 20%, 65%);
+    color: var(--on-surface-ultra-high);
   }
 
   .inline-link {
-    color: var(--surface-ultra-low);
+    color: var(--on-surface-ultra-high);
   }
 
   .login-footer {
-    display: flex;
-    justify-content: space-between;
     margin-top: 16px;
-    color: var(--surface-ultra-low);
+    color: var(--on-surface);
   }
 
   .login-footer a,
   .signup-footer a {
-    color: var(--surface-ultra-low);
+    color: var(--on-surface);
+    &:hover {
+      color: var(--on-surface-ultra-high);
+    }
   }
 
   .signup-footer {
@@ -130,7 +130,7 @@
     gap: 16px;
     margin-top: 32px;
     padding-top: 25px;
-    border-top: 1px solid #e8eff1;
+    border-top: 1px solid var(--outline-low);
     color: #566164;
   }
 
