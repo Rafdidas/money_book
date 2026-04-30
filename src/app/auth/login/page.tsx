@@ -114,7 +114,9 @@ export default function LoginPage() {
                   }}
                 />
                 {emailError ? (
-                  <p className="form-input-helper form-input-helper--invalid">{emailError}</p>
+                  <p className="form-input-helper form-input-helper--invalid">
+                    {emailError}
+                  </p>
                 ) : null}
               </div>
               <div className="field-group">
@@ -139,20 +141,33 @@ export default function LoginPage() {
                   }}
                 />
                 {passwordError ? (
-                  <p className="form-input-helper form-input-helper--invalid">{passwordError}</p>
+                  <p className="form-input-helper form-input-helper--invalid">
+                    {passwordError}
+                  </p>
                 ) : null}
               </div>
               <div className="login-footer row-group row-group--between body--sm">
                 <span>아직 회원이 아니신가요?</span>
-                <Link href="/auth/signup" className="body--md">회원가입</Link>
+                <Link href="/auth/signup" className="body--md">
+                  회원가입
+                </Link>
               </div>
-              <button
-                type="submit"
-                className="button button--primary button--lg button--full label--lg"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "로그인 중..." : "로그인"}
-              </button>
+              <div className="column-group column-group--gap-16">
+                <button
+                  type="submit"
+                  className="button button--primary button--lg button--full label--lg"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "로그인 중..." : "로그인"}
+                </button>
+                <button
+                  type="submit"
+                  className="button button--outline button--lg button--full label--lg"
+                  disabled={isSubmitting}
+                >
+                  데모 체험하기
+                </button>
+              </div>
             </form>
           </section>
         </section>

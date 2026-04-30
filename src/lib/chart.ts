@@ -6,6 +6,8 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
 } from 'chart.js';
 
 ChartJS.register(
@@ -14,5 +16,7 @@ ChartJS.register(
   Legend,
   CategoryScale,
   LinearScale,
-  BarElement
+  BarElement,
+  LineElement,
+  PointElement
 );

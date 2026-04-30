@@ -1,6 +1,10 @@
 .app-header {
-  
+  min-height: 52px;
   &--inner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -10,5 +14,9 @@
     background: var(--surface-ultra-low);
     border-bottom: 1px solid var(--outline-low);
   }
-  
+  &__brand {
+    display: inline-flex;
+    align-items: center;
+  }
+ 
 }

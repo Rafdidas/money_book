@@ -9,6 +9,7 @@
 @use "../styles/typography";
 @use "../styles/input";
 @use "../styles/button";
+@use "../styles/badge";
 @use "./page";
 @use "./analysis/analysis";
 @use "./auth/auth";
@@ -29,6 +30,7 @@ body {
   font-size: 13px;
   line-height: 1.5;
   font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--on-surface-ultra-high);
 }
 
 *::after,
@@ -117,6 +119,26 @@ img {
     "opsz" 24;
 }
 
+.card {
+  position: relative;
+  padding: 16px;
+  border: 1px solid var(--outline-lower);
+  border-radius: 12px;
+  background: var(--surface-ultra-low);
+  box-shadow: 0 1px 10px 1px rgba(0, 0, 0, 0.03);
+
+  .empty {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
 //로우 정렬 + 갭 조정
 .row-group {
   display: flex;
@@ -127,9 +149,7 @@ img {
     }
   }
 
-  &--center {
-    align-items: center;
-  }
+  
 
   &--between {
     justify-content: space-between;
@@ -154,6 +174,20 @@ img {
 
   &--bottom {
     align-items: flex-end;
+  }
+
+  &--center {
+    align-items: center;
+  }
+
+  &--stretch {
+    align-items: stretch;
+  }
+
+  &--flex {
+    > div {
+      flex: 1;
+    }
   }
 }
 
@@ -240,4 +274,14 @@ $limit: 64;
   .ml#{$i} {
     margin-left: #{$value}px !important;
   }
+}
+
+.tl {
+  text-align: left !important;
+}
+.tr {
+  text-align: right !important;
+}
+.tc {
+  text-align: center !important;
 }

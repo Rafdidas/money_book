@@ -1,0 +1,27 @@
+.badge {
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--outline);
+  padding: 0 8px;
+
+  &--green {
+    border-color: var(--green-mid);
+    background-color: var(--green-lower);
+    color: var(--on-green-high);
+  }
+  &--red {
+    border-color: var(--red-mid);
+    background-color: var(--red-lower);
+    color: var(--on-red-high);
+  }
+  &--teal {
+    border-color: var(--teal-mid);
+    background-color: var(--teal-lower);
+    color: var(--on-teal-high);
+  }
+}
