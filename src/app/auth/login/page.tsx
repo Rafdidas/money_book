@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { disableDemoMode, enableDemoMode } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -65,6 +66,7 @@ export default function LoginPage() {
         return;
       }
 
+      disableDemoMode();
       formRef.current?.reset();
       setEmail("");
       setPassword("");
@@ -73,6 +75,12 @@ export default function LoginPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDemoLogin = () => {
+    enableDemoMode();
+    router.replace("/");
+    router.refresh();
   };
 
   return (
@@ -161,8 +169,9 @@ export default function LoginPage() {
                   {isSubmitting ? "로그인 중..." : "로그인"}
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   className="button button--outline button--lg button--full label--lg"
+                  onClick={handleDemoLogin}
                   disabled={isSubmitting}
                 >
                   데모 체험하기

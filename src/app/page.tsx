@@ -1,21 +1,20 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 import Calendar from "react-calendar";
 import type { Value } from "react-calendar/dist/shared/types.js";
 import type { ChartOptions } from "chart.js";
 import { Line, Pie } from "react-chartjs-2";
 import Modal from "@/components/common/Modal";
+import SideMenu from "@/components/common/SideMenu";
+import { useAppData } from "@/app/providers";
+import { DEMO_USER_ID, writeDemoExpenses } from "@/lib/demo";
 import "@/lib/chart";
 import {
   createExpense,
   deleteExpense,
-  getExpenses,
   updateExpense,
 } from "@/lib/api/expense";
-import { supabase } from "@/lib/supabase/client";
 import type { Expense } from "@/types/expense";
 import { formatDate } from "@/utils/date";
 
@@ -49,8 +48,8 @@ const getCalendarDays = (selectedDate: Date) => {
   });
 };
 const getTrend = (current: number, previous: number) => {
-  if (previous === 0) return current === 0 ? 0 : 100;
-  return ((current - previous) / previous) * 100;
+  if (previous === 0) return current === 0 ? 0 : current > 0 ? 100 : -100;
+  return ((current - previous) / Math.abs(previous)) * 100;
 };
 const getDaysInMonth = (year: number, month: number) =>
   new Date(year, month + 1, 0).getDate();
@@ -224,20 +223,23 @@ function CategoryPieChart({ items }: { items: CategoryExpenseSlice[] }) {
   );
 
   if (!items.length) {
-    return <p className="label--md">이번 달 지출 내역이 없습니다.</p>;
+    return <p className="title--md empty-state">이번 달 지출 내역이 없습니다.</p>;
   }
 
   return <Pie data={chartData} options={options} />;
 }
 
 export default function Home() {
-  const router = useRouter();
-  const pathname = usePathname();
   const today = new Date();
+  const {
+    expenses,
+    setExpenses,
+    displayName,
+    displayEmail,
+    isDemoMode,
+    isAuthResolved,
+  } = useAppData();
   const [selectedDate, setSelectedDate] = useState(today);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [displayName, setDisplayName] = useState("게스트");
-  const [displayEmail, setDisplayEmail] = useState("");
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [inlineFormMode, setInlineFormMode] = useState<InlineFormMode>("create");
   const [inlineEditingId, setInlineEditingId] = useState("");
@@ -249,51 +251,6 @@ export default function Home() {
   const [inlineType, setInlineType] = useState<Expense["type"]>("expense");
   const [isInlineSubmitting, setIsInlineSubmitting] = useState(false);
   const [isInlineDeleting, setIsInlineDeleting] = useState(false);
-  const [isAuthResolved, setIsAuthResolved] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-
-      if (!user) {
-        router.replace("/auth/login");
-        return;
-      }
-
-      const data = await getExpenses();
-      setExpenses(data || []);
-      const metadataName =
-        typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "";
-      setDisplayName(metadataName || user.email?.split("@")[0] || "게스트");
-      setDisplayEmail(user.email || "");
-      setIsAuthResolved(true);
-    };
-    fetchData();
-  }, [router]);
-
-  useEffect(() => {
-    const handlePointerDown = (event: globalThis.MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
 
   const selectedDateKey = formatDate(selectedDate);
   const currentYear = selectedDate.getFullYear();
@@ -332,28 +289,32 @@ export default function Home() {
     ? monthlyExpenseTotal / monthlyExpenseCount
     : 0;
   const monthlyTotal = monthlyIncomeTotal - monthlyExpenseTotal;
+  const previousIncomeTotal = previousMonthlyExpenses
+    .filter((item) => item.type === "income")
+    .reduce((sum, item) => sum + item.amount, 0);
   const previousExpenseTotal = previousMonthlyExpenses
     .filter((item) => item.type === "expense")
     .reduce((sum, item) => sum + item.amount, 0);
-  const changeAmount = monthlyExpenseTotal - previousExpenseTotal;
-  const changeRate = getTrend(monthlyExpenseTotal, previousExpenseTotal);
-  const expenseChangeDirection =
+  const previousMonthlyTotal = previousIncomeTotal - previousExpenseTotal;
+  const changeAmount = monthlyTotal - previousMonthlyTotal;
+  const changeRate = getTrend(monthlyTotal, previousMonthlyTotal);
+  const balanceChangeDirection =
     changeAmount > 0
-      ? "지난달보다 지출 증가"
+      ? `지난달 잔액보다 ${formatWon(changeAmount)} 많습니다`
       : changeAmount < 0
-        ? "지난달보다 지출 감소"
-        : "지난달과 지출 동일";
+        ? `지난달 잔액보다 ${formatWon(changeAmount)} 적습니다`
+        : "지난달 잔액과 같습니다";
   const incomeSeries = getDailySeries(expenses, currentYear, currentMonth, "income");
   const expenseSeries = getDailySeries(expenses, currentYear, currentMonth, "expense");
+  const balanceSeries = getDailySeries(expenses, currentYear, currentMonth);
   const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
-  const previousExpenseSeries = getDailySeries(
+  const previousBalanceSeries = getDailySeries(
     expenses,
     previousMonthDate.getFullYear(),
     previousMonthDate.getMonth(),
-    "expense",
   );
-  const comparisonSeries = expenseSeries.map(
-    (value, index) => value - (previousExpenseSeries[index] ?? previousExpenseSeries.at(-1) ?? 0),
+  const comparisonSeries = balanceSeries.map(
+    (value, index) => value - (previousBalanceSeries[index] ?? previousBalanceSeries.at(-1) ?? 0),
   );
   const selectedDayItems = useMemo(
     () => monthlyExpenses.filter((item) => item.date === selectedDateKey),
@@ -450,6 +411,20 @@ export default function Home() {
   ]);
 
   const handleDelete = async (id: string) => {
+    if (isDemoMode) {
+      setExpenses((prev) => {
+        const next = prev.filter((item) => item.id !== id);
+        writeDemoExpenses(next);
+        return next;
+      });
+      if (inlineEditingId === id) {
+        setInlineEditingId("");
+        setInlineFormMode("create");
+        resetInlineCreateForm();
+      }
+      return;
+    }
+
     await deleteExpense(id);
     setExpenses((prev) => prev.filter((item) => item.id !== id));
     if (inlineEditingId === id) {
@@ -498,15 +473,39 @@ export default function Home() {
           alert("수정할 내역을 선택해주세요.");
           return;
         }
-        await updateExpense(selectedInlineExpense.id, payload);
-        setExpenses((prev) =>
-          prev.map((item) =>
-            item.id === selectedInlineExpense.id ? { ...item, ...payload } : item,
-          ),
-        );
+        if (isDemoMode) {
+          setExpenses((prev) => {
+            const next = prev.map((item) =>
+              item.id === selectedInlineExpense.id ? { ...item, ...payload } : item,
+            );
+            writeDemoExpenses(next);
+            return next;
+          });
+        } else {
+          await updateExpense(selectedInlineExpense.id, payload);
+          setExpenses((prev) =>
+            prev.map((item) =>
+              item.id === selectedInlineExpense.id ? { ...item, ...payload } : item,
+            ),
+          );
+        }
       } else {
-        const saved = await createExpense(payload);
-        setExpenses((prev) => [...prev, ...(saved || [])]);
+        if (isDemoMode) {
+          const demoExpense: Expense = {
+            id: `demo-${Date.now()}`,
+            user_id: DEMO_USER_ID,
+            created_at: new Date().toISOString(),
+            ...payload,
+          };
+          setExpenses((prev) => {
+            const next = [demoExpense, ...prev];
+            writeDemoExpenses(next);
+            return next;
+          });
+        } else {
+          const saved = await createExpense(payload);
+          setExpenses((prev) => [...prev, ...(saved || [])]);
+        }
         resetInlineCreateForm(payload.date);
       }
       setSelectedDate(new Date(`${payload.date}T00:00:00`));
@@ -548,113 +547,17 @@ export default function Home() {
     setSelectedDate(value);
     setShowCalendarModal(false);
   };
-  const handleMenuClose = () => {
-    setIsMenuOpen(false);
-  };
-  const handleMenuToggle = () => {
-    setIsMenuOpen((prev) => !prev);
-  };
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-
-    handleMenuClose();
-    setIsLoggingOut(true);
-
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      setIsLoggingOut(false);
-      alert(`로그아웃 실패: ${error.message}`);
-      return;
-    }
-
-    window.location.replace("/auth/login");
-  };
-  const dashboardActive = pathname === "/";
-  const analysisActive = pathname.startsWith("/analysis");
-
   if (!isAuthResolved) {
     return null;
   }
 
   return (
     <div className="home-page">
-      <div className="side-menu">
-        <div className="side-menu--inner column-group">
-          <div
-            ref={menuRef}
-            className="side-menu--avatar row-group row-group--center row-group--between"
-          >
-            <div className="row-group row-group--center row-group--gap-8">
-              <span className="material-symbols-outlined" aria-hidden="true">
-                account_circle
-              </span>
-              <div className="column-group">
-                <span className="bodyBold--sm">{displayName}</span>
-                <span className="label--sm">{displayEmail}</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              aria-label="Open menu"
-              aria-controls="side-menu-actions"
-              aria-expanded={isMenuOpen ? "true" : "false"}
-              aria-haspopup="menu"
-              className="button button--icon-only button--md button--subtle side-menu--more"
-              onClick={handleMenuToggle}
-            >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                more_vert
-              </span>
-            </button>
-            {isMenuOpen ? (
-              <div
-                className="side-menu--dropdown column-group"
-                id="side-menu-actions"
-                role="menu"
-              >
-                <ul>
-                  <li>
-                    <button
-                      type="button"
-                      className="side-menu--dropdown-item"
-                      role="menuitem"
-                      onClick={handleLogout}
-                      disabled={isLoggingOut}
-                    >
-                      {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            ) : null}
-          </div>
-          <ul className="side-menu--list app-header__nav column-group column-group--gap-4">
-            <li>
-              <Link
-                href="/"
-                className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${dashboardActive ? "is-active" : ""}`}
-              >
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  home
-                </span>
-                대시보드
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/analysis"
-                className={`side-menu--item row-group row-group--gap-4 label--lg ${analysisActive ? "is-active" : ""}`}
-              >
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  analytics
-                </span>
-                월별 분석
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </div>
+      <SideMenu
+        displayName={displayName}
+        displayEmail={displayEmail}
+        isDemoMode={isDemoMode}
+      />
       <main className="main column-group">
         <section className="main-header row-group row-group--center row-group--between">
           <h2 className="main-header--title headline--sm">대시보드</h2>
@@ -673,8 +576,8 @@ export default function Home() {
         <section className="column-group column-group--gap-16">
           <div className="main-overview column-group column-group--gap-16">
             <h3 className="main-common-title title--md">Overview</h3>
-            <div className="row-group row-group--stretch row-group--gap-16">
-              {/* 이번 달 상황 */}
+            <div className="main-overview-card row-group row-group--stretch row-group--gap-16">
+              {/* 이번 달 잔액 */}
               <div className="card overview-card column-group column-group--center column-group--gap-8">
                 <h4 className="main-overview--title title--sm">이번 달 잔액</h4>
                 <div className="row-group row-group--center row-group--between">
@@ -734,7 +637,7 @@ export default function Home() {
                     {formatTrendLabel(changeRate)}
                   </span>
                 </div>
-                <p className="main-overview--last label--md">{expenseChangeDirection}</p>
+                <p className="main-overview--last label--md">{balanceChangeDirection}</p>
                 <OverviewLineChart
                   lines={[
                     { values: comparisonSeries, color: "teal", label: "전월 대비" },

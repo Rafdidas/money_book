@@ -2,6 +2,7 @@
 @use "../components/common/header";
 @use "../components/common/footer";
 @use "../components/common/modal";
+@use "../components/common/side-menu";
 @use "../components/expense/expense-form";
 @use "../components/expense/expense-list";
 @use "../components/calendar/calendar-view";
@@ -137,6 +138,14 @@ img {
     justify-content: center;
     align-items: center;
   }
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 //로우 정렬 + 갭 조정

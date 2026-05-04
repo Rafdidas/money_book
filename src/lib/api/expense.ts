@@ -38,17 +38,22 @@ export const createExpense = async ({
   return data;
 };
 
-export const getExpenses = async () => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export const getExpenses = async (userId?: string) => {
+  let resolvedUserId = userId;
 
-  if (!user) throw new Error('로그인이 필요합니다.');
+  if (!resolvedUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error('로그인이 필요합니다.');
+    resolvedUserId = user.id;
+  }
 
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', resolvedUserId)
     .order('date', { ascending: false });
 
   if (error) throw new Error(error.message);
