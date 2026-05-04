@@ -34,7 +34,8 @@ const formatDetailDate = (dateValue: string) => {
   if (Number.isNaN(date.getTime())) return dateValue;
   return `${String(date.getFullYear()).slice(2)}.${date.getMonth() + 1}.${date.getDate()}`;
 };
-const categoryOptions = ["식비", "교통", "쇼핑", "문화생활", "급여", "기타"];
+const categoryOptions = ["🍚식비", "🚗교통비", "🎨문화생활", "🍱생필품", "🧴미용", "💊병원/약", "🎓교육", "📩공과금", "📱통신비", "🎠회비", "📅경조사", "💳카드대금", "🎁선물", "🏢대출이자"];
+const incomeCategoryOptions = ["💵월급", "💸보너스", "📩용돈", "🪙부수입", "👷아르바이트"];
 const customCategoryValue = "__custom__";
 const weekdayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const getCalendarDays = (selectedDate: Date) => {
@@ -356,6 +357,8 @@ export default function Home() {
     return acc;
   }, {});
   const calendarDays = getCalendarDays(selectedDate);
+  const activeCategoryOptions =
+    inlineType === "income" ? incomeCategoryOptions : categoryOptions;
 
   const resetInlineCreateForm = useCallback((date = selectedDateKey) => {
     setInlineAmount("");
@@ -367,12 +370,15 @@ export default function Home() {
   }, [selectedDateKey]);
 
   const fillInlineEditForm = useCallback((expense: Expense) => {
+    const categoryList =
+      expense.type === "income" ? incomeCategoryOptions : categoryOptions;
+
     setInlineAmount(String(expense.amount));
     setInlineCategory(
-      categoryOptions.includes(expense.category) ? expense.category : customCategoryValue,
+      categoryList.includes(expense.category) ? expense.category : customCategoryValue,
     );
     setInlineCustomCategory(
-      categoryOptions.includes(expense.category) ? "" : expense.category,
+      categoryList.includes(expense.category) ? "" : expense.category,
     );
     setInlineMemo(expense.memo);
     setInlineDate(expense.date);
@@ -441,6 +447,14 @@ export default function Home() {
     if (mode === "create") {
       resetInlineCreateForm();
     }
+  };
+  const handleInlineTypeChange = (type: Expense["type"]) => {
+    const nextCategoryOptions =
+      type === "income" ? incomeCategoryOptions : categoryOptions;
+
+    setInlineType(type);
+    setInlineCategory(nextCategoryOptions[0]);
+    setInlineCustomCategory("");
   };
   const handleInlineSubmit = async () => {
     const amount = Number(inlineAmount);
@@ -807,14 +821,14 @@ export default function Home() {
                       <button
                         type="button"
                         className={`main-overview--type bodyBold--sm ${inlineType === "expense" ? "is-active" : ""}`}
-                        onClick={() => setInlineType("expense")}
+                        onClick={() => handleInlineTypeChange("expense")}
                       >
                         지출
                       </button>
                       <button
                         type="button"
                         className={`main-overview--type bodyBold--sm ${inlineType === "income" ? "is-active" : ""}`}
-                        onClick={() => setInlineType("income")}
+                        onClick={() => handleInlineTypeChange("income")}
                       >
                         수입
                       </button>
@@ -827,7 +841,7 @@ export default function Home() {
                           value={inlineCategory}
                           onChange={(event) => setInlineCategory(event.target.value)}
                         >
-                          {categoryOptions.map((option) => (
+                          {activeCategoryOptions.map((option) => (
                             <option key={option} value={option}>
                               {option}
                             </option>
