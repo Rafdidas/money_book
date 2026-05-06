@@ -5,6 +5,14 @@ import { FormEvent, useState } from "react";
 import { getAuthCallbackUrl } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
 
+const getSignupErrorMessage = (message: string) => {
+  if (message.includes("email rate limit exceeded")) {
+    return "인증 메일 요청이 많습니다. 잠시 후 다시 시도해주세요.";
+  }
+
+  return message;
+};
+
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,7 +51,7 @@ export default function SignupPage() {
       });
 
       if (error) {
-        alert(`회원가입 실패: ${error.message}`);
+        alert(`회원가입 실패: ${getSignupErrorMessage(error.message)}`);
         return;
       }
 
