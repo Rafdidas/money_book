@@ -88,6 +88,25 @@
     gap: 16px;
   }
 
+  .auth-message {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    .auth-brand-block {
+      margin-bottom: 0;
+    }
+  }
+
+  .auth-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--outline-low);
+    border-top-color: var(--on-surface-ultra-high);
+    border-radius: 50%;
+    animation: auth-spin 0.8s linear infinite;
+  }
+
   .field-group {
     display: flex;
     flex-direction: column;
@@ -200,5 +219,11 @@
     .auth-brand-block {
       margin-bottom: 18px;
     }
+  }
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

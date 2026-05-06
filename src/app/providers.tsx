@@ -12,6 +12,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { getExpenses } from "@/lib/api/expense";
 import { DEMO_USER_ID, isDemoModeEnabled, readDemoExpenses } from "@/lib/demo";
+import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
 import type { Expense } from "@/types/expense";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
@@ -70,6 +71,13 @@ export default function Providers({ children }: { children: ReactNode }) {
 
     const fetchAppData = async () => {
       setIsAuthResolved(false);
+
+      try {
+        await consumeAuthHashSession();
+      } catch {
+        router.replace("/auth/login");
+        return;
+      }
 
       if (isDemoModeEnabled()) {
         if (isCancelled) return;
