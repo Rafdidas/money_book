@@ -64,7 +64,7 @@
   }
 
   &--item {
-    align-items: flex-start;
+    align-items: flex-start !important;
     padding: 8px 10px;
     border-radius: 8px;
     color: var(--on-surface-higher);

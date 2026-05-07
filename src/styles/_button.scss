@@ -45,6 +45,8 @@
     width: 100%;
   }
 
+  
+
   &--lg {
     --button-height: 48px;
     --button-padding-inline: 16px;
@@ -83,6 +85,10 @@
     --button-font-size: 13px;
     --button-font-weight: 500;
     --button-radius: 4px;
+  }
+
+  &.refresh-btn {
+    height: 38px !important;
   }
 
   &--icon-left.button--lg {
