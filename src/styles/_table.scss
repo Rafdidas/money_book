@@ -65,6 +65,9 @@
         font-weight: 500;
         > div {
           justify-content: flex-end;
+          &.first-th {
+            justify-content: flex-start;
+          }
         }
 
         .sort-btn {

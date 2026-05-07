@@ -1483,7 +1483,7 @@ export default function Home() {
               </div>
               {/* 주식 */}
               <div className="main-overview--invest card overview-card column-group column-group--top column-group--gap-8">
-                <div className="column-group column-group--gap-16">
+                {/* <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">주식</h4>
                     <div className="row-group row-group-center row-group--gap-4">
@@ -1631,7 +1631,7 @@ export default function Home() {
                       <thead>
                         <tr>
                           <th>
-                            <div className="row-group row-group--center row-group--gap-4">
+                            <div className="row-group row-group--center row-group--gap-4 first-th">
                               종목명
                               <button
                                 type="button"
@@ -1772,7 +1772,8 @@ export default function Home() {
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </div> */}
+                <div className="empty title--lg">업데이트 예정</div>
               </div>
             </div>
             <div className="row-group row-group--stretch row-group--gap-16">
