@@ -11,9 +11,9 @@ type Props = {
 };
 
 const weekLabels = ["S", "M", "T", "W", "T", "F", "S"];
-const savingsCategory = "적금";
+const isSavingsCategory = (category: string) => category.includes("적금");
 const isSavingsItem = (item: Expense) =>
-  item.type === "expense" && item.category === savingsCategory;
+  item.type === "expense" && isSavingsCategory(item.category);
 
 export default function CalendarView({
   selectedDate,

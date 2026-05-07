@@ -155,8 +155,9 @@ const parseSavingsMemo = (memo: string): SavingsMeta | null => {
 };
 
 const getVisibleMemo = (memo: string) => memo.replace(savingsMetaPattern, "").trim();
+const isSavingsCategory = (category: string) => category.includes("적금");
 const isSavingsItem = (item: Expense) =>
-  item.type === "expense" && item.category === savingsCategory;
+  item.type === "expense" && isSavingsCategory(item.category);
 const getFallbackSavingsMeta = (item: Expense): SavingsMeta => {
   const date = new Date(`${item.date}T00:00:00`);
   const paymentDay = Number.isNaN(date.getTime()) ? 1 : date.getDate();
@@ -435,7 +436,7 @@ export default function Home() {
   const savingsAccounts = useMemo<SavingsAccount[]>(() => {
     const todayKey = formatDate(today);
     const grouped = expenses.reduce<Record<string, SavingsAccount>>((acc, item) => {
-      if (item.type !== "expense" || item.category !== savingsCategory) return acc;
+      if (item.type !== "expense" || !isSavingsCategory(item.category)) return acc;
       const meta = parseSavingsMemo(item.memo) ?? getFallbackSavingsMeta(item);
 
       if (!acc[meta.id]) {

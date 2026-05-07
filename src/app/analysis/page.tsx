@@ -7,12 +7,12 @@ import SideMenu from "@/components/common/SideMenu";
 import { useAppData } from "@/app/providers";
 
 const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
-const savingsCategory = "적금";
 const formatCurrency = (value: number) => `₩ ${value.toLocaleString()}`;
 const formatSignedCurrency = (value: number) =>
   `${value < 0 ? "-" : ""}₩ ${Math.abs(value).toLocaleString()}`;
+const isSavingsCategory = (category: string) => category.includes("적금");
 const isSavingsItem = (item: { type: string; category: string }) =>
-  item.type === "expense" && item.category === savingsCategory;
+  item.type === "expense" && isSavingsCategory(item.category);
 
 export default function AnalysisPage() {
   const today = new Date();
