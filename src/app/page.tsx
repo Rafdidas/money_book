@@ -102,6 +102,7 @@ type SavingsMeta = {
   paymentDay: number;
   maturityDate: string;
   initialAmount: number;
+  hasNoMaturity: boolean;
 };
 
 type SavingsAccount = SavingsMeta & {
@@ -155,6 +156,7 @@ const categoryChartColors = [
   "#D4B8FF",
   "#F3B5E5",
 ];
+const openEndedSavingsYears = 10;
 
 const encodeSavingsMemo = (meta: SavingsMeta) =>
   `${meta.name} ${savingsMetaPrefix}${encodeURIComponent(JSON.stringify(meta))}]]`;
@@ -183,6 +185,7 @@ const parseSavingsMemo = (memo: string): SavingsMeta | null => {
       paymentDay: parsed.paymentDay,
       maturityDate: parsed.maturityDate,
       initialAmount: parsed.initialAmount,
+      hasNoMaturity: parsed.hasNoMaturity === true,
     };
   } catch {
     return null;
@@ -249,7 +252,14 @@ const getFallbackSavingsMeta = (item: Expense): SavingsMeta => {
     paymentDay,
     maturityDate: item.date,
     initialAmount: 0,
+    hasNoMaturity: false,
   };
+};
+
+const getOpenEndedSavingsDate = (startDate: Date) => {
+  const date = new Date(startDate);
+  date.setFullYear(date.getFullYear() + openEndedSavingsYears);
+  return formatDate(date);
 };
 
 const getSavingsPaymentDates = (
@@ -429,6 +439,7 @@ export default function Home() {
   const [savingsPaymentAmount, setSavingsPaymentAmount] = useState("");
   const [savingsPaymentDay, setSavingsPaymentDay] = useState("1");
   const [savingsMaturityDate, setSavingsMaturityDate] = useState(formatDate(today));
+  const [savingsHasNoMaturity, setSavingsHasNoMaturity] = useState(false);
   const [savingsCurrentAmount, setSavingsCurrentAmount] = useState("");
   const [savingsName, setSavingsName] = useState("");
   const [isSavingsSubmitting, setIsSavingsSubmitting] = useState(false);
@@ -568,6 +579,14 @@ export default function Home() {
   }, [expenses, today]);
   const selectedSavingsAccount =
     savingsAccounts.find((account) => account.id === savingsEditingId) ?? null;
+  const visibleSavingsAccounts = useMemo(() => {
+    const monthStart = formatDate(new Date(currentYear, currentMonth, 1));
+    const monthEnd = formatDate(new Date(currentYear, currentMonth + 1, 0));
+
+    return savingsAccounts.filter((account) =>
+      account.items.some((item) => item.date >= monthStart && item.date <= monthEnd),
+    );
+  }, [currentMonth, currentYear, savingsAccounts]);
   const investmentStocks = useMemo<InvestmentStock[]>(
     () =>
       expenses
@@ -673,6 +692,7 @@ export default function Home() {
     setSavingsPaymentAmount("");
     setSavingsPaymentDay("1");
     setSavingsMaturityDate(formatDate(selectedDate));
+    setSavingsHasNoMaturity(false);
     setSavingsCurrentAmount("");
     setSavingsName("");
   }, [selectedDate]);
@@ -690,6 +710,7 @@ export default function Home() {
     setSavingsPaymentAmount(String(account.monthlyPayment));
     setSavingsPaymentDay(String(account.paymentDay));
     setSavingsMaturityDate(account.maturityDate);
+    setSavingsHasNoMaturity(account.hasNoMaturity);
     setSavingsCurrentAmount(String(account.initialAmount));
     setSavingsName(account.name);
   }, []);
@@ -834,7 +855,7 @@ export default function Home() {
       alert("납입일을 1일부터 31일 중에서 선택해주세요.");
       return;
     }
-    if (!savingsMaturityDate || Number.isNaN(maturityDate.getTime())) {
+    if (!savingsHasNoMaturity && (!savingsMaturityDate || Number.isNaN(maturityDate.getTime()))) {
       alert("만기일을 선택해주세요.");
       return;
     }
@@ -847,10 +868,13 @@ export default function Home() {
       savingsFormMode === "edit" && selectedSavingsAccount?.items[0]
         ? new Date(`${selectedSavingsAccount.items[0].date}T00:00:00`)
         : selectedDate;
-    if (maturityDate < new Date(formatDate(savingsStartDate))) {
+    if (!savingsHasNoMaturity && maturityDate < new Date(formatDate(savingsStartDate))) {
       alert("만기일은 첫 납입월 이후로 선택해주세요.");
       return;
     }
+    const savingsEndDate = savingsHasNoMaturity
+      ? getOpenEndedSavingsDate(savingsStartDate)
+      : savingsMaturityDate;
 
     const meta: SavingsMeta = {
       id:
@@ -859,10 +883,11 @@ export default function Home() {
           : `savings-${Date.now()}`,
       name,
       paymentDay,
-      maturityDate: savingsMaturityDate,
+      maturityDate: savingsEndDate,
       initialAmount,
+      hasNoMaturity: savingsHasNoMaturity,
     };
-    const paymentDates = getSavingsPaymentDates(savingsStartDate, paymentDay, savingsMaturityDate);
+    const paymentDates = getSavingsPaymentDates(savingsStartDate, paymentDay, savingsEndDate);
     if (!paymentDates.length) {
       alert("추가할 납입 내역이 없습니다.");
       return;
@@ -932,6 +957,68 @@ export default function Home() {
       resetSavingsCreateForm();
     } catch (error) {
       const message = error instanceof Error ? error.message : "적금 삭제 중 오류가 발생했습니다.";
+      alert(message);
+    } finally {
+      setIsSavingsDeleting(false);
+    }
+  };
+  const handleSavingsMaturity = async (account: SavingsAccount) => {
+    const confirmed = window.confirm("만기 처리 하시겠습니까?");
+    if (!confirmed) return;
+
+    const cutoffDate = formatDate(new Date(currentYear, currentMonth + 1, 0));
+    const keptItems = account.items.filter((item) => item.date <= cutoffDate);
+    const deletedItems = account.items.filter((item) => item.date > cutoffDate);
+    const maturityDate = keptItems.at(-1)?.date;
+
+    if (!maturityDate) {
+      alert("남길 납입 내역이 없습니다.");
+      return;
+    }
+
+    const nextMeta: SavingsMeta = {
+      id: account.id,
+      name: account.name,
+      paymentDay: account.paymentDay,
+      maturityDate,
+      initialAmount: account.initialAmount,
+      hasNoMaturity: false,
+    };
+    const nextMemo = encodeSavingsMemo(nextMeta);
+    const keptIds = new Set(keptItems.map((item) => item.id));
+    const deletedIds = new Set(deletedItems.map((item) => item.id));
+
+    try {
+      setIsSavingsDeleting(true);
+      if (isDemoMode) {
+        setExpenses((prev) => {
+          const next = prev
+            .filter((item) => !deletedIds.has(item.id))
+            .map((item) => (keptIds.has(item.id) ? { ...item, memo: nextMemo } : item));
+          writeDemoExpenses(next);
+          return next;
+        });
+      } else {
+        await deleteExpenses(deletedItems.map((item) => item.id));
+        await Promise.all(
+          keptItems.map((item) =>
+            updateExpense(item.id, {
+              amount: item.amount,
+              category: item.category,
+              memo: nextMemo,
+              date: item.date,
+              type: item.type,
+            }),
+          ),
+        );
+        setExpenses((prev) =>
+          prev
+            .filter((item) => !deletedIds.has(item.id))
+            .map((item) => (keptIds.has(item.id) ? { ...item, memo: nextMemo } : item)),
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "만기 처리 중 오류가 발생했습니다.";
       alert(message);
     } finally {
       setIsSavingsDeleting(false);
@@ -1381,12 +1468,23 @@ export default function Home() {
                         </select>
                       </label>
                       <label className="main-overview--field  flex-fill">
-                        <span className="label--md">만기일</span>
+                        <div className="row-group row-group--center row-group--between">
+                          <span className="label--md">만기일</span>
+                          <label className="row-group row-group--center row-group--gap-4">
+                            <input
+                              type="checkbox"
+                              checked={savingsHasNoMaturity}
+                              onChange={(event) => setSavingsHasNoMaturity(event.target.checked)}
+                            />
+                            <span className="caption--md">만기일 없음</span>
+                          </label>
+                        </div>
                         <input
                           className="main-overview--control body--sm"
                           type="date"
                           value={savingsMaturityDate}
                           onChange={(event) => setSavingsMaturityDate(event.target.value)}
+                          disabled={savingsHasNoMaturity}
                         />
                       </label>
                     </div>
@@ -1448,8 +1546,8 @@ export default function Home() {
                       </button>
                     </div>
                     <ul className="savings--list column-group column-group--gap-8">
-                      {savingsAccounts.length ? (
-                        savingsAccounts.map((account) => (
+                      {visibleSavingsAccounts.length ? (
+                        visibleSavingsAccounts.map((account) => (
                           <li
                             key={account.id}
                             className="savings--items row-group row-group--center row-group--gap-16"
@@ -1467,8 +1565,18 @@ export default function Home() {
                               <span className="label--sm">-</span>
                               <span className="label--sm">만기일</span>
                               <span className="label--sm">
-                                {formatDetailDate(account.maturityDate)}
+                                {account.hasNoMaturity
+                                  ? "만기일 없음"
+                                  : formatDetailDate(account.maturityDate)}
                               </span>
+                              <button
+                                type="button"
+                                className="button button--xs button--secondary"
+                                onClick={() => handleSavingsMaturity(account)}
+                                disabled={isSavingsDeleting}
+                              >
+                                만기 처리
+                              </button>
                             </p>
                           </li>
                         ))
