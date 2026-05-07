@@ -347,6 +347,8 @@
       }
       .savings {
         &--list {
+          overflow-y: auto;
+          max-height: 202px;
           margin-top: 16px;
         }
         &--items {

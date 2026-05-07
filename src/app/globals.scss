@@ -9,6 +9,7 @@
 @use "../components/chart/expense-pie-chart";
 @use "../styles/typography";
 @use "../styles/input";
+@use "../styles/autocomplete";
 @use "../styles/button";
 @use "../styles/badge";
 @use "./page";
@@ -108,7 +109,9 @@ img {
   line-height: 1;
   letter-spacing: normal;
   text-transform: none;
-  display: inline-block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
@@ -237,6 +240,9 @@ img {
   &--end {
     align-items: flex-end;
   }
+  &--flex-start {
+    justify-content: flex-start;
+  }
 }
 
 //ex) class="column-group column-group--gap-4 ~ column-group--gap-48"
@@ -294,4 +300,15 @@ $limit: 64;
 }
 .tc {
   text-align: center !important;
+}
+
+.grid-col-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.grid-col-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
