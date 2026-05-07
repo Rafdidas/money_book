@@ -11,6 +11,9 @@ type Props = {
 };
 
 const weekLabels = ["S", "M", "T", "W", "T", "F", "S"];
+const savingsCategory = "적금";
+const isSavingsItem = (item: Expense) =>
+  item.type === "expense" && item.category === savingsCategory;
 
 export default function CalendarView({
   selectedDate,
@@ -31,10 +34,10 @@ export default function CalendarView({
   const selectedDateKey = formatDate(selectedDate);
   const selectedDayExpenses = expenses.filter((item) => item.date === selectedDateKey);
   const totalExpense = selectedDayExpenses
-    .filter((item) => item.type === "expense")
+    .filter((item) => item.type === "expense" && !isSavingsItem(item))
     .reduce((sum, item) => sum + item.amount, 0);
   const maxExpense = selectedDayExpenses
-    .filter((item) => item.type === "expense")
+    .filter((item) => item.type === "expense" && !isSavingsItem(item))
     .reduce((max, item) => Math.max(max, item.amount), 0);
 
   return (

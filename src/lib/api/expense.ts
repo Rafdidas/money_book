@@ -38,6 +38,28 @@ export const createExpense = async ({
   return data;
 };
 
+export const createExpenses = async (payloads: ExpensePayload[]) => {
+  if (!payloads.length) return [];
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('로그인이 필요합니다.');
+
+  const { data, error } = await supabase.from('expenses').insert(
+    payloads.map((payload) => ({
+      user_id: user.id,
+      ...payload,
+    })),
+  )
+  .select();
+
+  if (error) throw new Error(error.message);
+
+  return data;
+};
+
 export const getExpenses = async (userId?: string) => {
   let resolvedUserId = userId;
 
@@ -72,6 +94,24 @@ export const deleteExpense = async (id: string) => {
     .from('expenses')
     .delete()
     .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (error) throw new Error(error.message);
+};
+
+export const deleteExpenses = async (ids: string[]) => {
+  if (!ids.length) return;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('로그인이 필요합니다.');
+
+  const { error } = await supabase
+    .from('expenses')
+    .delete()
+    .in('id', ids)
     .eq('user_id', user.id);
 
   if (error) throw new Error(error.message);

@@ -4,10 +4,21 @@ export const DEMO_MODE_STORAGE_KEY = "money-book:demo-mode";
 export const DEMO_EXPENSES_STORAGE_KEY = "money-book:demo-expenses";
 export const DEMO_USER_ID = "demo-user";
 
+const demoSavingsId = "demo-savings-emergency";
+const savingsCategory = "적금";
+
 const formatDateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
     date.getDate(),
   ).padStart(2, "0")}`;
+
+const encodeSavingsMemo = (meta: {
+  id: string;
+  name: string;
+  paymentDay: number;
+  maturityDate: string;
+  initialAmount: number;
+}) => `${meta.name} [[savings:${encodeURIComponent(JSON.stringify(meta))}]]`;
 
 const createDemoExpense = (
   id: string,
@@ -27,6 +38,41 @@ const createDemoExpense = (
   created_at: `${formatDateKey(date)}T09:00:00.000Z`,
 });
 
+const createDemoSavingsExpenses = (referenceDate = new Date()): Expense[] => {
+  const currentYear = referenceDate.getFullYear();
+  const currentMonth = referenceDate.getMonth();
+  const paymentDay = 15;
+  const maturityDate = formatDateKey(new Date(currentYear, currentMonth + 6, paymentDay));
+  const memo = encodeSavingsMemo({
+    id: demoSavingsId,
+    name: "비상금 적금",
+    paymentDay,
+    maturityDate,
+    initialAmount: 0,
+  });
+
+  return [-1, 0, 1].map((monthOffset) =>
+    createDemoExpense(
+      `demo-savings-emergency-${monthOffset}`,
+      new Date(currentYear, currentMonth + monthOffset, paymentDay),
+      "expense",
+      savingsCategory,
+      500000,
+      memo,
+    ),
+  );
+};
+
+const hasDemoSavings = (expenses: Expense[]) =>
+  expenses.some((item) => item.category === savingsCategory && item.memo.includes(demoSavingsId));
+
+const ensureDemoSavings = (expenses: Expense[], referenceDate = new Date()) =>
+  hasDemoSavings(expenses)
+    ? expenses
+    : [...createDemoSavingsExpenses(referenceDate), ...expenses].sort((left, right) =>
+        right.date.localeCompare(left.date),
+      );
+
 export const createDemoExpenses = (referenceDate = new Date()): Expense[] => {
   const currentYear = referenceDate.getFullYear();
   const currentMonth = referenceDate.getMonth();
@@ -35,6 +81,7 @@ export const createDemoExpenses = (referenceDate = new Date()): Expense[] => {
     new Date(currentYear, currentMonth + monthOffset, day);
 
   return [
+    ...createDemoSavingsExpenses(referenceDate),
     createDemoExpense(
       "demo-income-salary-current",
       dateInMonth(0, 1),
@@ -164,7 +211,12 @@ export const readDemoExpenses = () => {
   }
 
   try {
-    return JSON.parse(storedExpenses) as Expense[];
+    const parsedExpenses = JSON.parse(storedExpenses) as Expense[];
+    const demoExpenses = ensureDemoSavings(parsedExpenses);
+    if (demoExpenses !== parsedExpenses) {
+      writeDemoExpenses(demoExpenses);
+    }
+    return demoExpenses;
   } catch {
     const demoExpenses = createDemoExpenses();
     writeDemoExpenses(demoExpenses);

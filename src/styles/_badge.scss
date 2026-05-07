@@ -24,4 +24,14 @@
     background-color: var(--teal-lower);
     color: var(--on-teal-high);
   }
+  &--blue {
+    border-color: var(--blue-mid);
+    background-color: var(--blue-lower);
+    color: var(--on-blue-high);
+  }
+  &--violet {
+    border-color: var(--violet-mid);
+    background-color: var(--violet-lower);
+    color: var(--on-violet-high);
+  }
 }

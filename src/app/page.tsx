@@ -12,7 +12,9 @@ import { DEMO_USER_ID, writeDemoExpenses } from "@/lib/demo";
 import "@/lib/chart";
 import {
   createExpense,
+  createExpenses,
   deleteExpense,
+  deleteExpenses,
   updateExpense,
 } from "@/lib/api/expense";
 import type { Expense } from "@/types/expense";
@@ -22,7 +24,6 @@ const formatCurrency = (value: number) =>
   `${value < 0 ? "-" : ""}₩ ${Math.abs(value).toLocaleString()}`;
 const formatWon = (value: number) =>
   `${value < 0 ? "-" : ""}${Math.round(Math.abs(value)).toLocaleString()}원`;
-const formatTrendLabel = (value: number) => `${value >= 0 ? "+" : "-"}${Math.abs(value).toFixed(1)}%`;
 const formatHeaderDate = (date: Date) =>
   new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -34,8 +35,11 @@ const formatDetailDate = (dateValue: string) => {
   if (Number.isNaN(date.getTime())) return dateValue;
   return `${String(date.getFullYear()).slice(2)}.${date.getMonth() + 1}.${date.getDate()}`;
 };
-const categoryOptions = ["🍚식비", "🚗교통비", "🎨문화생활", "🍱생필품", "🧴미용", "💊병원/약", "🎓교육", "📩공과금", "📱통신비", "🎠회비", "📅경조사", "💳카드대금", "🎁선물", "🏢대출이자"];
+const categoryOptions = ["🍚식비", "🚗교통비", "🎨문화생활", "🍱생필품", "🧴미용", "💊병원/약", "🎓교육", "📩공과금", "📱통신비", "🎠회비", "📅경조사", "💳카드대금", "🎁선물", "🏢대출이자", "📈주식"];
 const incomeCategoryOptions = ["💵월급", "💸보너스", "📩용돈", "🪙부수입", "👷아르바이트"];
+const savingsCategory = "적금";
+const savingsMetaPrefix = "[[savings:";
+const savingsMetaPattern = /\s*\[\[savings:([^\]]+)\]\]\s*$/;
 const customCategoryValue = "__custom__";
 const weekdayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const getCalendarDays = (selectedDate: Date) => {
@@ -48,25 +52,27 @@ const getCalendarDays = (selectedDate: Date) => {
     return date;
   });
 };
-const getTrend = (current: number, previous: number) => {
-  if (previous === 0) return current === 0 ? 0 : current > 0 ? 100 : -100;
-  return ((current - previous) / Math.abs(previous)) * 100;
-};
 const getDaysInMonth = (year: number, month: number) =>
   new Date(year, month + 1, 0).getDate();
 const getDailySeries = (
   items: Expense[],
   year: number,
   month: number,
-  type?: Expense["type"],
+  type?: Expense["type"] | "savings",
 ) => {
   const dailyTotals = Array.from({ length: getDaysInMonth(year, month) }, () => 0);
 
   items.forEach((item) => {
-    if (type && item.type !== type) return;
+    if (type === "savings" && !isSavingsItem(item)) return;
+    if (type && type !== "savings" && item.type !== type) return;
+    if (type === "expense" && isSavingsItem(item)) return;
     const date = new Date(item.date);
     if (date.getFullYear() !== year || date.getMonth() !== month) return;
-    const amount = type ? item.amount : item.type === "income" ? item.amount : -item.amount;
+    const amount = type
+      ? item.amount
+      : item.type === "income"
+        ? item.amount
+        : -item.amount;
     dailyTotals[date.getDate() - 1] += amount;
   });
 
@@ -85,6 +91,20 @@ type OverviewLine = {
 
 type ExpenseFormData = Pick<Expense, "amount" | "category" | "memo" | "date" | "type">;
 type InlineFormMode = "create" | "edit";
+type SavingsMeta = {
+  id: string;
+  name: string;
+  paymentDay: number;
+  maturityDate: string;
+  initialAmount: number;
+};
+
+type SavingsAccount = SavingsMeta & {
+  items: Expense[];
+  currentAmount: number;
+  monthlyPayment: number;
+  nextPaymentDate: string;
+};
 
 const overviewChartColors: Record<OverviewLine["color"], string> = {
   green: "#A2E2B5",
@@ -103,6 +123,64 @@ const categoryChartColors = [
   "#D4B8FF",
   "#F3B5E5",
 ];
+
+const encodeSavingsMemo = (meta: SavingsMeta) =>
+  `${meta.name} ${savingsMetaPrefix}${encodeURIComponent(JSON.stringify(meta))}]]`;
+
+const parseSavingsMemo = (memo: string): SavingsMeta | null => {
+  const match = memo.match(savingsMetaPattern);
+  if (!match) return null;
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(match[1])) as Partial<SavingsMeta>;
+    if (
+      typeof parsed.id !== "string" ||
+      typeof parsed.name !== "string" ||
+      typeof parsed.paymentDay !== "number" ||
+      typeof parsed.maturityDate !== "string" ||
+      typeof parsed.initialAmount !== "number"
+    ) {
+      return null;
+    }
+    return {
+      id: parsed.id,
+      name: parsed.name,
+      paymentDay: parsed.paymentDay,
+      maturityDate: parsed.maturityDate,
+      initialAmount: parsed.initialAmount,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const getVisibleMemo = (memo: string) => memo.replace(savingsMetaPattern, "").trim();
+const isSavingsItem = (item: Expense) =>
+  item.type === "expense" && item.category === savingsCategory;
+
+const getSavingsPaymentDates = (
+  startDate: Date,
+  paymentDay: number,
+  maturityDateValue: string,
+) => {
+  const maturityDate = new Date(`${maturityDateValue}T00:00:00`);
+  if (Number.isNaN(maturityDate.getTime())) return [];
+
+  const dates: string[] = [];
+  const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const endMonth = new Date(maturityDate.getFullYear(), maturityDate.getMonth(), 1);
+
+  while (cursor <= endMonth) {
+    const day = Math.min(paymentDay, getDaysInMonth(cursor.getFullYear(), cursor.getMonth()));
+    const paymentDate = new Date(cursor.getFullYear(), cursor.getMonth(), day);
+    if (paymentDate <= maturityDate) {
+      dates.push(formatDate(paymentDate));
+    }
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return dates;
+};
 
 type CategoryExpenseSlice = {
   category: string;
@@ -231,7 +309,7 @@ function CategoryPieChart({ items }: { items: CategoryExpenseSlice[] }) {
 }
 
 export default function Home() {
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const {
     expenses,
     setExpenses,
@@ -252,6 +330,15 @@ export default function Home() {
   const [inlineType, setInlineType] = useState<Expense["type"]>("expense");
   const [isInlineSubmitting, setIsInlineSubmitting] = useState(false);
   const [isInlineDeleting, setIsInlineDeleting] = useState(false);
+  const [savingsFormMode, setSavingsFormMode] = useState<InlineFormMode>("create");
+  const [savingsEditingId, setSavingsEditingId] = useState("");
+  const [savingsPaymentAmount, setSavingsPaymentAmount] = useState("");
+  const [savingsPaymentDay, setSavingsPaymentDay] = useState("1");
+  const [savingsMaturityDate, setSavingsMaturityDate] = useState(formatDate(today));
+  const [savingsCurrentAmount, setSavingsCurrentAmount] = useState("");
+  const [savingsName, setSavingsName] = useState("");
+  const [isSavingsSubmitting, setIsSavingsSubmitting] = useState(false);
+  const [isSavingsDeleting, setIsSavingsDeleting] = useState(false);
 
   const selectedDateKey = formatDate(selectedDate);
   const currentYear = selectedDate.getFullYear();
@@ -264,66 +351,38 @@ export default function Home() {
       }),
     [currentMonth, currentYear, expenses],
   );
-  const previousMonthlyExpenses = useMemo(() => {
-    const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
-    return expenses.filter((item) => {
-      const date = new Date(item.date);
-      return (
-        date.getFullYear() === previousMonthDate.getFullYear() &&
-        date.getMonth() === previousMonthDate.getMonth()
-      );
-    });
-  }, [currentMonth, currentYear, expenses]);
-
-  const monthlyExpenseTotal = monthlyExpenses
-    .filter((item) => item.type === "expense")
+  const monthlyExpenseItems = monthlyExpenses.filter(
+    (item) => item.type === "expense" && !isSavingsItem(item),
+  );
+  const monthlySavingsItems = monthlyExpenses.filter(isSavingsItem);
+  const monthlyExpenseTotal = monthlyExpenseItems
+    .reduce((sum, item) => sum + item.amount, 0);
+  const monthlySavingsTotal = monthlySavingsItems
     .reduce((sum, item) => sum + item.amount, 0);
   const monthlyIncomeTotal = monthlyExpenses
     .filter((item) => item.type === "income")
     .reduce((sum, item) => sum + item.amount, 0);
   const monthlyIncomeCount = monthlyExpenses.filter((item) => item.type === "income").length;
-  const monthlyExpenseCount = monthlyExpenses.filter((item) => item.type === "expense").length;
+  const monthlyExpenseCount = monthlyExpenseItems.length;
+  const monthlySavingsCount = monthlySavingsItems.length;
   const monthlyIncomeAverage = monthlyIncomeCount
     ? monthlyIncomeTotal / monthlyIncomeCount
     : 0;
   const monthlyExpenseAverage = monthlyExpenseCount
     ? monthlyExpenseTotal / monthlyExpenseCount
     : 0;
-  const monthlyTotal = monthlyIncomeTotal - monthlyExpenseTotal;
-  const previousIncomeTotal = previousMonthlyExpenses
-    .filter((item) => item.type === "income")
-    .reduce((sum, item) => sum + item.amount, 0);
-  const previousExpenseTotal = previousMonthlyExpenses
-    .filter((item) => item.type === "expense")
-    .reduce((sum, item) => sum + item.amount, 0);
-  const previousMonthlyTotal = previousIncomeTotal - previousExpenseTotal;
-  const changeAmount = monthlyTotal - previousMonthlyTotal;
-  const changeRate = getTrend(monthlyTotal, previousMonthlyTotal);
-  const balanceChangeDirection =
-    changeAmount > 0
-      ? `지난달 잔액보다 ${formatWon(changeAmount)} 많습니다`
-      : changeAmount < 0
-        ? `지난달 잔액보다 ${formatWon(changeAmount)} 적습니다`
-        : "지난달 잔액과 같습니다";
+  const monthlyTotal = monthlyIncomeTotal - monthlyExpenseTotal - monthlySavingsTotal;
+  const cashflowSeries = getDailySeries(expenses, currentYear, currentMonth);
   const incomeSeries = getDailySeries(expenses, currentYear, currentMonth, "income");
   const expenseSeries = getDailySeries(expenses, currentYear, currentMonth, "expense");
-  const balanceSeries = getDailySeries(expenses, currentYear, currentMonth);
-  const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
-  const previousBalanceSeries = getDailySeries(
-    expenses,
-    previousMonthDate.getFullYear(),
-    previousMonthDate.getMonth(),
-  );
-  const comparisonSeries = balanceSeries.map(
-    (value, index) => value - (previousBalanceSeries[index] ?? previousBalanceSeries.at(-1) ?? 0),
-  );
+  const savingsSeries = getDailySeries(expenses, currentYear, currentMonth, "savings");
   const selectedDayItems = useMemo(
     () => monthlyExpenses.filter((item) => item.date === selectedDateKey),
     [monthlyExpenses, selectedDateKey],
   );
   const categoryExpenseItems = useMemo(() => {
     const categoryTotals = monthlyExpenses
-      .filter((item) => item.type === "expense")
+      .filter((item) => item.type === "expense" && !isSavingsItem(item))
       .reduce<Record<string, number>>((acc, item) => {
         acc[item.category] = (acc[item.category] || 0) + item.amount;
         return acc;
@@ -359,6 +418,50 @@ export default function Home() {
   const calendarDays = getCalendarDays(selectedDate);
   const activeCategoryOptions =
     inlineType === "income" ? incomeCategoryOptions : categoryOptions;
+  const savingsAccounts = useMemo<SavingsAccount[]>(() => {
+    const todayKey = formatDate(today);
+    const grouped = expenses.reduce<Record<string, SavingsAccount>>((acc, item) => {
+      if (item.type !== "expense" || item.category !== savingsCategory) return acc;
+      const meta = parseSavingsMemo(item.memo);
+      if (!meta) return acc;
+
+      if (!acc[meta.id]) {
+        acc[meta.id] = {
+          ...meta,
+          items: [],
+          currentAmount: meta.initialAmount,
+          monthlyPayment: item.amount,
+          nextPaymentDate: item.date,
+        };
+      }
+      acc[meta.id].items.push(item);
+      acc[meta.id].monthlyPayment = item.amount;
+      return acc;
+    }, {});
+
+    return Object.values(grouped)
+      .map((account) => {
+        const sortedItems = [...account.items].sort((left, right) =>
+          left.date.localeCompare(right.date),
+        );
+        const paidAmount = sortedItems
+          .filter((item) => item.date <= todayKey)
+          .reduce((sum, item) => sum + item.amount, 0);
+        const nextPayment =
+          sortedItems.find((item) => item.date >= todayKey) ?? sortedItems.at(-1);
+        return {
+          ...account,
+          items: sortedItems,
+          currentAmount: account.initialAmount + paidAmount,
+          monthlyPayment: sortedItems[0]?.amount ?? account.monthlyPayment,
+          nextPaymentDate: nextPayment?.date ?? account.maturityDate,
+        };
+      })
+      .filter((account) => account.maturityDate >= todayKey)
+      .sort((left, right) => left.maturityDate.localeCompare(right.maturityDate));
+  }, [expenses, today]);
+  const selectedSavingsAccount =
+    savingsAccounts.find((account) => account.id === savingsEditingId) ?? null;
 
   const resetInlineCreateForm = useCallback((date = selectedDateKey) => {
     setInlineAmount("");
@@ -383,6 +486,22 @@ export default function Home() {
     setInlineMemo(expense.memo);
     setInlineDate(expense.date);
     setInlineType(expense.type);
+  }, []);
+
+  const resetSavingsCreateForm = useCallback(() => {
+    setSavingsPaymentAmount("");
+    setSavingsPaymentDay("1");
+    setSavingsMaturityDate(formatDate(selectedDate));
+    setSavingsCurrentAmount("");
+    setSavingsName("");
+  }, [selectedDate]);
+
+  const fillSavingsEditForm = useCallback((account: SavingsAccount) => {
+    setSavingsPaymentAmount(String(account.monthlyPayment));
+    setSavingsPaymentDay(String(account.paymentDay));
+    setSavingsMaturityDate(account.maturityDate);
+    setSavingsCurrentAmount(String(account.initialAmount));
+    setSavingsName(account.name);
   }, []);
 
   useEffect(() => {
@@ -414,6 +533,37 @@ export default function Home() {
     resetInlineCreateForm,
     selectedDateKey,
     selectedDayItems,
+  ]);
+
+  useEffect(() => {
+    if (savingsFormMode === "edit" && savingsAccounts.length === 0) {
+      setSavingsEditingId("");
+      setSavingsFormMode("create");
+      resetSavingsCreateForm();
+      return;
+    }
+
+    if (savingsFormMode === "create") return;
+
+    const nextAccount = selectedSavingsAccount ?? savingsAccounts[0];
+    if (!nextAccount) {
+      setSavingsEditingId("");
+      setSavingsFormMode("create");
+      resetSavingsCreateForm();
+      return;
+    }
+
+    if (nextAccount.id !== savingsEditingId) {
+      setSavingsEditingId(nextAccount.id);
+    }
+    fillSavingsEditForm(nextAccount);
+  }, [
+    fillSavingsEditForm,
+    resetSavingsCreateForm,
+    savingsAccounts,
+    savingsEditingId,
+    savingsFormMode,
+    selectedSavingsAccount,
   ]);
 
   const handleDelete = async (id: string) => {
@@ -455,6 +605,147 @@ export default function Home() {
     setInlineType(type);
     setInlineCategory(nextCategoryOptions[0]);
     setInlineCustomCategory("");
+  };
+  const handleSavingsModeChange = (mode: InlineFormMode) => {
+    setSavingsFormMode(mode);
+    if (mode === "create") {
+      setSavingsEditingId("");
+      resetSavingsCreateForm();
+    } else if (!savingsEditingId && savingsAccounts[0]) {
+      setSavingsEditingId(savingsAccounts[0].id);
+    }
+  };
+  const persistSavingsDeletion = async (account: SavingsAccount) => {
+    const ids = account.items.map((item) => item.id);
+    if (isDemoMode) {
+      setExpenses((prev) => {
+        const next = prev.filter((item) => !ids.includes(item.id));
+        writeDemoExpenses(next);
+        return next;
+      });
+      return;
+    }
+
+    await deleteExpenses(ids);
+    setExpenses((prev) => prev.filter((item) => !ids.includes(item.id)));
+  };
+  const handleSavingsSubmit = async () => {
+    const paymentAmount = Number(savingsPaymentAmount);
+    const paymentDay = Number(savingsPaymentDay);
+    const initialAmount = Number(savingsCurrentAmount) || 0;
+    const name = savingsName.trim();
+    const maturityDate = new Date(`${savingsMaturityDate}T00:00:00`);
+
+    if (!paymentAmount || paymentAmount <= 0) {
+      alert("납입 금액을 입력해주세요.");
+      return;
+    }
+    if (!paymentDay || paymentDay < 1 || paymentDay > 31) {
+      alert("납입일을 1일부터 31일 중에서 선택해주세요.");
+      return;
+    }
+    if (!savingsMaturityDate || Number.isNaN(maturityDate.getTime())) {
+      alert("만기일을 선택해주세요.");
+      return;
+    }
+    if (!name) {
+      alert("적금 이름을 입력해주세요.");
+      return;
+    }
+
+    const savingsStartDate =
+      savingsFormMode === "edit" && selectedSavingsAccount?.items[0]
+        ? new Date(`${selectedSavingsAccount.items[0].date}T00:00:00`)
+        : selectedDate;
+    if (maturityDate < new Date(formatDate(savingsStartDate))) {
+      alert("만기일은 첫 납입월 이후로 선택해주세요.");
+      return;
+    }
+
+    const meta: SavingsMeta = {
+      id:
+        savingsFormMode === "edit" && selectedSavingsAccount
+          ? selectedSavingsAccount.id
+          : `savings-${Date.now()}`,
+      name,
+      paymentDay,
+      maturityDate: savingsMaturityDate,
+      initialAmount,
+    };
+    const paymentDates = getSavingsPaymentDates(savingsStartDate, paymentDay, savingsMaturityDate);
+    if (!paymentDates.length) {
+      alert("추가할 납입 내역이 없습니다.");
+      return;
+    }
+
+    const payloads: ExpenseFormData[] = paymentDates.map((date) => ({
+      amount: paymentAmount,
+      category: savingsCategory,
+      memo: encodeSavingsMemo(meta),
+      date,
+      type: "expense",
+    }));
+
+    try {
+      setIsSavingsSubmitting(true);
+      if (savingsFormMode === "edit") {
+        if (!selectedSavingsAccount) {
+          alert("수정할 적금을 선택해주세요.");
+          return;
+        }
+        await persistSavingsDeletion(selectedSavingsAccount);
+      }
+
+      if (isDemoMode) {
+        const createdAt = new Date().toISOString();
+        const demoItems: Expense[] = payloads.map((payload, index) => ({
+          id: `demo-${meta.id}-${index}-${Date.now()}`,
+          user_id: DEMO_USER_ID,
+          created_at: createdAt,
+          ...payload,
+        }));
+        setExpenses((prev) => {
+          const next = [...demoItems, ...prev];
+          writeDemoExpenses(next);
+          return next;
+        });
+      } else {
+        const saved = await createExpenses(payloads);
+        setExpenses((prev) => [...prev, ...(saved || [])]);
+      }
+
+      setSelectedDate(new Date(`${paymentDates[0]}T00:00:00`));
+      setSavingsFormMode("create");
+      setSavingsEditingId("");
+      resetSavingsCreateForm();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "적금 저장 중 오류가 발생했습니다.";
+      alert(message);
+    } finally {
+      setIsSavingsSubmitting(false);
+    }
+  };
+  const handleSavingsDelete = async () => {
+    if (!selectedSavingsAccount) {
+      alert("삭제할 적금을 선택해주세요.");
+      return;
+    }
+
+    const confirmed = window.confirm("선택한 적금과 예정 납입 내역을 모두 삭제할까요?");
+    if (!confirmed) return;
+
+    try {
+      setIsSavingsDeleting(true);
+      await persistSavingsDeletion(selectedSavingsAccount);
+      setSavingsEditingId("");
+      setSavingsFormMode("create");
+      resetSavingsCreateForm();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "적금 삭제 중 오류가 발생했습니다.";
+      alert(message);
+    } finally {
+      setIsSavingsDeleting(false);
+    }
   };
   const handleInlineSubmit = async () => {
     const amount = Number(inlineAmount);
@@ -589,11 +880,11 @@ export default function Home() {
         </section>
         <section className="column-group column-group--gap-16">
           <div className="main-overview column-group column-group--gap-16">
-            <h3 className="main-common-title title--md">Overview</h3>
+            <h3 className="main-common-title title--md">개요</h3>
             <div className="main-overview-card row-group row-group--stretch row-group--gap-16">
-              {/* 이번 달 잔액 */}
+              {/* 이번 달 현금흐름 */}
               <div className="card overview-card column-group column-group--center column-group--gap-8">
-                <h4 className="main-overview--title title--sm">이번 달 잔액</h4>
+                <h4 className="main-overview--title title--sm">이번 달 현금흐름</h4>
                 <div className="row-group row-group--center row-group--between">
                   <p className="main-overview--num title--lg">
                     {formatWon(monthlyTotal)}
@@ -601,13 +892,10 @@ export default function Home() {
                 </div>
                 <p className="main-overview--last label--md">
                   수입 {formatWon(monthlyIncomeTotal)} · 지출{" "}
-                  {formatWon(monthlyExpenseTotal)}
+                  {formatWon(monthlyExpenseTotal)} · 저축 {formatWon(monthlySavingsTotal)}
                 </p>
                 <OverviewLineChart
-                  lines={[
-                    { values: incomeSeries, color: "green", label: "수입" },
-                    { values: expenseSeries, color: "red", label: "지출" },
-                  ]}
+                  lines={[{ values: cashflowSeries, color: "teal", label: "현금흐름" }]}
                 />
               </div>
               {/* 수입 */}
@@ -640,23 +928,205 @@ export default function Home() {
                   lines={[{ values: expenseSeries, color: "red", label: "지출" }]}
                 />
               </div>
-              {/* 전월 대비 */}
+              {/* 저축 */}
               <div className="card overview-card column-group column-group--center column-group--gap-8">
-                <h4 className="main-overview--title title--sm">전월 대비</h4>
+                <h4 className="main-overview--title title--sm">이번 달 저축</h4>
                 <div className="row-group row-group--center row-group--between">
                   <p className="main-overview--num title--lg">
-                    {formatWon(changeAmount)}
+                    {formatWon(monthlySavingsTotal)}
                   </p>
-                  <span className="badge badge--teal">
-                    {formatTrendLabel(changeRate)}
-                  </span>
                 </div>
-                <p className="main-overview--last label--md">{balanceChangeDirection}</p>
+                <p className="main-overview--last label--md">
+                  총 {monthlySavingsCount}건
+                </p>
                 <OverviewLineChart
-                  lines={[
-                    { values: comparisonSeries, color: "teal", label: "전월 대비" },
-                  ]}
+                  lines={[{ values: savingsSeries, color: "blue", label: "저축" }]}
                 />
+              </div>
+            </div>
+            <h3 className="main-common-title title--md">특수 지출</h3>
+            <div className="main-overview--savings row-group row-group--stretch row-group--gap-16">
+              {/* 적금 */}
+              <div className="card overview-card column-group column-group--center column-group--gap-8">
+                <div className="main-overview--section-header row-group row-group--center row-group--between">
+                  <h4 className="main-overview--title title--sm">적금 추가/수정</h4>
+                  <div
+                    className="main-overview--tabs"
+                    role="tablist"
+                    aria-label="내역 입력 모드"
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={savingsFormMode === "create"}
+                      className={`main-overview--tab bodyBold--sm ${savingsFormMode === "create" ? "is-active" : ""}`}
+                      onClick={() => handleSavingsModeChange("create")}
+                    >
+                      추가
+                    </button>
+                    {savingsAccounts.length ? (
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={savingsFormMode === "edit"}
+                        className={`main-overview--tab bodyBold--sm ${savingsFormMode === "edit" ? "is-active" : ""}`}
+                        onClick={() => handleSavingsModeChange("edit")}
+                      >
+                        수정
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                {savingsFormMode === "edit" ? (
+                  <label className="main-overview--field">
+                    <span className="label--md">수정할 적금</span>
+                    <select
+                      className="main-overview--control body--sm"
+                      value={savingsEditingId}
+                      onChange={(event) => setSavingsEditingId(event.target.value)}
+                      disabled={savingsAccounts.length === 0}
+                    >
+                      {savingsAccounts.length === 0 ? (
+                        <option value="">등록된 적금 없음</option>
+                      ) : (
+                        savingsAccounts.map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.name} · 매월 {account.paymentDay}일 ·{" "}
+                            {account.monthlyPayment.toLocaleString()}원
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </label>
+                ) : null}
+                <div className="row-group row-group--center row-group--gap-8">
+                  <label className="main-overview--field flex-fill">
+                    <span className="label--md">납입 금액</span>
+                    <input
+                      className="main-overview--control body--sm"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={savingsPaymentAmount}
+                      onChange={(event) => setSavingsPaymentAmount(event.target.value)}
+                    />
+                  </label>
+                  <label className="main-overview--field flex-fill">
+                    <span className="label--md">납입일</span>
+                    <select
+                      className="main-overview--control body--sm"
+                      value={savingsPaymentDay}
+                      onChange={(event) => setSavingsPaymentDay(event.target.value)}
+                    >
+                      {Array.from({ length: 31 }, (_, index) => {
+                        const day = index + 1;
+                        return (
+                          <option key={day} value={day}>
+                            {day}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </label>
+                  <label className="main-overview--field  flex-fill">
+                    <span className="label--md">만기일</span>
+                    <input
+                      className="main-overview--control body--sm"
+                      type="date"
+                      value={savingsMaturityDate}
+                      onChange={(event) => setSavingsMaturityDate(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="row-group row-group--center row-group--gap-8">
+                  <label className="main-overview--field  flex-fill">
+                    <span className="label--md">현재 금액</span>
+                    <input
+                      className="main-overview--control body--sm"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={savingsCurrentAmount}
+                      onChange={(event) => setSavingsCurrentAmount(event.target.value)}
+                    />
+                  </label>
+                  <label className="main-overview--field  flex-fill">
+                    <span className="label--md">적금 이름</span>
+                    <input
+                      className="main-overview--control body--sm"
+                      type="text"
+                      placeholder="카테고리로 사용 될 이름"
+                      value={savingsName}
+                      onChange={(event) => setSavingsName(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="main-overview--actions row-group row-group--center row-group--gap-8">
+                  {savingsFormMode === "edit" ? (
+                    <button
+                      type="button"
+                      className="button button--outline button--md main-overview--delete"
+                      onClick={handleSavingsDelete}
+                      disabled={
+                        isSavingsSubmitting ||
+                        isSavingsDeleting ||
+                        !selectedSavingsAccount
+                      }
+                    >
+                      {isSavingsDeleting ? "삭제 중..." : "삭제"}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="button button--primary button--md button--full main-overview--submit"
+                    onClick={handleSavingsSubmit}
+                    disabled={
+                      isSavingsSubmitting ||
+                      isSavingsDeleting ||
+                      (savingsFormMode === "edit" && !selectedSavingsAccount)
+                    }
+                  >
+                    {isSavingsSubmitting
+                      ? "저장 중..."
+                      : savingsFormMode === "edit"
+                        ? "수정 저장"
+                        : "적금 추가"}
+                  </button>
+                </div>
+                <ul className="savings--list column-group column-group--gap-8">
+                  {savingsAccounts.length ? (
+                    savingsAccounts.map((account) => (
+                      <li
+                        key={account.id}
+                        className="savings--items row-group row-group--center row-group--gap-16"
+                      >
+                        <span className="badge badge--blue">적금</span>
+                        <p className="savings--name label--md">{account.name}</p>
+                        <p className="savings--num bodyBold--sm">
+                          {formatWon(account.currentAmount)}
+                        </p>
+                        <p className="savings--dates row-group row-group--center row-group--gap-8">
+                          <span className="label--sm">납입일</span>
+                          <span className="label--sm">매월 {account.paymentDay}일</span>
+                          <span className="label--sm">-</span>
+                          <span className="label--sm">만기일</span>
+                          <span className="label--sm">
+                            {formatDetailDate(account.maturityDate)}
+                          </span>
+                        </p>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="savings--items savings--empty label--md">
+                      등록된 적금이 없습니다.
+                    </li>
+                  )}
+                </ul>
+              </div>
+              {/* 주식 */}
+              <div className="card overview-card column-group column-group--top column-group--gap-8">
+                {/* <h4 className="main-overview--title title--sm">주식</h4> */}
+                <p className="title--lg empty">업데이트 예정</p>
               </div>
             </div>
             <div className="row-group row-group--stretch row-group--gap-16">
@@ -734,6 +1204,7 @@ export default function Home() {
                     <ul className="calendar-content column-group column-group--gap-4">
                       {selectedDayItems.map((item) => {
                         const isIncome = item.type === "income";
+                        const isSavings = isSavingsItem(item);
                         return (
                           <li
                             key={item.id}
@@ -741,9 +1212,15 @@ export default function Home() {
                           >
                             <p className="calendar-content--sort">
                               <span
-                                className={`badge ${isIncome ? "badge--green" : "badge--red"}`}
+                                className={`badge ${
+                                  isSavings
+                                    ? "badge--blue"
+                                    : isIncome
+                                      ? "badge--green"
+                                      : "badge--red"
+                                }`}
                               >
-                                {isIncome ? "수입" : "지출"}
+                                {isSavings ? "저축" : isIncome ? "수입" : "지출"}
                               </span>
                             </p>
                             <div className="row-group row-group--center row-group--gap-8">
@@ -755,7 +1232,7 @@ export default function Home() {
                               </p>
                             </div>
                             <p className="calendar-content--num label--lg">
-                              {item.memo || "-"}
+                              {getVisibleMemo(item.memo) || "-"}
                             </p>
                           </li>
                         );
@@ -809,8 +1286,8 @@ export default function Home() {
                           ) : (
                             inlineEditItems.map((item) => (
                               <option key={item.id} value={item.id}>
-                                {item.date} · {item.memo || item.category} ·{" "}
-                                {item.amount.toLocaleString()}원
+                                {item.date} · {getVisibleMemo(item.memo) || item.category}{" "}
+                                · {item.amount.toLocaleString()}원
                               </option>
                             ))
                           )}
@@ -977,7 +1454,7 @@ export default function Home() {
             </div>
           </div>
           {/* 전체 정보 */}
-          <h3 className="main-common-title title--md">Details</h3>
+          <h3 className="main-common-title title--md">상세내용</h3>
           <div className="main-detail">
             <div className="row-group row-group--flex row-group--top row-group--gap-16">
               <div className="table--wrap">
@@ -1002,18 +1479,25 @@ export default function Home() {
                     {inlineEditItems.length ? (
                       inlineEditItems.map((item) => {
                         const isIncome = item.type === "income";
+                        const isSavings = isSavingsItem(item);
                         return (
                           <tr key={item.id}>
                             <td>{item.category}</td>
                             <td>
                               <span
-                                className={`badge ${isIncome ? "badge--green" : "badge--red"}`}
+                                className={`badge ${
+                                  isSavings
+                                    ? "badge--blue"
+                                    : isIncome
+                                      ? "badge--green"
+                                      : "badge--red"
+                                }`}
                               >
-                                {isIncome ? "수입" : "지출"}
+                                {isSavings ? "저축" : isIncome ? "수입" : "지출"}
                               </span>
                             </td>
                             <td>{formatCurrency(item.amount)}</td>
-                            <td>{item.memo || "-"}</td>
+                            <td>{getVisibleMemo(item.memo) || "-"}</td>
                             <td>{formatDetailDate(item.date)}</td>
                           </tr>
                         );

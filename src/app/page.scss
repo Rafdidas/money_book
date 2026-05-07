@@ -345,6 +345,23 @@
           }
         }
       }
+      .savings {
+        &--list {
+          margin-top: 16px;
+        }
+        &--items {
+          padding: 4px 8px;
+          background: var(--surface-lowest);
+          border: 1px solid var(--outline);
+          border-radius: 8px;
+        }
+        &--dates {
+          margin-left: auto;
+          > span {
+            color: var(--on-surface);
+          }
+        }
+      }
     }
     .main-detail {
       .table--wrap {
@@ -364,6 +381,16 @@
         .overview-card {
           flex: 1 1 calc(50% - 8px);
           min-width: 320px;
+        }
+      }
+      .savings {
+        &--items {
+          flex-wrap: wrap;
+          gap: 4px !important;
+        }
+        &--dates {
+          flex-wrap: wrap;
+          margin-left: 2px !important;
         }
       }
     }
