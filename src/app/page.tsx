@@ -37,7 +37,7 @@ const formatDetailDate = (dateValue: string) => {
 };
 const categoryOptions = ["🍚식비", "🚗교통비", "🎨문화생활", "🍱생필품", "🧴미용", "💊병원/약", "🎓교육", "📩공과금", "📱통신비", "🎠회비", "📅경조사", "💳카드대금", "🎁선물", "🏢대출이자", "📈주식"];
 const incomeCategoryOptions = ["💵월급", "💸보너스", "📩용돈", "🪙부수입", "👷아르바이트"];
-const savingsCategory = "적금";
+const savingsCategory = "📩적금";
 const savingsMetaPrefix = "[[savings:";
 const savingsMetaPattern = /\s*\[\[savings:([^\]]+)\]\]\s*$/;
 const customCategoryValue = "__custom__";
