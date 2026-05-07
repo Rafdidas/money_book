@@ -157,6 +157,20 @@ const parseSavingsMemo = (memo: string): SavingsMeta | null => {
 const getVisibleMemo = (memo: string) => memo.replace(savingsMetaPattern, "").trim();
 const isSavingsItem = (item: Expense) =>
   item.type === "expense" && item.category === savingsCategory;
+const getFallbackSavingsMeta = (item: Expense): SavingsMeta => {
+  const date = new Date(`${item.date}T00:00:00`);
+  const paymentDay = Number.isNaN(date.getTime()) ? 1 : date.getDate();
+  const name = getVisibleMemo(item.memo) || "적금";
+  const fallbackKey = encodeURIComponent(`${name}-${paymentDay}-${item.amount}`);
+
+  return {
+    id: `savings-fallback-${fallbackKey}`,
+    name,
+    paymentDay,
+    maturityDate: item.date,
+    initialAmount: 0,
+  };
+};
 
 const getSavingsPaymentDates = (
   startDate: Date,
@@ -422,8 +436,7 @@ export default function Home() {
     const todayKey = formatDate(today);
     const grouped = expenses.reduce<Record<string, SavingsAccount>>((acc, item) => {
       if (item.type !== "expense" || item.category !== savingsCategory) return acc;
-      const meta = parseSavingsMemo(item.memo);
-      if (!meta) return acc;
+      const meta = parseSavingsMemo(item.memo) ?? getFallbackSavingsMeta(item);
 
       if (!acc[meta.id]) {
         acc[meta.id] = {
@@ -436,6 +449,9 @@ export default function Home() {
       }
       acc[meta.id].items.push(item);
       acc[meta.id].monthlyPayment = item.amount;
+      if (item.date > acc[meta.id].maturityDate) {
+        acc[meta.id].maturityDate = item.date;
+      }
       return acc;
     }, {});
 
@@ -457,7 +473,6 @@ export default function Home() {
           nextPaymentDate: nextPayment?.date ?? account.maturityDate,
         };
       })
-      .filter((account) => account.maturityDate >= todayKey)
       .sort((left, right) => left.maturityDate.localeCompare(right.maturityDate));
   }, [expenses, today]);
   const selectedSavingsAccount =
