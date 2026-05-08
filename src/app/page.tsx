@@ -262,6 +262,11 @@ const getOpenEndedSavingsDate = (startDate: Date) => {
   return formatDate(date);
 };
 
+const getNextMonthPaymentChangeMessage = (date: Date) => {
+  const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  return `${date.getMonth() + 1}월이 아닌 ${nextMonth.getMonth() + 1}월 부터 납입금액이 변경됩니다.`;
+};
+
 const getSavingsPaymentDates = (
   startDate: Date,
   paymentDay: number,
@@ -440,6 +445,7 @@ export default function Home() {
   const [savingsPaymentDay, setSavingsPaymentDay] = useState("1");
   const [savingsMaturityDate, setSavingsMaturityDate] = useState(formatDate(today));
   const [savingsHasNoMaturity, setSavingsHasNoMaturity] = useState(false);
+  const [savingsStartsThisMonth, setSavingsStartsThisMonth] = useState(true);
   const [savingsCurrentAmount, setSavingsCurrentAmount] = useState("");
   const [savingsName, setSavingsName] = useState("");
   const [isSavingsSubmitting, setIsSavingsSubmitting] = useState(false);
@@ -536,6 +542,7 @@ export default function Home() {
     inlineType === "income" ? incomeCategoryOptions : categoryOptions;
   const savingsAccounts = useMemo<SavingsAccount[]>(() => {
     const todayKey = formatDate(today);
+    const selectedMonthStartKey = formatDate(new Date(currentYear, currentMonth, 1));
     const grouped = expenses.reduce<Record<string, SavingsAccount>>((acc, item) => {
       if (item.type !== "expense" || !isSavingsCategory(item.category)) return acc;
       const meta = parseSavingsMemo(item.memo) ?? getFallbackSavingsMeta(item);
@@ -567,16 +574,18 @@ export default function Home() {
           .reduce((sum, item) => sum + item.amount, 0);
         const nextPayment =
           sortedItems.find((item) => item.date >= todayKey) ?? sortedItems.at(-1);
+        const selectedMonthPayment =
+          sortedItems.find((item) => item.date >= selectedMonthStartKey) ?? sortedItems.at(-1);
         return {
           ...account,
           items: sortedItems,
           currentAmount: account.initialAmount + paidAmount,
-          monthlyPayment: sortedItems[0]?.amount ?? account.monthlyPayment,
+          monthlyPayment: selectedMonthPayment?.amount ?? account.monthlyPayment,
           nextPaymentDate: nextPayment?.date ?? account.maturityDate,
         };
       })
       .sort((left, right) => left.maturityDate.localeCompare(right.maturityDate));
-  }, [expenses, today]);
+  }, [currentMonth, currentYear, expenses, today]);
   const selectedSavingsAccount =
     savingsAccounts.find((account) => account.id === savingsEditingId) ?? null;
   const visibleSavingsAccounts = useMemo(() => {
@@ -693,6 +702,7 @@ export default function Home() {
     setSavingsPaymentDay("1");
     setSavingsMaturityDate(formatDate(selectedDate));
     setSavingsHasNoMaturity(false);
+    setSavingsStartsThisMonth(true);
     setSavingsCurrentAmount("");
     setSavingsName("");
   }, [selectedDate]);
@@ -711,6 +721,7 @@ export default function Home() {
     setSavingsPaymentDay(String(account.paymentDay));
     setSavingsMaturityDate(account.maturityDate);
     setSavingsHasNoMaturity(account.hasNoMaturity);
+    setSavingsStartsThisMonth(true);
     setSavingsCurrentAmount(String(account.initialAmount));
     setSavingsName(account.name);
   }, []);
@@ -819,11 +830,18 @@ export default function Home() {
   };
   const handleSavingsModeChange = (mode: InlineFormMode) => {
     setSavingsFormMode(mode);
+    setSavingsStartsThisMonth(true);
     if (mode === "create") {
       setSavingsEditingId("");
       resetSavingsCreateForm();
     } else if (!savingsEditingId && savingsAccounts[0]) {
       setSavingsEditingId(savingsAccounts[0].id);
+    }
+  };
+  const handleSavingsStartMonthChange = (checked: boolean) => {
+    setSavingsStartsThisMonth(checked);
+    if (!checked) {
+      alert(getNextMonthPaymentChangeMessage(selectedDate));
     }
   };
   const persistSavingsDeletion = async (account: SavingsAccount) => {
@@ -839,6 +857,45 @@ export default function Home() {
 
     await deleteExpenses(ids);
     setExpenses((prev) => prev.filter((item) => !ids.includes(item.id)));
+  };
+  const persistSavingsReplacement = async (
+    account: SavingsAccount,
+    changeStartDateKey: string,
+    nextMemo: string,
+  ) => {
+    const keptItems = account.items.filter((item) => item.date < changeStartDateKey);
+    const replacedItems = account.items.filter((item) => item.date >= changeStartDateKey);
+    const keptIds = new Set(keptItems.map((item) => item.id));
+    const replacedIds = new Set(replacedItems.map((item) => item.id));
+
+    if (isDemoMode) {
+      setExpenses((prev) => {
+        const next = prev
+          .filter((item) => !replacedIds.has(item.id))
+          .map((item) => (keptIds.has(item.id) ? { ...item, memo: nextMemo } : item));
+        writeDemoExpenses(next);
+        return next;
+      });
+      return;
+    }
+
+    await deleteExpenses(replacedItems.map((item) => item.id));
+    await Promise.all(
+      keptItems.map((item) =>
+        updateExpense(item.id, {
+          amount: item.amount,
+          category: item.category,
+          memo: nextMemo,
+          date: item.date,
+          type: item.type,
+        }),
+      ),
+    );
+    setExpenses((prev) =>
+      prev
+        .filter((item) => !replacedIds.has(item.id))
+        .map((item) => (keptIds.has(item.id) ? { ...item, memo: nextMemo } : item)),
+    );
   };
   const handleSavingsSubmit = async () => {
     const paymentAmount = Number(savingsPaymentAmount);
@@ -864,16 +921,20 @@ export default function Home() {
       return;
     }
 
-    const savingsStartDate =
+    const savingsOriginalStartDate =
       savingsFormMode === "edit" && selectedSavingsAccount?.items[0]
         ? new Date(`${selectedSavingsAccount.items[0].date}T00:00:00`)
         : selectedDate;
-    if (!savingsHasNoMaturity && maturityDate < new Date(formatDate(savingsStartDate))) {
+    const savingsChangeStartDate =
+      savingsFormMode === "edit"
+        ? new Date(currentYear, currentMonth + (savingsStartsThisMonth ? 0 : 1), 1)
+        : savingsOriginalStartDate;
+    if (!savingsHasNoMaturity && maturityDate < new Date(formatDate(savingsChangeStartDate))) {
       alert("만기일은 첫 납입월 이후로 선택해주세요.");
       return;
     }
     const savingsEndDate = savingsHasNoMaturity
-      ? getOpenEndedSavingsDate(savingsStartDate)
+      ? getOpenEndedSavingsDate(savingsOriginalStartDate)
       : savingsMaturityDate;
 
     const meta: SavingsMeta = {
@@ -887,7 +948,7 @@ export default function Home() {
       initialAmount,
       hasNoMaturity: savingsHasNoMaturity,
     };
-    const paymentDates = getSavingsPaymentDates(savingsStartDate, paymentDay, savingsEndDate);
+    const paymentDates = getSavingsPaymentDates(savingsChangeStartDate, paymentDay, savingsEndDate);
     if (!paymentDates.length) {
       alert("추가할 납입 내역이 없습니다.");
       return;
@@ -908,7 +969,11 @@ export default function Home() {
           alert("수정할 적금을 선택해주세요.");
           return;
         }
-        await persistSavingsDeletion(selectedSavingsAccount);
+        await persistSavingsReplacement(
+          selectedSavingsAccount,
+          formatDate(savingsChangeStartDate),
+          encodeSavingsMemo(meta),
+        );
       }
 
       if (isDemoMode) {
@@ -1438,7 +1503,21 @@ export default function Home() {
                     ) : null}
                     <div className="grid-col-3">
                       <label className="main-overview--field flex-fill">
-                        <span className="label--md">납입 금액</span>
+                        <div className="row-group row-group--center row-group--between">
+                          <span className="label--md">납입 금액</span>
+                          {savingsFormMode === "edit" ? (
+                            <label className="row-group row-group--center row-group--gap-4">
+                              <input
+                                type="checkbox"
+                                checked={savingsStartsThisMonth}
+                                onChange={(event) =>
+                                  handleSavingsStartMonthChange(event.target.checked)
+                                }
+                              />
+                              <span className="caption--md">이번 달 부터 변경</span>
+                            </label>
+                          ) : null}
+                        </div>
                         <input
                           className="main-overview--control body--sm"
                           type="number"
@@ -1556,9 +1635,20 @@ export default function Home() {
                           >
                             <span className="badge badge--blue">적금</span>
                             <p className="savings--name label--md">{account.name}</p>
-                            <p className="savings--num bodyBold--sm">
-                              {formatWon(account.currentAmount)}
-                            </p>
+                            <div className="row-group row-group--center row-group--gap-8">
+                              <div className="row-group row-group--center row-group--gap-4">
+                                <span className="label--sm">납입액 :</span>
+                                <p className="savings--num bodyBold--sm">
+                                  {formatWon(account.monthlyPayment)}
+                                </p>
+                              </div>
+                              <div className="row-group row-group--center row-group--gap-4">
+                                <span className="label--sm">누적 납입액 :</span>
+                                <p className="savings--num bodyBold--sm">
+                                  {formatWon(account.currentAmount)}
+                                </p>
+                              </div>
+                            </div>
                             <p className="savings--dates row-group row-group--center row-group--gap-8">
                               <span className="label--sm">납입일</span>
                               <span className="label--sm">

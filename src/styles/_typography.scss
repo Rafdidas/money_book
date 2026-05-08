@@ -94,6 +94,10 @@ $fw-regular: 400;
 }
 
 .caption {
+  &--lg {
+    @include typo(12px, $fw-medium);
+  }
+
   &--md {
     @include typo(12px, $fw-regular);
   }

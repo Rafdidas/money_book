@@ -352,6 +352,7 @@
           margin-top: 16px;
         }
         &--items {
+          flex-wrap: wrap;
           padding: 4px 8px;
           background: var(--surface-lowest);
           border: 1px solid var(--outline);
