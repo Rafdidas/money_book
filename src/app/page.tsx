@@ -1474,7 +1474,9 @@ export default function Home() {
                             <input
                               type="checkbox"
                               checked={savingsHasNoMaturity}
-                              onChange={(event) => setSavingsHasNoMaturity(event.target.checked)}
+                              onChange={(event) =>
+                                setSavingsHasNoMaturity(event.target.checked)
+                              }
                             />
                             <span className="caption--md">만기일 없음</span>
                           </label>
@@ -1881,9 +1883,10 @@ export default function Home() {
                     </table>
                   </div>
                 </div> */}
-                <div className="empty title--lg">업데이트 예정</div>
+                <div className="empty title--md">업데이트 예정</div>
               </div>
             </div>
+            <h3 className="main-common-title title--md">등록 / 수정</h3>
             <div className="row-group row-group--stretch row-group--gap-16">
               {/* 달력 */}
               <div className="card overview-card main-overview--calendar-card column-group--center ">

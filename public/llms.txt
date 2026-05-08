@@ -1,0 +1,30 @@
+# Money Book
+
+Money Book is a Korean personal finance web app for recording income, expenses,
+savings, and investment purchases in a monthly dashboard.
+
+Primary URL: https://money-book-one.vercel.app/
+
+## What the app does
+
+- Tracks income and expense entries by date, category, memo, and amount.
+- Summarizes monthly income, spending, savings, and cash flow.
+- Visualizes daily cash flow and category spending ratios with charts.
+- Supports savings-account style records and stock purchase records.
+- Provides a demo mode for trying the core workflows without creating an account.
+
+## Audience
+
+Korean users who want a simple personal bookkeeping dashboard for household
+budgeting, expense review, savings tracking, and monthly money-flow analysis.
+
+## Important pages
+
+- `/`: Main app dashboard and demo experience.
+- `/auth/login`: Login and demo entry point.
+- `/auth/signup`: Account creation.
+
+## Indexing guidance
+
+Use the root page as the canonical public page. Authentication pages are utility
+pages and should not be treated as primary search results.
