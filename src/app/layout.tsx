@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Header from "@/components/common/Header";
 import Providers from "./providers";
 import "./globals.scss";
@@ -6,6 +6,13 @@ import "./globals.scss";
 export const metadata: Metadata = {
   title: "money book",
   description: "Track your income and expenses with money book",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

@@ -405,44 +405,41 @@
       padding: 0 14px 32px;
 
       .main-header {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 10px;
         padding-top: 14px;
-
-        &--calendar-button {
-          width: 100%;
-          min-width: 0;
-          height: 42px;
-        }
       }
 
       .main-overview {
 
-        .overview-card {
-          flex: 1 1 auto;
-          width: 100%;
-          min-width: 0;
+        // 개요 카드
+        .main-overview-card {
+          overflow-x: auto;
+          flex-wrap: nowrap;
+
+          .overview-card {
+            flex: 1;
+            width: 100%;
+            min-width: 70dvw;
+          }
         }
 
-        &--section-header {
-          align-items: flex-start;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        &--tabs {
-          width: 100%;
+        &--graph {
+          display: none;
         }
 
         &--form-grid {
           grid-template-columns: 1fr;
         }
 
+        &--form {
+          .grid-col-3,.grid-col-2 {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
         &--control,
         &--type,
         &--tab {
-          min-height: 42px;
+          min-height: 28px;
         }
 
         &--actions {
@@ -482,9 +479,6 @@
           max-height: 150px;
 
           &--item {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 6px;
           }
         }
 
@@ -518,6 +512,7 @@
       }
 
       .main-overview {
+        
         &--day {
           min-height: 36px;
 
