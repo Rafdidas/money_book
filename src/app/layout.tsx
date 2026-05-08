@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: siteUrl,
   applicationName: siteName,
   title: {
-    default: "Money Book | 개인 가계부 대시보드",
+    default: "Money Book | 개인 가계부",
     template: `%s | ${siteName}`,
   },
   description: siteDescription,
@@ -40,13 +40,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName,
-    title: "Money Book | 개인 가계부 대시보드",
+    title: "Money Book | 개인 가계부",
     description: siteDescription,
     locale: "ko_KR",
   },
   twitter: {
     card: "summary",
-    title: "Money Book | 개인 가계부 대시보드",
+    title: "Money Book | 개인 가계부",
     description: siteDescription,
   },
   robots: {
