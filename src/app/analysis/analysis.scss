@@ -269,9 +269,16 @@
   }
 
   @media (max-width: 720px) {
-    .main-header {
+    .main-overview-analysis-card {
+      overflow-x: auto;
+      flex-wrap: nowrap !important;
+    
+      .analysis-summary-card {
+        flex: 1;
+        width: 100%;
+        min-width: 70dvw;
+      }
     }
-
     .analysis-year-control {
       justify-content: space-between;
       min-height: 32px;
