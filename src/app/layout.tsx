@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Header from "@/components/common/Header";
 import Providers from "./providers";
 import "./globals.scss";
+import localFont from "next/font/local";
 
 const siteUrl = new URL(
   process.env.NEXT_PUBLIC_SITE_URL || "https://money-book-one.vercel.app",
@@ -107,13 +108,19 @@ const jsonLd = [
   },
 ];
 
+const paperlogy = localFont({
+  src: "../assets/fonts/Paperlogy-7Bold.ttf",
+  variable: "--font-paperlogy",
+  display: "swap",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={paperlogy.variable}>
       <head>
         <script
           type="application/ld+json"

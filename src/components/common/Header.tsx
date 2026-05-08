@@ -13,7 +13,7 @@ export default function Header() {
   return (
     <header className="app-header">
       <div className="app-header--inner">
-        <Link href="/" className="app-header__brand title--md">
+        <Link href="/" className="app-header__brand title--lg">
           MONEY BOOK
         </Link>
       </div>

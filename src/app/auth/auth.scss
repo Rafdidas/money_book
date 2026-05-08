@@ -53,10 +53,17 @@
     align-items: flex-start;
     gap: 8px;
     margin-bottom: 24px;
+    &--logo {
+      align-items: center;
+    }
   }
 
   .auth-brand {
+    
     color: var(--on-surface-ultra-high);
+    &--logo {
+      font-family: var(--font-paperlogy);
+    }
   }
   .auth-lead {
     color: var(--on-surface-ultra-high);

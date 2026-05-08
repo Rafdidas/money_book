@@ -70,8 +70,10 @@ export default function SignupPage() {
 
       <main className="signup-stage">
         <section className="signup-wrap">
-          <div className="auth-brand-block">
-            <h1 className="auth-brand auth-brand-sm headline--sm">MONEY BOOK</h1>
+          <div className="auth-brand-block auth-brand-block--logo">
+            <h1 className="auth-brand auth-brand--logo auth-brand-sm headline--sm">
+              MONEY BOOK
+            </h1>
             <p className="auth-lead">새로운 금융 여정을 시작하세요</p>
           </div>
 
