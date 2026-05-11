@@ -9,8 +9,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal, flushSync } from "react-dom";
-import type { PointerEvent, ReactNode } from "react";
+import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
 
 type DialogType = "alert" | "confirm";
 
@@ -47,12 +47,19 @@ export const useAppAlert = () => {
 export default function AppAlertProvider({ children }: { children: ReactNode }) {
   const [dialog, setDialog] = useState<DialogRequest | null>(null);
   const queueRef = useRef<DialogRequest[]>([]);
+  const dialogRef = useRef<DialogRequest | null>(null);
   const idRef = useRef(0);
   const scrollYRef = useRef(0);
 
-  const openNextDialog = useCallback(() => {
-    setDialog((current) => current ?? queueRef.current.shift() ?? null);
+  const setActiveDialog = useCallback((nextDialog: DialogRequest | null) => {
+    dialogRef.current = nextDialog;
+    setDialog(nextDialog);
   }, []);
+
+  const openNextDialog = useCallback(() => {
+    if (dialogRef.current) return;
+    setActiveDialog(queueRef.current.shift() ?? null);
+  }, [setActiveDialog]);
 
   const enqueue = useCallback(
     (request: Omit<DialogRequest, "id">) => {
@@ -97,22 +104,13 @@ export default function AppAlertProvider({ children }: { children: ReactNode }) 
 
   const closeDialog = useCallback(
     (result: boolean) => {
-      dialog?.resolve?.(result);
-      flushSync(() => {
-        setDialog(queueRef.current.shift() ?? null);
-      });
-    },
-    [dialog],
-  );
+      const current = dialogRef.current;
+      if (!current) return;
 
-  const handleDialogButtonPointerDown = useCallback(
-    (event: PointerEvent<HTMLButtonElement>, result: boolean) => {
-      if (event.pointerType === "mouse" || event.pointerType === "touch") {
-        event.preventDefault();
-        closeDialog(result);
-      }
+      setActiveDialog(queueRef.current.shift() ?? null);
+      current.resolve?.(result);
     },
-    [closeDialog],
+    [setActiveDialog],
   );
 
   useEffect(() => {
@@ -206,7 +204,6 @@ export default function AppAlertProvider({ children }: { children: ReactNode }) 
                       <button
                         type="button"
                         className="button button--md button--outline app-alert__button"
-                        onPointerDown={(event) => handleDialogButtonPointerDown(event, false)}
                         onClick={() => closeDialog(false)}
                       >
                         {dialog.cancelText}
@@ -215,7 +212,6 @@ export default function AppAlertProvider({ children }: { children: ReactNode }) 
                     <button
                       type="button"
                       className="button button--md button--primary app-alert__button"
-                      onPointerDown={(event) => handleDialogButtonPointerDown(event, true)}
                       onClick={() => closeDialog(true)}
                       autoFocus
                     >

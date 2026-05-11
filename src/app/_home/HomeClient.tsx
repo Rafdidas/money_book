@@ -2,11 +2,9 @@
 
 import {
   type CSSProperties,
-  type PointerEvent,
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import Calendar from "react-calendar";
@@ -108,11 +106,12 @@ export default function HomeClient() {
   const [fixedExpenseName, setFixedExpenseName] = useState("");
   const [isFixedExpenseSubmitting, setIsFixedExpenseSubmitting] = useState(false);
   const [isFixedExpenseDeleting, setIsFixedExpenseDeleting] = useState(false);
-  const handledPointerClickRef = useRef(false);
 
   const selectedDateKey = formatDate(selectedDate);
   const currentYear = selectedDate.getFullYear();
   const currentMonth = selectedDate.getMonth();
+  const selectedMonthStartKey = formatDate(new Date(currentYear, currentMonth, 1));
+  const selectedMonthEndKey = formatDate(new Date(currentYear, currentMonth + 1, 0));
   const monthlyExpenses = useMemo(
     () =>
       expenses.filter((item) => {
@@ -237,15 +236,10 @@ export default function HomeClient() {
   const selectedSavingsAccount =
     savingsAccounts.find((account) => account.id === savingsEditingId) ?? null;
   const visibleSavingsAccounts = useMemo(() => {
-    const monthStart = formatDate(new Date(currentYear, currentMonth, 1));
-    const monthEnd = formatDate(new Date(currentYear, currentMonth + 1, 0));
-
-    return savingsAccounts.filter(
-      (account) =>
-        (account.hasNoMaturity || account.maturityDate > monthEnd) &&
-        account.items.some((item) => item.date >= monthStart && item.date <= monthEnd),
+    return savingsAccounts.filter((account) =>
+      account.items.some((item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey),
     );
-  }, [currentMonth, currentYear, savingsAccounts]);
+  }, [savingsAccounts, selectedMonthEndKey, selectedMonthStartKey]);
   const fixedExpenseAccounts = useMemo<FixedExpenseAccount[]>(() => {
     const todayKey = formatDate(today);
     const selectedMonthStartKey = formatDate(new Date(currentYear, currentMonth, 1));
@@ -289,15 +283,10 @@ export default function HomeClient() {
   const selectedFixedExpenseAccount =
     fixedExpenseAccounts.find((account) => account.id === fixedExpenseEditingId) ?? null;
   const visibleFixedExpenseAccounts = useMemo(() => {
-    const monthStart = formatDate(new Date(currentYear, currentMonth, 1));
-    const monthEnd = formatDate(new Date(currentYear, currentMonth + 1, 0));
-
-    return fixedExpenseAccounts.filter(
-      (account) =>
-        (account.hasNoEndDate || account.endDate > monthEnd) &&
-        account.items.some((item) => item.date >= monthStart && item.date <= monthEnd),
+    return fixedExpenseAccounts.filter((account) =>
+      account.items.some((item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey),
     );
-  }, [currentMonth, currentYear, fixedExpenseAccounts]);
+  }, [fixedExpenseAccounts, selectedMonthEndKey, selectedMonthStartKey]);
 
   const resetInlineCreateForm = useCallback((date = selectedDateKey) => {
     setInlineAmount("");
@@ -902,7 +891,7 @@ export default function HomeClient() {
     const confirmed = await confirm("고정지출을 종료하시겠습니까?");
     if (!confirmed) return;
 
-    const cutoffDate = formatDate(new Date(currentYear, currentMonth + 1, 0));
+    const cutoffDate = selectedMonthEndKey;
     const keptItems = account.items.filter((item) => item.date <= cutoffDate);
     const deletedItems = account.items.filter((item) => item.date > cutoffDate);
     const endDate = keptItems.at(-1)?.date;
@@ -963,7 +952,7 @@ export default function HomeClient() {
     const confirmed = await confirm("만기 처리 하시겠습니까?");
     if (!confirmed) return;
 
-    const cutoffDate = formatDate(new Date(currentYear, currentMonth + 1, 0));
+    const cutoffDate = selectedMonthEndKey;
     const keptItems = account.items.filter((item) => item.date <= cutoffDate);
     const deletedItems = account.items.filter((item) => item.date > cutoffDate);
     const maturityDate = keptItems.at(-1)?.date;
@@ -1021,33 +1010,6 @@ export default function HomeClient() {
       setIsSavingsDeleting(false);
     }
   };
-  const handleSavingsMaturityPointerDown = (
-    event: PointerEvent<HTMLButtonElement>,
-    account: SavingsAccount,
-  ) => {
-    if (event.pointerType !== "mouse" && event.pointerType !== "touch") return;
-
-    event.preventDefault();
-    handledPointerClickRef.current = true;
-    window.setTimeout(() => {
-      handledPointerClickRef.current = false;
-    }, 0);
-    void handleSavingsMaturity(account);
-  };
-  const handleFixedExpenseEndPointerDown = (
-    event: PointerEvent<HTMLButtonElement>,
-    account: FixedExpenseAccount,
-  ) => {
-    if (event.pointerType !== "mouse" && event.pointerType !== "touch") return;
-
-    event.preventDefault();
-    handledPointerClickRef.current = true;
-    window.setTimeout(() => {
-      handledPointerClickRef.current = false;
-    }, 0);
-    void handleFixedExpenseEnd(account);
-  };
-  const shouldSkipPointerHandledClick = () => handledPointerClickRef.current;
   const handleInlineSubmit = async () => {
     const amount = Number(inlineAmount);
     const category =
@@ -1429,56 +1391,57 @@ export default function HomeClient() {
                     </div>
                     <ul className="savings--list column-group column-group--gap-8">
                       {visibleSavingsAccounts.length ? (
-                        visibleSavingsAccounts.map((account) => (
-                          <li
-                            key={account.id}
-                            className="savings--items row-group row-group--center row-group--gap-16"
-                          >
-                            <span className="badge badge--blue">적금</span>
-                            <p className="savings--name label--md">{account.name}</p>
-                            <div className="row-group row-group--center row-group--gap-8">
-                              <div className="row-group row-group--center row-group--gap-4">
-                                <span className="label--sm">납입액 :</span>
-                                <p className="savings--num bodyBold--sm">
-                                  {formatWon(account.monthlyPayment)}
-                                </p>
+                        visibleSavingsAccounts.map((account) => {
+                          const isMatured =
+                            !account.hasNoMaturity &&
+                            account.maturityDate >= selectedMonthStartKey &&
+                            account.maturityDate <= selectedMonthEndKey;
+
+                          return (
+                            <li
+                              key={account.id}
+                              className="savings--items row-group row-group--center row-group--gap-16"
+                            >
+                              <span className="badge badge--blue">적금</span>
+                              <p className="savings--name label--md">{account.name}</p>
+                              <div className="row-group row-group--center row-group--gap-8">
+                                <div className="row-group row-group--center row-group--gap-4">
+                                  <span className="label--sm">납입액 :</span>
+                                  <p className="savings--num bodyBold--sm">
+                                    {formatWon(account.monthlyPayment)}
+                                  </p>
+                                </div>
+                                <div className="row-group row-group--center row-group--gap-4">
+                                  <span className="label--sm">누적 납입액 :</span>
+                                  <p className="savings--num bodyBold--sm">
+                                    {formatWon(account.currentAmount)}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="row-group row-group--center row-group--gap-4">
-                                <span className="label--sm">누적 납입액 :</span>
-                                <p className="savings--num bodyBold--sm">
-                                  {formatWon(account.currentAmount)}
-                                </p>
-                              </div>
-                            </div>
-                            <p className="savings--dates row-group row-group--center row-group--gap-8">
-                              <span className="label--sm">납입일</span>
-                              <span className="label--sm">
-                                매월 {account.paymentDay}일
-                              </span>
-                              <span className="label--sm">-</span>
-                              <span className="label--sm">만기일</span>
-                              <span className="label--sm">
-                                {account.hasNoMaturity
-                                  ? "만기일 없음"
-                                  : formatDetailDate(account.maturityDate)}
-                              </span>
-                              <button
-                                type="button"
-                                className="button button--xs button--secondary"
-                                onPointerDown={(event) =>
-                                  handleSavingsMaturityPointerDown(event, account)
-                                }
-                                onClick={() => {
-                                  if (shouldSkipPointerHandledClick()) return;
-                                  void handleSavingsMaturity(account);
-                                }}
-                                disabled={isSavingsDeleting}
-                              >
-                                만기 처리
-                              </button>
-                            </p>
-                          </li>
-                        ))
+                              <p className="savings--dates row-group row-group--center row-group--gap-8">
+                                <span className="label--sm">납입일</span>
+                                <span className="label--sm">
+                                  매월 {account.paymentDay}일
+                                </span>
+                                <span className="label--sm">-</span>
+                                <span className="label--sm">만기일</span>
+                                <span className="label--sm">
+                                  {account.hasNoMaturity
+                                    ? "만기일 없음"
+                                    : formatDetailDate(account.maturityDate)}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="button button--xs button--secondary"
+                                  onClick={() => handleSavingsMaturity(account)}
+                                  disabled={isSavingsDeleting || isMatured}
+                                >
+                                  {isMatured ? "만기됨" : "만기 처리"}
+                                </button>
+                              </p>
+                            </li>
+                          );
+                        })
                       ) : (
                         <li className="savings--items savings--empty label--md">
                           등록된 적금이 없습니다.
@@ -1674,35 +1637,36 @@ export default function HomeClient() {
                       </thead>
                       <tbody>
                         {visibleFixedExpenseAccounts.length ? (
-                          visibleFixedExpenseAccounts.map((account) => (
-                            <tr key={account.id}>
-                              <td>{account.name}</td>
-                              <td>매월 {account.paymentDay}일</td>
-                              <td>{formatWon(account.monthlyAmount)}</td>
-                              <td>{formatDetailDate(account.nextPaymentDate)}</td>
-                              <td>
-                                {account.hasNoEndDate
-                                  ? "기한 없음"
-                                  : formatDetailDate(account.endDate)}
-                              </td>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="button button--xs button--secondary"
-                                  onPointerDown={(event) =>
-                                    handleFixedExpenseEndPointerDown(event, account)
-                                  }
-                                  onClick={() => {
-                                    if (shouldSkipPointerHandledClick()) return;
-                                    void handleFixedExpenseEnd(account);
-                                  }}
-                                  disabled={isFixedExpenseDeleting}
-                                >
-                                  종료
-                                </button>
-                              </td>
-                            </tr>
-                          ))
+                          visibleFixedExpenseAccounts.map((account) => {
+                            const isEnded =
+                              !account.hasNoEndDate &&
+                              account.endDate >= selectedMonthStartKey &&
+                              account.endDate <= selectedMonthEndKey;
+
+                            return (
+                              <tr key={account.id}>
+                                <td>{account.name}</td>
+                                <td>매월 {account.paymentDay}일</td>
+                                <td>{formatWon(account.monthlyAmount)}</td>
+                                <td>{formatDetailDate(account.nextPaymentDate)}</td>
+                                <td>
+                                  {account.hasNoEndDate
+                                    ? "기한 없음"
+                                    : formatDetailDate(account.endDate)}
+                                </td>
+                                <td>
+                                  <button
+                                    type="button"
+                                    className="button button--xs button--secondary"
+                                    onClick={() => handleFixedExpenseEnd(account)}
+                                    disabled={isFixedExpenseDeleting || isEnded}
+                                  >
+                                    {isEnded ? "종료됨" : "종료"}
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
                         ) : (
                           <tr>
                             <td colSpan={6}>등록된 고정지출이 없습니다.</td>
