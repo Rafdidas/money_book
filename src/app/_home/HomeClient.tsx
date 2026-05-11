@@ -1282,7 +1282,7 @@ export default function HomeClient() {
                   <div className="main-overview--form">
                     {savingsFormMode === "edit" ? (
                       <label className="main-overview--field">
-                        <span className="label--md">수정할 적금</span>
+                        <span className="form-label label--md">수정할 적금</span>
                         <select
                           className="main-overview--control body--sm"
                           value={savingsEditingId}
@@ -1305,7 +1305,7 @@ export default function HomeClient() {
                     <div className="grid-col-3">
                       <label className="main-overview--field flex-fill">
                         <div className="row-group row-group--center row-group--between">
-                          <span className="label--md">납입 금액</span>
+                          <span className="form-label label--md">납입 금액</span>
                           {savingsFormMode === "edit" ? (
                             <label className="row-group row-group--center row-group--gap-4">
                               <input
@@ -1331,7 +1331,7 @@ export default function HomeClient() {
                         />
                       </label>
                       <label className="main-overview--field flex-fill">
-                        <span className="label--md">납입일</span>
+                        <span className="form-label label--md">납입일</span>
                         <select
                           className="main-overview--control body--sm"
                           value={savingsPaymentDay}
@@ -1349,7 +1349,7 @@ export default function HomeClient() {
                       </label>
                       <label className="main-overview--field  flex-fill">
                         <div className="row-group row-group--center row-group--between">
-                          <span className="label--md">만기일</span>
+                          <span className="form-label label--md">만기일</span>
                           <label className="row-group row-group--center row-group--gap-4">
                             <input
                               type="checkbox"
@@ -1372,7 +1372,7 @@ export default function HomeClient() {
                     </div>
                     <div className="row-group row-group--center row-group--gap-8">
                       <label className="main-overview--field  flex-fill">
-                        <span className="label--md">현재 금액</span>
+                        <span className="form-label label--md">현재 금액</span>
                         <input
                           className="main-overview--control body--sm"
                           type="number"
@@ -1385,7 +1385,7 @@ export default function HomeClient() {
                         />
                       </label>
                       <label className="main-overview--field  flex-fill">
-                        <span className="label--md">적금 이름</span>
+                        <span className="form-label label--md">적금 이름</span>
                         <input
                           className="main-overview--control body--sm"
                           type="text"
@@ -1523,7 +1523,7 @@ export default function HomeClient() {
                   <div className="main-overview--form">
                     {fixedExpenseFormMode === "edit" ? (
                       <label className="main-overview--field">
-                        <span className="label--md">수정할 고정지출</span>
+                        <span className="form-label label--md">수정할 고정지출</span>
                         <select
                           className="main-overview--control body--sm"
                           value={fixedExpenseEditingId}
@@ -1548,7 +1548,7 @@ export default function HomeClient() {
                     <div className="grid-col-2">
                       <label className="main-overview--field  flex-fill">
                         <div className="row-group row-group--center row-group--between">
-                          <span className="label--md">지출 금액</span>
+                          <span className="form-label label--md">지출 금액</span>
                           {fixedExpenseFormMode === "edit" ? (
                             <label className="row-group row-group--center row-group--gap-4">
                               <input
@@ -1573,7 +1573,7 @@ export default function HomeClient() {
                       </label>
                       <label className="main-overview--field  flex-fill">
                         <div className="row-group row-group--center row-group--between">
-                          <span className="label--md">지출기한</span>
+                          <span className="form-label label--md">종료일</span>
                           <label className="row-group row-group--center row-group--gap-4">
                             <input
                               type="checkbox"
@@ -1582,7 +1582,7 @@ export default function HomeClient() {
                                 setFixedExpenseHasNoEndDate(event.target.checked)
                               }
                             />
-                            <span className="caption--md">기한 설정 안함</span>
+                            <span className="caption--md">종료일 설정 안함</span>
                           </label>
                         </div>
                         <input
@@ -1596,7 +1596,7 @@ export default function HomeClient() {
                     </div>
                     <div className="grid-col-2">
                       <label className="main-overview--field flex-fill">
-                        <span className="label--md">지출일</span>
+                        <span className="form-label label--md">지출일</span>
                         <select
                           className="main-overview--control body--sm"
                           value={fixedExpensePaymentDay}
@@ -1615,7 +1615,7 @@ export default function HomeClient() {
                         </select>
                       </label>
                       <label className="main-overview--field  flex-fill">
-                        <span className="label--md">지출명</span>
+                        <span className="form-label label--md">지출명</span>
                         <input
                           className="main-overview--control body--sm"
                           type="text"
