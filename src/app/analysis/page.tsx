@@ -145,7 +145,7 @@ export default function AnalysisPage() {
 
         <section className="analysis-content column-group column-group--gap-16">
           <div className="main-overview column-group column-group--gap-16">
-            <h3 className="main-common-title title--md">Overview</h3>
+            <h3 className="main-common-title title--md">월별 개요</h3>
             <div className="main-overview-analysis-card row-group row-group--stretch row-group--gap-16">
               <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
                 <h4 className="analysis-card--title title--sm">
