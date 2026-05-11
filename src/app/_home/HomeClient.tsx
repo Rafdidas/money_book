@@ -52,6 +52,7 @@ import {
   getCalendarDays,
   getDailySeries,
   getFallbackSavingsMeta,
+  getMemoWithPreservedMeta,
   getNextMonthPaymentChangeMessage,
   getOpenEndedSavingsDate,
   getSavingsPaymentDates,
@@ -308,7 +309,7 @@ export default function HomeClient() {
     setInlineCustomCategory(
       categoryList.includes(expense.category) ? "" : expense.category,
     );
-    setInlineMemo(expense.memo);
+    setInlineMemo(getVisibleMemo(expense.memo));
     setInlineDate(expense.date);
     setInlineType(expense.type);
   }, []);
@@ -1026,10 +1027,16 @@ export default function HomeClient() {
       return;
     }
 
+    const trimmedMemo = inlineMemo.trim();
+    const memo =
+      inlineFormMode === "edit" && selectedInlineExpense
+        ? getMemoWithPreservedMeta(trimmedMemo, selectedInlineExpense.memo)
+        : trimmedMemo;
+
     const payload: ExpenseFormData = {
       amount,
       category,
-      memo: inlineMemo.trim(),
+      memo,
       date: inlineDate,
       type: inlineType,
     };

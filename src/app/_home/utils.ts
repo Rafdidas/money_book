@@ -137,6 +137,17 @@ export const getVisibleMemo = (memo: string) =>
     .replace(fixedExpenseMetaPattern, "")
     .trim();
 
+export const getMemoWithPreservedMeta = (visibleMemo: string, sourceMemo: string) => {
+  const hiddenMeta =
+    sourceMemo.match(savingsMetaPattern)?.[0].trim() ??
+    sourceMemo.match(fixedExpenseMetaPattern)?.[0].trim();
+  const memo = visibleMemo.trim();
+
+  if (!hiddenMeta) return memo;
+  if (!memo) return hiddenMeta;
+  return `${memo} ${hiddenMeta}`;
+};
+
 export const isSavingsCategory = (category: string) => category.includes("적금");
 
 export const isSavingsItem = (item: Expense) =>
