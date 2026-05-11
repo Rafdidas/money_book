@@ -4,7 +4,7 @@
 
   &--wrap {
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
     border-radius: 12px;
     border: 1px solid var(--outline-lower);
     background-color: var(--surface-ultra-low);
@@ -29,6 +29,7 @@
       background-color: var(--surface-low);
       font-size: 15px;
       font-weight: 500;
+      white-space: nowrap;
     }
   }
   tbody {
@@ -37,6 +38,7 @@
       background-color: var(--transparent);
       font-size: 14px;
       text-align: center;
+      white-space: nowrap;
       
     }
     tr {

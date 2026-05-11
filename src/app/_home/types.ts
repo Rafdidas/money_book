@@ -1,0 +1,46 @@
+import type { Expense } from "@/types/expense";
+
+export type OverviewLine = {
+  values: number[];
+  color: "green" | "red" | "teal" | "blue";
+  label: string;
+};
+
+export type ExpenseFormData = Pick<Expense, "amount" | "category" | "memo" | "date" | "type">;
+export type InlineFormMode = "create" | "edit";
+
+export type SavingsMeta = {
+  id: string;
+  name: string;
+  paymentDay: number;
+  maturityDate: string;
+  initialAmount: number;
+  hasNoMaturity: boolean;
+};
+
+export type SavingsAccount = SavingsMeta & {
+  items: Expense[];
+  currentAmount: number;
+  monthlyPayment: number;
+  nextPaymentDate: string;
+};
+
+export type FixedExpenseMeta = {
+  id: string;
+  name: string;
+  paymentDay: number;
+  endDate: string;
+  hasNoEndDate: boolean;
+};
+
+export type FixedExpenseAccount = FixedExpenseMeta & {
+  items: Expense[];
+  monthlyAmount: number;
+  nextPaymentDate: string;
+};
+
+export type CategoryExpenseSlice = {
+  category: string;
+  amount: number;
+  percentage: number;
+};

@@ -1,0 +1,70 @@
+.app-alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(25, 28, 29, 0.24);
+}
+
+.app-alert {
+  width: min(100%, 328px);
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface-ultra-low);
+  box-shadow: 0 12px 32px rgba(6, 19, 31, 0.16);
+}
+
+.app-alert__wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.app-alert__title {
+  width: 100%;
+  color: var(--on-surface-ultra-high);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.app-alert__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.app-alert__message,
+.app-alert__description {
+  width: 100%;
+  color: var(--on-surface-higher);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.app-alert__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+}
+
+.app-alert__actions--single {
+  min-width: 120px;
+}
+
+.app-alert__actions--single .app-alert__button {
+  max-width: 144px;
+}
+
+.app-alert__button {
+  flex: 1 1 0;
+}

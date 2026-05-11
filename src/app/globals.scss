@@ -3,6 +3,7 @@
 @use "../components/common/footer";
 @use "../components/common/modal";
 @use "../components/common/side-menu";
+@use "../components/app-alert/app-alert";
 @use "../components/expense/expense-form";
 @use "../components/expense/expense-list";
 @use "../components/calendar/calendar-view";
@@ -21,6 +22,17 @@ html,
 body {
   min-height: 100%;
   font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overscroll-behavior: none;
+}
+
+body.overflow {
+  position: fixed;
+  top: var(--scroll-y, 0);
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+  touch-action: none;
   overscroll-behavior: none;
 }
 

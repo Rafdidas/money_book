@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import AppAlertProvider from "@/components/app-alert/AppAlertProvider";
 import { getExpenses } from "@/lib/api/expense";
 import { DEMO_USER_ID, isDemoModeEnabled, readDemoExpenses } from "@/lib/demo";
 import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
@@ -143,5 +144,9 @@ export default function Providers({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
+  return (
+    <AppDataContext.Provider value={value}>
+      <AppAlertProvider>{children}</AppAlertProvider>
+    </AppDataContext.Provider>
+  );
 }
