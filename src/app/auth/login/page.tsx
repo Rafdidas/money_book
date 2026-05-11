@@ -92,7 +92,7 @@ export default function LoginPage() {
         <section className="login-wrap">
           <div className="auth-brand-block">
             <h1 className="auth-brand auth-brand--logo headline--md">MONEY BOOK</h1>
-            <p className="auth-lead">당신의 자산 이야기를 기록합니다</p>
+            <p className="auth-lead label--lg">무료 개인 가계부로 현금흐름을 관리하세요</p>
           </div>
           <section className="login-card">
             <div className="auth-brand-block">

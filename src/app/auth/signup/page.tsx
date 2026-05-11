@@ -74,7 +74,9 @@ export default function SignupPage() {
             <h1 className="auth-brand auth-brand--logo auth-brand-sm headline--sm">
               MONEY BOOK
             </h1>
-            <p className="auth-lead">새로운 금융 여정을 시작하세요</p>
+            <p className="auth-lead label--lg">
+              무료 가계부를 시작하고 이번 달 현금흐름을 기록해보세요
+            </p>
           </div>
 
           <section className="signup-card">
