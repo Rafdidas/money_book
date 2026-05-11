@@ -9,13 +9,13 @@ const siteUrl = new URL(
 );
 const siteName = "Money Book";
 const siteDescription =
-  "수입, 지출, 저축, 투자 기록을 월별 대시보드와 분석 차트로 관리하는 개인 가계부 서비스입니다.";
+  "수입, 지출, 저축, 투자 기록을 월별 대시보드와 분석 차트로 관리하는 무료 개인 가계부 서비스입니다.";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
   applicationName: siteName,
   title: {
-    default: "Money Book | 개인 가계부",
+    default: "Money Book | 무료 개인 가계부",
     template: `%s | ${siteName}`,
   },
   description: siteDescription,
@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     "저축 관리",
     "투자 기록",
     "Money Book",
+    "무료 가계부",
   ],
   authors: [{ name: "Money Book" }],
   creator: "Money Book",
@@ -41,13 +42,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName,
-    title: "Money Book | 개인 가계부",
+    title: "Money Book | 무료 개인 가계부",
     description: siteDescription,
     locale: "ko_KR",
   },
   twitter: {
     card: "summary",
-    title: "Money Book | 개인 가계부",
+    title: "Money Book | 무료 개인 가계부",
     description: siteDescription,
   },
   robots: {
@@ -99,6 +100,7 @@ const jsonLd = [
       "카테고리별 지출 분석",
       "저축 및 투자 기록 관리",
       "로그인 없는 데모 모드",
+      "무료 가계부",
     ],
     offers: {
       "@type": "Offer",
