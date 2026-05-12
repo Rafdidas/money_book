@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { ChartOptions } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import { categoryChartColors } from "@/app/_home/constants";
 import "@/lib/chart";
 
 type CategoryDatum = {
@@ -15,8 +16,6 @@ type Props = {
   height?: number;
 };
 
-const palette = ["#506169", "#9f403d", "#84d5c8", "#88a2ff", "#d2f2ed", "#d8c087"];
-
 export default function CategoryDoughnutChart({ data, height = 260 }: Props) {
   const chartData = useMemo(
     () => ({
@@ -24,7 +23,9 @@ export default function CategoryDoughnutChart({ data, height = 260 }: Props) {
       datasets: [
         {
           data: data.map((item) => item.value),
-          backgroundColor: data.map((_, index) => palette[index % palette.length]),
+          backgroundColor: data.map(
+            (_, index) => categoryChartColors[index % categoryChartColors.length],
+          ),
           borderColor: "#ffffff",
           borderWidth: 4,
           hoverOffset: 8,

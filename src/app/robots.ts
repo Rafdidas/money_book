@@ -1,15 +1,24 @@
 import type { MetadataRoute } from "next";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://monibuk.com";
+import { getSiteUrl } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/auth/", "/api/"],
+      disallow: [
+        "/auth",
+        "/auth/",
+        "/api",
+        "/api/",
+        "/dashboard",
+        "/dashboard/",
+        "/mypage",
+        "/mypage/",
+        "/setting",
+        "/setting/",
+      ],
     },
-    sitemap: `${siteUrl}/sitemap.xml`,
-    host: siteUrl,
+    sitemap: getSiteUrl("/sitemap.xml"),
   };
 }
