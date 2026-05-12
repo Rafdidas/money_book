@@ -1214,6 +1214,330 @@ export default function HomeClient() {
                 />
               </div>
             </div>
+            <h3 className="main-common-title title--md">등록 / 수정</h3>
+            <div className="row-group row-group--stretch row-group--gap-16">
+              {/* 달력 */}
+              <div className="card overview-card main-overview--calendar-card column-group--center ">
+                <div className="column-group column-group--gap-16">
+                  <div className="main-overview--section-header row-group row-group--center row-group--between">
+                    <h4 className="main-overview--title title--sm">
+                      {selectedDateKey.replaceAll("-", ".")} 현황
+                    </h4>
+                    <div className="main-overview--calendar-nav row-group row-group--center">
+                      <button
+                        type="button"
+                        className="button button--icon-only button--sm button--subtle"
+                        aria-label="이전 달"
+                        onClick={() => handleOverviewMonthChange(-1)}
+                      >
+                        <span className="material-symbols-outlined" aria-hidden="true">
+                          chevron_left
+                        </span>
+                      </button>
+                      <span className="label--lg">
+                        {currentYear}.{String(currentMonth + 1).padStart(2, "0")}
+                      </span>
+                      <button
+                        type="button"
+                        className="button button--icon-only button--sm button--subtle"
+                        aria-label="다음 달"
+                        onClick={() => handleOverviewMonthChange(1)}
+                      >
+                        <span className="material-symbols-outlined" aria-hidden="true">
+                          chevron_right
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="main-overview--calendar">
+                    <div className="main-overview--weekday-row">
+                      {weekdayLabels.map((label) => (
+                        <span key={label} className="label--sm">
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="main-overview--calendar-grid">
+                      {calendarDays.map((date) => {
+                        const key = formatDate(date);
+                        const isCurrentMonth = date.getMonth() === currentMonth;
+                        const isToday = key === formatDate(today);
+                        const isSelected = key === selectedDateKey;
+                        const hasEntries = Boolean(dayMap[key]);
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            className={`main-overview--day body--sm ${!isCurrentMonth ? "is-muted" : ""} ${isToday ? "is-today" : ""} ${isSelected ? "is-selected" : ""}`}
+                            onClick={() => setSelectedDate(date)}
+                          >
+                            <span className="day-unit body--lg">{date.getDate()}</span>
+                            {hasEntries ? (
+                              <span className="main-overview--day-dot" />
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="main-overview--calendar-footer column-group column-group--gap-8">
+                    <div className="row-group row-group--center row-group--between">
+                      <span className="bodyBold--md">선택일</span>
+                      <strong className="bodyBold--md">
+                        {selectedDayItems.length}건
+                      </strong>
+                    </div>
+                    <ul className="calendar-content column-group column-group--gap-4">
+                      {selectedDayItems.map((item) => {
+                        const isIncome = item.type === "income";
+                        const isSavings = isSavingsItem(item);
+                        return (
+                          <li
+                            key={item.id}
+                            className="calendar-content--item row-group row-group--center row-group--gap-16"
+                          >
+                            <p className="calendar-content--sort">
+                              <span
+                                className={`badge ${
+                                  isSavings
+                                    ? "badge--blue"
+                                    : isIncome
+                                      ? "badge--green"
+                                      : "badge--red"
+                                }`}
+                              >
+                                {isSavings ? "저축" : isIncome ? "수입" : "지출"}
+                              </span>
+                            </p>
+                            <div className="row-group row-group--center row-group--gap-8">
+                              <p className="calendar-content--num label--lg">
+                                {item.category}
+                              </p>
+                              <p className="calendar-content--num label--lg">
+                                {formatCurrency(item.amount)}
+                              </p>
+                            </div>
+                            <p className="calendar-content--num label--lg">
+                              {getVisibleMemo(item.memo) || "-"}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              {/* 입력, 수정 */}
+              <div className="card overview-card main-overview--form-card column-group--center ">
+                <div className="column-group column-group--gap-16">
+                  <div className="main-overview--section-header row-group row-group--center row-group--between">
+                    <h4 className="main-overview--title title--sm">내역 추가/수정</h4>
+                    <div
+                      className="main-overview--tabs"
+                      role="tablist"
+                      aria-label="내역 입력 모드"
+                    >
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={inlineFormMode === "create"}
+                        className={`main-overview--tab bodyBold--sm ${inlineFormMode === "create" ? "is-active" : ""}`}
+                        onClick={() => handleInlineModeChange("create")}
+                      >
+                        추가
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={inlineFormMode === "edit"}
+                        className={`main-overview--tab bodyBold--sm ${inlineFormMode === "edit" ? "is-active" : ""}`}
+                        onClick={() => handleInlineModeChange("edit")}
+                      >
+                        수정
+                      </button>
+                    </div>
+                  </div>
+                  <div className="main-overview--form">
+                    {inlineFormMode === "edit" ? (
+                      <label className="main-overview--field">
+                        <span className="label--md">수정할 내역</span>
+                        <select
+                          className="main-overview--control body--sm"
+                          value={inlineEditingId}
+                          onChange={(event) => setInlineEditingId(event.target.value)}
+                          disabled={inlineEditItems.length === 0}
+                        >
+                          {inlineEditItems.length === 0 ? (
+                            <option value="">이번 달 내역 없음</option>
+                          ) : (
+                            inlineEditItems.map((item) => (
+                              <option key={item.id} value={item.id}>
+                                {item.date} · {getVisibleMemo(item.memo) || item.category}{" "}
+                                · {item.amount.toLocaleString()}원
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </label>
+                    ) : null}
+                    <div className="main-overview--type-toggle">
+                      <button
+                        type="button"
+                        className={`main-overview--type bodyBold--sm ${inlineType === "expense" ? "is-active" : ""}`}
+                        onClick={() => handleInlineTypeChange("expense")}
+                      >
+                        지출
+                      </button>
+                      <button
+                        type="button"
+                        className={`main-overview--type bodyBold--sm ${inlineType === "income" ? "is-active" : ""}`}
+                        onClick={() => handleInlineTypeChange("income")}
+                      >
+                        수입
+                      </button>
+                    </div>
+                    <div className="main-overview--form-grid">
+                      <label className="main-overview--field">
+                        <span className="label--md">카테고리</span>
+                        <select
+                          className="main-overview--control body--sm"
+                          value={inlineCategory}
+                          onChange={(event) => setInlineCategory(event.target.value)}
+                        >
+                          {activeCategoryOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                          <option value={customCategoryValue}>직접 입력</option>
+                        </select>
+                      </label>
+                      <label className="main-overview--field">
+                        <span className="label--md">날짜</span>
+                        <input
+                          className="main-overview--control body--sm"
+                          type="date"
+                          value={inlineDate}
+                          onChange={(event) => setInlineDate(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    {inlineCategory === customCategoryValue ? (
+                      <label className="main-overview--field">
+                        <span className="label--md">임시 카테고리</span>
+                        <input
+                          className="main-overview--control body--sm"
+                          type="text"
+                          placeholder="예: 병원, 선물"
+                          value={inlineCustomCategory}
+                          onChange={(event) =>
+                            setInlineCustomCategory(event.target.value)
+                          }
+                        />
+                      </label>
+                    ) : null}
+                    <div className="main-overview--form-grid">
+                      <label className="main-overview--field">
+                        <span className="label--md">금액</span>
+                        <input
+                          className="main-overview--control body--sm"
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={inlineAmount}
+                          onChange={(event) => setInlineAmount(event.target.value)}
+                        />
+                      </label>
+                      <label className="main-overview--field">
+                        <span className="label--md">메모</span>
+                        <input
+                          className="main-overview--control body--sm"
+                          type="text"
+                          placeholder="간단한 메모"
+                          value={inlineMemo}
+                          onChange={(event) => setInlineMemo(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <div className="main-overview--actions row-group row-group--center row-group--gap-8">
+                      {inlineFormMode === "edit" ? (
+                        <button
+                          type="button"
+                          className="button button--outline button--md main-overview--delete"
+                          onClick={handleInlineDelete}
+                          disabled={
+                            isInlineSubmitting ||
+                            isInlineDeleting ||
+                            !selectedInlineExpense
+                          }
+                        >
+                          {isInlineDeleting ? "삭제 중..." : "삭제"}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="button button--primary button--md button--full main-overview--submit"
+                        onClick={handleInlineSubmit}
+                        disabled={
+                          isInlineSubmitting ||
+                          isInlineDeleting ||
+                          (inlineFormMode === "edit" && !selectedInlineExpense)
+                        }
+                      >
+                        {isInlineSubmitting
+                          ? "저장 중..."
+                          : inlineFormMode === "edit"
+                            ? "수정 저장"
+                            : "내역 추가"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* 카테고리 지출 비율 */}
+              <div className="card overview-card main-overview--category-rate-card column-group column-group--gap-16">
+                <div className="column-group column-group--gap-16">
+                  <h4 className="main-overview--title title--sm">카테고리 지출 비율</h4>
+                  <div className="graph-section">
+                    <CategoryPieChart items={categoryExpenseItems} />
+                  </div>
+                </div>
+                <div className="column-group column-group--gap-16">
+                  <ul className="content-rate column-group column-group--gap-16">
+                    {categoryExpenseItems.length ? (
+                      categoryExpenseItems.map((item, index) => (
+                        <li
+                          key={item.category}
+                          className="column-group column-group--gap-8"
+                          style={
+                            {
+                              "--content-rate": `${item.percentage}%`,
+                              "--content-rate-color":
+                                categoryChartColors[index % categoryChartColors.length],
+                            } as CSSProperties
+                          }
+                        >
+                          <div className="row-group row-group--center row-group--between">
+                            <span className="label--lg">{item.category}</span>
+                            <span className="bodyBold--md">
+                              {item.percentage.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div
+                            className="content-rate--percentage"
+                            aria-label={`${item.category} ${item.percentage.toFixed(1)}%`}
+                          />
+                        </li>
+                      ))
+                    ) : (
+                      <li className="content-rate--empty label--md">
+                        이번 달 지출 내역이 없습니다.
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
             <h3 className="main-common-title title--md">특수지출</h3>
             <div className="row-group row-group--stretch row-group--gap-16">
               {/* 적금 */}
@@ -1682,330 +2006,6 @@ export default function HomeClient() {
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
-            </div>
-            <h3 className="main-common-title title--md">등록 / 수정</h3>
-            <div className="row-group row-group--stretch row-group--gap-16">
-              {/* 달력 */}
-              <div className="card overview-card main-overview--calendar-card column-group--center ">
-                <div className="column-group column-group--gap-16">
-                  <div className="main-overview--section-header row-group row-group--center row-group--between">
-                    <h4 className="main-overview--title title--sm">
-                      {selectedDateKey.replaceAll("-", ".")} 현황
-                    </h4>
-                    <div className="main-overview--calendar-nav row-group row-group--center">
-                      <button
-                        type="button"
-                        className="button button--icon-only button--sm button--subtle"
-                        aria-label="이전 달"
-                        onClick={() => handleOverviewMonthChange(-1)}
-                      >
-                        <span className="material-symbols-outlined" aria-hidden="true">
-                          chevron_left
-                        </span>
-                      </button>
-                      <span className="label--lg">
-                        {currentYear}.{String(currentMonth + 1).padStart(2, "0")}
-                      </span>
-                      <button
-                        type="button"
-                        className="button button--icon-only button--sm button--subtle"
-                        aria-label="다음 달"
-                        onClick={() => handleOverviewMonthChange(1)}
-                      >
-                        <span className="material-symbols-outlined" aria-hidden="true">
-                          chevron_right
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="main-overview--calendar">
-                    <div className="main-overview--weekday-row">
-                      {weekdayLabels.map((label) => (
-                        <span key={label} className="label--sm">
-                          {label}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="main-overview--calendar-grid">
-                      {calendarDays.map((date) => {
-                        const key = formatDate(date);
-                        const isCurrentMonth = date.getMonth() === currentMonth;
-                        const isToday = key === formatDate(today);
-                        const isSelected = key === selectedDateKey;
-                        const hasEntries = Boolean(dayMap[key]);
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            className={`main-overview--day body--sm ${!isCurrentMonth ? "is-muted" : ""} ${isToday ? "is-today" : ""} ${isSelected ? "is-selected" : ""}`}
-                            onClick={() => setSelectedDate(date)}
-                          >
-                            <span className="day-unit body--lg">{date.getDate()}</span>
-                            {hasEntries ? (
-                              <span className="main-overview--day-dot" />
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="main-overview--calendar-footer column-group column-group--gap-8">
-                    <div className="row-group row-group--center row-group--between">
-                      <span className="bodyBold--md">선택일</span>
-                      <strong className="bodyBold--md">
-                        {selectedDayItems.length}건
-                      </strong>
-                    </div>
-                    <ul className="calendar-content column-group column-group--gap-4">
-                      {selectedDayItems.map((item) => {
-                        const isIncome = item.type === "income";
-                        const isSavings = isSavingsItem(item);
-                        return (
-                          <li
-                            key={item.id}
-                            className="calendar-content--item row-group row-group--center row-group--gap-16"
-                          >
-                            <p className="calendar-content--sort">
-                              <span
-                                className={`badge ${
-                                  isSavings
-                                    ? "badge--blue"
-                                    : isIncome
-                                      ? "badge--green"
-                                      : "badge--red"
-                                }`}
-                              >
-                                {isSavings ? "저축" : isIncome ? "수입" : "지출"}
-                              </span>
-                            </p>
-                            <div className="row-group row-group--center row-group--gap-8">
-                              <p className="calendar-content--num label--lg">
-                                {item.category}
-                              </p>
-                              <p className="calendar-content--num label--lg">
-                                {formatCurrency(item.amount)}
-                              </p>
-                            </div>
-                            <p className="calendar-content--num label--lg">
-                              {getVisibleMemo(item.memo) || "-"}
-                            </p>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              {/* 입력, 수정 */}
-              <div className="card overview-card main-overview--form-card column-group--center ">
-                <div className="column-group column-group--gap-16">
-                  <div className="main-overview--section-header row-group row-group--center row-group--between">
-                    <h4 className="main-overview--title title--sm">내역 추가/수정</h4>
-                    <div
-                      className="main-overview--tabs"
-                      role="tablist"
-                      aria-label="내역 입력 모드"
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={inlineFormMode === "create"}
-                        className={`main-overview--tab bodyBold--sm ${inlineFormMode === "create" ? "is-active" : ""}`}
-                        onClick={() => handleInlineModeChange("create")}
-                      >
-                        추가
-                      </button>
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={inlineFormMode === "edit"}
-                        className={`main-overview--tab bodyBold--sm ${inlineFormMode === "edit" ? "is-active" : ""}`}
-                        onClick={() => handleInlineModeChange("edit")}
-                      >
-                        수정
-                      </button>
-                    </div>
-                  </div>
-                  <div className="main-overview--form">
-                    {inlineFormMode === "edit" ? (
-                      <label className="main-overview--field">
-                        <span className="label--md">수정할 내역</span>
-                        <select
-                          className="main-overview--control body--sm"
-                          value={inlineEditingId}
-                          onChange={(event) => setInlineEditingId(event.target.value)}
-                          disabled={inlineEditItems.length === 0}
-                        >
-                          {inlineEditItems.length === 0 ? (
-                            <option value="">이번 달 내역 없음</option>
-                          ) : (
-                            inlineEditItems.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.date} · {getVisibleMemo(item.memo) || item.category}{" "}
-                                · {item.amount.toLocaleString()}원
-                              </option>
-                            ))
-                          )}
-                        </select>
-                      </label>
-                    ) : null}
-                    <div className="main-overview--type-toggle">
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${inlineType === "expense" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("expense")}
-                      >
-                        지출
-                      </button>
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${inlineType === "income" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("income")}
-                      >
-                        수입
-                      </button>
-                    </div>
-                    <div className="main-overview--form-grid">
-                      <label className="main-overview--field">
-                        <span className="label--md">카테고리</span>
-                        <select
-                          className="main-overview--control body--sm"
-                          value={inlineCategory}
-                          onChange={(event) => setInlineCategory(event.target.value)}
-                        >
-                          {activeCategoryOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                          <option value={customCategoryValue}>직접 입력</option>
-                        </select>
-                      </label>
-                      <label className="main-overview--field">
-                        <span className="label--md">날짜</span>
-                        <input
-                          className="main-overview--control body--sm"
-                          type="date"
-                          value={inlineDate}
-                          onChange={(event) => setInlineDate(event.target.value)}
-                        />
-                      </label>
-                    </div>
-                    {inlineCategory === customCategoryValue ? (
-                      <label className="main-overview--field">
-                        <span className="label--md">임시 카테고리</span>
-                        <input
-                          className="main-overview--control body--sm"
-                          type="text"
-                          placeholder="예: 병원, 선물"
-                          value={inlineCustomCategory}
-                          onChange={(event) =>
-                            setInlineCustomCategory(event.target.value)
-                          }
-                        />
-                      </label>
-                    ) : null}
-                    <div className="main-overview--form-grid">
-                      <label className="main-overview--field">
-                        <span className="label--md">금액</span>
-                        <input
-                          className="main-overview--control body--sm"
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={inlineAmount}
-                          onChange={(event) => setInlineAmount(event.target.value)}
-                        />
-                      </label>
-                      <label className="main-overview--field">
-                        <span className="label--md">메모</span>
-                        <input
-                          className="main-overview--control body--sm"
-                          type="text"
-                          placeholder="간단한 메모"
-                          value={inlineMemo}
-                          onChange={(event) => setInlineMemo(event.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <div className="main-overview--actions row-group row-group--center row-group--gap-8">
-                      {inlineFormMode === "edit" ? (
-                        <button
-                          type="button"
-                          className="button button--outline button--md main-overview--delete"
-                          onClick={handleInlineDelete}
-                          disabled={
-                            isInlineSubmitting ||
-                            isInlineDeleting ||
-                            !selectedInlineExpense
-                          }
-                        >
-                          {isInlineDeleting ? "삭제 중..." : "삭제"}
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="button button--primary button--md button--full main-overview--submit"
-                        onClick={handleInlineSubmit}
-                        disabled={
-                          isInlineSubmitting ||
-                          isInlineDeleting ||
-                          (inlineFormMode === "edit" && !selectedInlineExpense)
-                        }
-                      >
-                        {isInlineSubmitting
-                          ? "저장 중..."
-                          : inlineFormMode === "edit"
-                            ? "수정 저장"
-                            : "내역 추가"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* 카테고리 지출 비율 */}
-              <div className="card overview-card main-overview--category-rate-card column-group column-group--gap-16">
-                <div className="column-group column-group--gap-16">
-                  <h4 className="main-overview--title title--sm">카테고리 지출 비율</h4>
-                  <div className="graph-section">
-                    <CategoryPieChart items={categoryExpenseItems} />
-                  </div>
-                </div>
-                <div className="column-group column-group--gap-16">
-                  <ul className="content-rate column-group column-group--gap-16">
-                    {categoryExpenseItems.length ? (
-                      categoryExpenseItems.map((item, index) => (
-                        <li
-                          key={item.category}
-                          className="column-group column-group--gap-8"
-                          style={
-                            {
-                              "--content-rate": `${item.percentage}%`,
-                              "--content-rate-color":
-                                categoryChartColors[index % categoryChartColors.length],
-                            } as CSSProperties
-                          }
-                        >
-                          <div className="row-group row-group--center row-group--between">
-                            <span className="label--lg">{item.category}</span>
-                            <span className="bodyBold--md">
-                              {item.percentage.toFixed(1)}%
-                            </span>
-                          </div>
-                          <div
-                            className="content-rate--percentage"
-                            aria-label={`${item.category} ${item.percentage.toFixed(1)}%`}
-                          />
-                        </li>
-                      ))
-                    ) : (
-                      <li className="content-rate--empty label--md">
-                        이번 달 지출 내역이 없습니다.
-                      </li>
-                    )}
-                  </ul>
                 </div>
               </div>
             </div>
