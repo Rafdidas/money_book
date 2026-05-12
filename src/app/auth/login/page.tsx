@@ -96,7 +96,7 @@ export default function LoginPage() {
           </div>
           <section className="login-card">
             <div className="auth-brand-block">
-              <h1 className="auth-brand headline--md">Sign in</h1>
+              <h1 className="auth-brand headline--md">로그인</h1>
               {/* <p className="auth-lead">당신의 자산 이야기를 기록합니다</p> */}
             </div>
             <form ref={formRef} className="auth-form" onSubmit={handleLogin}>

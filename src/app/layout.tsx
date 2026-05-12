@@ -22,9 +22,14 @@ export const metadata: Metadata = {
   },
   description: siteDescription,
   keywords: siteKeywords,
-  authors: [{ name: "Money Book" }],
-  creator: "Money Book",
-  publisher: "Money Book",
+  verification: {
+    other: {
+      "naver-site-verification": "9f9d6d6fe721722acddd6199cdc7cea35d2b7484",
+    },
+  },
+  authors: [{ name: siteName }],
+  creator: siteName,
+  publisher: siteName,
   alternates: {
     canonical: "/",
     languages: {

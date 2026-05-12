@@ -81,7 +81,7 @@ export default function SignupPage() {
 
           <section className="signup-card">
             <div className="auth-brand-block">
-              <h1 className="auth-brand auth-brand-sm headline--sm">Sign up</h1>
+              <h1 className="auth-brand auth-brand-sm headline--sm">회원가입</h1>
               {/* <p className="auth-lead">새로운 금융 여정을 시작하세요</p> */}
             </div>
             <form className="auth-form" onSubmit={handleSignup}>
