@@ -64,16 +64,16 @@ export const metadata: Metadata = {
   category: "finance",
 };
 
-// export const viewport: Viewport = {
-//   width: "device-width",
-//   initialScale: 1,
-//   maximumScale: 1,
-//   userScalable: false,
-// };
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
+// export const viewport: Viewport = {
+//   width: "device-width",
+//   initialScale: 1,
+// };
 
 const jsonLd = [
   {

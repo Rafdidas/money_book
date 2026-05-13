@@ -1,5 +1,139 @@
-import HomeClient from "@/app/_home/HomeClient";
+import type { Metadata } from "next";
+import IntroPage from "@/app/_intro/IntroPage";
+import {
+  getSiteUrl,
+  siteDescription,
+  siteKeywords,
+  siteName,
+  siteTitle,
+} from "@/lib/site";
+
+const pageTitle = "머니북가계부 | 무료 온라인 개인 가계부";
+const pageDescription =
+  "머니북가계부는 수입, 지출, 고정지출, 저축, 투자 기록을 한 곳에서 관리하고 월별 분석 차트로 소비 흐름을 확인하는 무료 온라인 가계부 서비스입니다.";
+
+export const metadata: Metadata = {
+  title: pageTitle,
+  description: pageDescription,
+  keywords: [
+    ...siteKeywords,
+    "무료 온라인 가계부",
+    "월별 가계부",
+    "소비 분석",
+    "현금흐름 관리",
+    "고정비 관리",
+    "적금 관리",
+    "주식 기록",
+  ],
+  alternates: {
+    canonical: "/",
+    languages: {
+      "ko-KR": "/",
+      "x-default": "/",
+    },
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName,
+    title: pageTitle,
+    description: pageDescription,
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: pageTitle,
+    description: pageDescription,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+};
+
+const pageJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: siteTitle,
+    url: getSiteUrl(),
+    inLanguage: "ko-KR",
+    description: siteDescription,
+    isPartOf: {
+      "@type": "WebSite",
+      name: siteName,
+      url: getSiteUrl(),
+    },
+    about: [
+      "무료 가계부",
+      "수입 지출 관리",
+      "월별 지출 분석",
+      "고정지출 관리",
+      "저축 관리",
+      "투자 기록",
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "머니북가계부는 무료로 사용할 수 있나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "네. 머니북가계부는 수입, 지출, 저축, 고정지출, 월별 분석 등 기본 가계부 기능을 무료로 사용할 수 있습니다.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "모바일에서도 사용할 수 있나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "네. 머니북가계부는 모바일 웹과 PC 브라우저에서 사용할 수 있으며 로그인 후 데이터를 관리할 수 있습니다.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "어떤 가계부 기능을 제공하나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "월별 수입과 지출 기록, 카테고리별 소비 분석, 고정지출 관리, 저축 관리, 투자 기록 기능을 제공합니다.",
+        },
+      },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "머니북가계부",
+        item: getSiteUrl(),
+      },
+    ],
+  },
+];
 
 export default function Home() {
-  return <HomeClient />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(pageJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <IntroPage />
+    </>
+  );
 }

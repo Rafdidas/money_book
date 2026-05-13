@@ -26,7 +26,7 @@ function AuthCallbackContent() {
             return;
           }
 
-          router.replace("/");
+          router.replace("/app");
           return;
         }
 
@@ -39,7 +39,7 @@ function AuthCallbackContent() {
           return;
         }
 
-        router.replace("/");
+        router.replace("/app");
       } catch (error) {
         if (isCancelled) return;
         setErrorMessage(

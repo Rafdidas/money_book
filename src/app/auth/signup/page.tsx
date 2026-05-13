@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { disableDemoMode } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
+import logo from "@/assets/img/monibuk-logo.svg";
+import Image from "next/image";
 
 const getSignupErrorMessage = (message: string) => {
   if (message.includes("email rate limit exceeded")) {
@@ -56,7 +58,7 @@ export default function SignupPage() {
       }
 
       disableDemoMode();
-      router.replace("/");
+      router.replace("/app");
       router.refresh();
     } finally {
       setIsSubmitting(false);
@@ -72,7 +74,13 @@ export default function SignupPage() {
         <section className="signup-wrap">
           <div className="auth-brand-block auth-brand-block--logo">
             <h1 className="auth-brand auth-brand--logo auth-brand-sm headline--sm">
-              MONEY BOOK
+              <Image
+                src={logo}
+                width={232}
+                height={52}
+                alt="머니북가계부 로고"
+                priority
+              />
             </h1>
             <p className="auth-lead label--lg">
               무료 가계부를 시작하고 이번 달 현금흐름을 기록해보세요

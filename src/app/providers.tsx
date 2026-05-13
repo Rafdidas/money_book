@@ -41,6 +41,7 @@ export const useAppData = () => {
 export default function Providers({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const isAppRoute = pathname === "/app" || pathname.startsWith("/app/");
   const [userId, setUserId] = useState("");
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [displayName, setDisplayName] = useState("게스트");
@@ -60,7 +61,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   }, [userId]);
 
   useEffect(() => {
-    if (pathname.startsWith("/auth")) {
+    if (!isAppRoute) {
       return;
     }
 
@@ -121,7 +122,7 @@ export default function Providers({ children }: { children: ReactNode }) {
     return () => {
       isCancelled = true;
     };
-  }, [pathname, router, userId]);
+  }, [isAppRoute, router, userId]);
 
   const value = useMemo<AppDataContextValue>(
     () => ({
@@ -130,7 +131,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       displayName,
       displayEmail,
       isDemoMode,
-      isAuthResolved: pathname.startsWith("/auth") || isAuthResolved,
+      isAuthResolved: !isAppRoute || isAuthResolved,
       refreshExpenses,
     }),
     [
@@ -139,7 +140,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       expenses,
       isAuthResolved,
       isDemoMode,
-      pathname,
+      isAppRoute,
       refreshExpenses,
     ],
   );

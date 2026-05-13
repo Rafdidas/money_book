@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="232" height="52" viewBox="0 0 232 52" fill="none">
+<rect x="0" y="4" width="40" height="40" rx="10" fill="#226cff"/>
+<path d="M10 32V16H15L20 25.5L25 16H30V32H25.8V23.4L21.4 32H18.6L14.2 23.4V32H10Z" fill="white"/>
+<text x="52" y="24" font-family="Pretendard, Arial, sans-serif" font-size="22" font-weight="800" fill="#111827">머니북가계부</text>
+<text x="53" y="43" font-family="Arial, sans-serif" font-size="10" font-weight="700" letter-spacing="5" fill="#6b7280">MONIBUK</text>
+</svg>

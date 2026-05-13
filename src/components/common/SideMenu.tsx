@@ -14,16 +14,22 @@ type SideMenuProps = {
 
 const navItems = [
   {
-    href: "/",
+    href: "/app",
     icon: "home",
     label: "대시보드",
-    isActive: (pathname: string) => pathname === "/",
+    isActive: (pathname: string) => pathname === "/app",
   },
   {
-    href: "/analysis",
+    href: "/app/analysis",
     icon: "analytics",
     label: "월별 분석",
-    isActive: (pathname: string) => pathname.startsWith("/analysis"),
+    isActive: (pathname: string) => pathname.startsWith("/app/analysis"),
+  },
+  {
+    href: "/app/invest",
+    icon: "trending_up",
+    label: "투자",
+    isActive: (pathname: string) => pathname.startsWith("/app/invest"),
   },
 ];
 

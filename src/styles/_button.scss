@@ -225,6 +225,21 @@
     --button-border-disabled: var(--overlay-gray-mid, rgba(90, 105, 138, 0.2));
   }
 
+  &--outline-primary {
+    --button-bg: var(--surface-ultra-low, #ffffff);
+    --button-bg-hover: var(--primary-ultra-low, #eff5ff);
+    --button-bg-pressed: var(--primary-lowest, #dae6ff);
+    --button-bg-disabled: var(--surface-ultra-low, #ffffff);
+    --button-text: var(--on-primary-high, #1d5bd6);
+    --button-text-hover: var(--on-primary-higher, #1749ad);
+    --button-text-pressed: var(--on-primary-highest, #123885);
+    --button-text-disabled: var(--on-surface-low, #c9cdd4);
+    --button-border: var(--primary-high, #5991ff);
+    --button-border-hover: var(--primary-higher, #1d5bd6);
+    --button-border-pressed: var(--primary-highest, #1749ad);
+    --button-border-disabled: var(--overlay-gray-mid, rgba(90, 105, 138, 0.2));
+  }
+
   &--subtle {
     --button-bg: transparent;
     --button-bg-hover: var(--overlay-gray, rgba(55, 93, 137, 0.05));

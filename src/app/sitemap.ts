@@ -16,27 +16,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
         },
       },
     },
-    {
-      url: getSiteUrl("/analysis"),
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.7,
-      alternates: {
-        languages: {
-          "ko-KR": getSiteUrl("/analysis"),
-        },
-      },
-    },
-    {
-      url: getSiteUrl("/invest"),
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.6,
-      alternates: {
-        languages: {
-          "ko-KR": getSiteUrl("/invest"),
-        },
-      },
-    },
   ];
 }

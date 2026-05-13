@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { disableDemoMode, enableDemoMode } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
+import logo from "@/assets/img/monibuk-logo.svg";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,7 +22,7 @@ export default function LoginPage() {
       const { data } = await supabase.auth.getUser();
 
       if (data.user) {
-        router.replace("/");
+        router.replace("/app");
       }
     };
 
@@ -70,7 +72,7 @@ export default function LoginPage() {
       formRef.current?.reset();
       setEmail("");
       setPassword("");
-      router.replace("/");
+      router.replace("/app");
       router.refresh();
     } finally {
       setIsSubmitting(false);
@@ -79,7 +81,7 @@ export default function LoginPage() {
 
   const handleDemoLogin = () => {
     enableDemoMode();
-    router.replace("/");
+    router.replace("/app");
     router.refresh();
   };
 
@@ -91,8 +93,18 @@ export default function LoginPage() {
       <main className="login-stage">
         <section className="login-wrap">
           <div className="auth-brand-block">
-            <h1 className="auth-brand auth-brand--logo headline--md">MONEY BOOK</h1>
-            <p className="auth-lead label--lg">무료 개인 가계부로 현금흐름을 관리하세요</p>
+            <h1 className="auth-brand auth-brand--logo headline--md">
+              <Image
+                src={logo}
+                width={232}
+                height={52}
+                alt="머니북가계부 로고"
+                priority
+              />
+            </h1>
+            <p className="auth-lead label--lg">
+              무료 개인 가계부로 현금흐름을 관리하세요
+            </p>
           </div>
           <section className="login-card">
             <div className="auth-brand-block">

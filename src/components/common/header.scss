@@ -1,5 +1,6 @@
 .app-header {
   min-height: 52px;
+
   &--inner {
     position: fixed;
     top: 0;
@@ -9,13 +10,32 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 8px 12px;
+    padding: 0 12px;
     min-height: 52px;
     background: var(--surface-ultra-low);
     border-bottom: 1px solid var(--outline-low);
   }
   &__brand {
-    font-family: var(--font-paperlogy);
+    > img {
+      width: auto;
+      height: 40px;
+    }
   }
- 
+
+  &--intro {
+    min-height: 52px;
+
+    .hd-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-header--inner {
+      min-height: 52px;
+      padding: 0 max(20px, calc((100vw - 1400px) / 2));
+    }
+
+  }
+
 }
