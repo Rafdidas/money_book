@@ -25,12 +25,6 @@ const navItems = [
     label: "월별 분석",
     isActive: (pathname: string) => pathname.startsWith("/app/analysis"),
   },
-  {
-    href: "/app/invest",
-    icon: "trending_up",
-    label: "투자",
-    isActive: (pathname: string) => pathname.startsWith("/app/invest"),
-  },
 ];
 
 export default function SideMenu({
