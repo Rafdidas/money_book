@@ -3,10 +3,10 @@ import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
   title: "로그인",
-  description: "Money Book에 로그인하거나 데모 모드로 개인 가계부 기능을 체험하세요.",
+  description: "머니북에 로그인하거나 데모 모드로 무료 온라인 가계부 기능을 체험하세요.",
   robots: {
     index: false,
-    follow: false,
+    follow: true,
   },
 };
 

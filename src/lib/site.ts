@@ -4,31 +4,27 @@ export const siteUrl = new URL(rawSiteUrl.endsWith("/") ? rawSiteUrl : `${rawSit
 export const siteName = "머니북가계부";
 export const siteTitle = "머니북가계부 | 무료가계부";
 export const siteDescription =
-  "수입, 지출, 저축, 투자 기록을 월별 대시보드와 분석 차트로 관리하는 무료 온라인 개인 가계부 서비스입니다.";
+  "수입, 지출, 저축, 투자 내역을 기록하고 월별 대시보드와 분석 차트로 소비 흐름을 확인할 수 있는 무료 온라인 개인 가계부 서비스입니다.";
 
 export const siteKeywords = [
   "가계부",
   "무료 가계부",
   "개인 가계부",
   "온라인 가계부",
+  "웹 가계부",
+  "인터넷 가계부",
   "수입 지출 관리",
-  "월별 지출 분석",
-  "저축 관리",
+  "월별 지출 관리",
   "고정지출 관리",
+  "저축 관리",
   "투자 기록",
-  "Money Book",
+  "자산 관리",
+  "가계부 프로그램",
+  "가계부 추천",
+  "가계부 쓰는 법",
   "머니북",
-  "머니북가계부",
-  "가계부",
-  "인터넷가계부",
-  "무료가계부",
-  "가계부프로그램",
-  "회계",
-  "가계부서비스",
-  "가계부어플",
-  "자산관리",
-  "가계부항목",
-  "전자가계부",
+  "머니북 가계부",
+  "Money Book",
 ];
 
 export const getSiteUrl = (path = "/") => new URL(path, siteUrl).toString();

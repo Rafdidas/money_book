@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { disableDemoMode, enableDemoMode } from "@/lib/demo";
+import { setRememberLogin } from "@/lib/supabase/auth-storage";
 import { supabase } from "@/lib/supabase/client";
 import logo from "@/assets/img/monibuk-logo.svg";
 import Image from "next/image";
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rememberLogin, setRememberLoginState] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
@@ -53,6 +55,7 @@ export default function LoginPage() {
 
     try {
       setIsSubmitting(true);
+      setRememberLogin(rememberLogin);
 
       const { error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
@@ -60,6 +63,7 @@ export default function LoginPage() {
       });
 
       if (error) {
+        setRememberLogin(false);
         formRef.current?.reset();
         setEmail("");
         setPassword("");
@@ -172,6 +176,15 @@ export default function LoginPage() {
                   회원가입
                 </Link>
               </div>
+              <label className="auth-check label--md">
+                <input
+                  type="checkbox"
+                  checked={rememberLogin}
+                  disabled={isSubmitting}
+                  onChange={(event) => setRememberLoginState(event.target.checked)}
+                />
+                <span>로그인 유지</span>
+              </label>
               <div className="column-group column-group--gap-16">
                 <button
                   type="submit"
