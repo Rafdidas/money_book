@@ -2,13 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import logo from "@/assets/img/monibuk-logo.svg";
 import { usePublicAppSession } from "@/hooks/usePublicAppSession";
+import { enableDemoMode } from "@/lib/demo";
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { hasAppSession, isSessionResolved } = usePublicAppSession();
+
+  const handleDemoLogin = () => {
+    enableDemoMode();
+    router.replace("/app");
+    router.refresh();
+  };
 
   if (pathname.startsWith("/auth")) {
     return null;
@@ -34,9 +42,13 @@ export default function Header() {
                 >
                   로그인
                 </Link>
-                <Link href="/auth/login" className="button button--outline-primary button--sm ">
+                <button
+                  type="button"
+                  className="button button--outline-primary button--sm"
+                  onClick={handleDemoLogin}
+                >
                   데모 버전
-                </Link>
+                </button>
               </>
             )}
           </div>

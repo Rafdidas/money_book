@@ -3,16 +3,25 @@ import "../intro/intro.scss";
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import visual from "@/assets/img/visual_img.png";
 import free from "@/assets/img/free.png";
 import phone from "@/assets/img/phone3.png";
 import { usePublicAppSession } from "@/hooks/usePublicAppSession";
+import { enableDemoMode } from "@/lib/demo";
 
 
 
 export default function IntroPage() {
+  const router = useRouter();
   const { hasAppSession, isSessionResolved } = usePublicAppSession();
+
+  const handleDemoLogin = () => {
+    enableDemoMode();
+    router.replace("/app");
+    router.refresh();
+  };
 
   return (
     <main className="intro-page">
@@ -40,12 +49,13 @@ export default function IntroPage() {
                   <Link href="/auth/login" className="button button--lg button--primary ">
                     무료로 시작하기
                   </Link>
-                  <Link
-                    href="/auth/login"
+                  <button
+                    type="button"
                     className="button button--lg button--outline-primary"
+                    onClick={handleDemoLogin}
                   >
                     데모 버전 체험하기
-                  </Link>
+                  </button>
                 </>
               )}
             </div>
