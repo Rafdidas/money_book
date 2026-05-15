@@ -187,7 +187,7 @@
         color: var(--on-surface);
       }
       .calendar-content {
-        height: 88px;
+        height: 135px;
         overflow-y: auto;
         &--item {
           padding: 8px;
@@ -204,7 +204,7 @@
       // 카테고리 지출 비율
       .graph-section {
         width: 100%;
-        height: 220px;
+        height: 315px;
 
         canvas {
           display: block;
