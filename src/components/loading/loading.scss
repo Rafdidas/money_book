@@ -1,0 +1,36 @@
+.app-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 100dvh;
+  padding: 24px;
+  background: var(--surface);
+}
+
+.app-loading--overlay {
+  background: var(--opacity-light-80);
+  backdrop-filter: blur(2px);
+}
+
+.app-loading__lottie {
+  width: min(220px, 54vw);
+  aspect-ratio: 1;
+
+  > div,
+  canvas,
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.app-loading__text {
+  color: var(--on-surface);
+  font-size: 14px;
+  font-weight: 700;
+}

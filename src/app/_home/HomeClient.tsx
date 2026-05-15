@@ -11,6 +11,7 @@ import Calendar from "react-calendar";
 import type { Value } from "react-calendar/dist/shared/types.js";
 import Modal from "@/components/common/Modal";
 import SideMenu from "@/components/common/SideMenu";
+import Loading from "@/components/loading/Loading";
 import { useAppData } from "@/app/providers";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import { DEMO_USER_ID, readDemoExpenses, writeDemoExpenses } from "@/lib/demo";
@@ -102,6 +103,8 @@ export default function HomeClient() {
   const [storedSavingsPayments, setStoredSavingsPayments] = useState<SavingsPayment[]>([]);
   const [storedFixedExpenseRules, setStoredFixedExpenseRules] = useState<FixedExpenseRule[]>([]);
   const [storedFixedExpensePayments, setStoredFixedExpensePayments] = useState<FixedExpensePayment[]>([]);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(true);
+  const [hasDashboardLoaded, setHasDashboardLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [inlineFormMode, setInlineFormMode] = useState<InlineFormMode>("create");
@@ -182,7 +185,10 @@ export default function HomeClient() {
   }, [dashboardRange.from, dashboardRange.to, isAuthResolved, isDemoMode]);
 
   useEffect(() => {
-    if (!isAuthResolved) return;
+    if (!isAuthResolved) {
+      setIsDashboardLoading(true);
+      return;
+    }
 
     if (isDemoMode) {
       window.queueMicrotask(() => {
@@ -191,6 +197,8 @@ export default function HomeClient() {
         setStoredSavingsPayments([]);
         setStoredFixedExpenseRules([]);
         setStoredFixedExpensePayments([]);
+        setHasDashboardLoaded(true);
+        setIsDashboardLoading(false);
       });
       return;
     }
@@ -198,6 +206,7 @@ export default function HomeClient() {
     let isCancelled = false;
 
     const fetchDashboardExpenses = async () => {
+      setIsDashboardLoading(true);
       try {
         const [
           data,
@@ -226,6 +235,11 @@ export default function HomeClient() {
           setStoredSavingsPayments([]);
           setStoredFixedExpenseRules([]);
           setStoredFixedExpensePayments([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setHasDashboardLoaded(true);
+          setIsDashboardLoading(false);
         }
       }
     };
@@ -1579,8 +1593,8 @@ export default function HomeClient() {
     setSelectedDate(value);
     setShowCalendarModal(false);
   };
-  if (!isAuthResolved) {
-    return null;
+  if (!isAuthResolved || (isDashboardLoading && !hasDashboardLoaded)) {
+    return <Loading message="대시보드를 불러오는 중입니다" />;
   }
 
   return (
@@ -2578,6 +2592,9 @@ export default function HomeClient() {
             </div>
           </div>
         </Modal>
+      ) : null}
+      {isDashboardLoading ? (
+        <Loading message="대시보드를 새로 불러오는 중입니다" variant="overlay" />
       ) : null}
     </div>
   );

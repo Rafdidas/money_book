@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import CategoryDoughnutChart from "@/components/chart/CategoryDoughnutChart";
 import MonthlyFlowChart from "@/components/chart/MonthlyFlowChart";
 import SideMenu from "@/components/common/SideMenu";
+import Loading from "@/components/loading/Loading";
 import { useAppData } from "@/app/providers";
 import {
   getMoneyBookEntriesByYear,
@@ -46,13 +47,25 @@ export default function AnalysisPage() {
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [analysisEntries, setAnalysisEntries] = useState<MoneyBookEntry[]>([]);
+  const [isAnalysisLoading, setIsAnalysisLoading] = useState(true);
+  const [hasAnalysisLoaded, setHasAnalysisLoaded] = useState(false);
 
   useEffect(() => {
-    if (!isAuthResolved || isDemoMode) return;
+    if (!isAuthResolved) {
+      setIsAnalysisLoading(true);
+      return;
+    }
+
+    if (isDemoMode) {
+      setHasAnalysisLoaded(true);
+      setIsAnalysisLoading(false);
+      return;
+    }
 
     let isCancelled = false;
 
     const fetchYearlyExpenses = async () => {
+      setIsAnalysisLoading(true);
       try {
         const data = await getMoneyBookEntriesByYear(selectedYear);
         if (!isCancelled) {
@@ -61,6 +74,11 @@ export default function AnalysisPage() {
       } catch {
         if (!isCancelled) {
           setAnalysisEntries([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setHasAnalysisLoaded(true);
+          setIsAnalysisLoading(false);
         }
       }
     };
@@ -148,8 +166,8 @@ export default function AnalysisPage() {
   const yearlyRecordCount = yearlyEntries.length;
   const categoryChartData = categorySummary.map(([label, value]) => ({ label, value }));
 
-  if (!isAuthResolved) {
-    return null;
+  if (!isAuthResolved || (isAnalysisLoading && !hasAnalysisLoaded)) {
+    return <Loading message="월별 분석을 불러오는 중입니다" />;
   }
 
   return (
@@ -413,6 +431,9 @@ export default function AnalysisPage() {
           </section>
         </section>
       </main>
+      {isAnalysisLoading ? (
+        <Loading message="월별 분석을 새로 불러오는 중입니다" variant="overlay" />
+      ) : null}
     </div>
   );
 }
