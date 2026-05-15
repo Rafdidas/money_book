@@ -12,6 +12,7 @@ import {
 import Providers from "./providers";
 import "./globals.scss";
 import localFont from "next/font/local";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
@@ -159,6 +160,7 @@ export default function RootLayout({
             <Header />
             <main className="app-main">{children}</main>
             <Analytics />
+            <SpeedInsights />
             {/* <Footer /> */}
           </div>
         </Providers>
