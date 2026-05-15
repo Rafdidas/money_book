@@ -48,7 +48,6 @@ export default function AnalysisPage() {
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [analysisEntries, setAnalysisEntries] = useState<MoneyBookEntry[]>([]);
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(true);
-  const [hasAnalysisLoaded, setHasAnalysisLoaded] = useState(false);
 
   useEffect(() => {
     if (!isAuthResolved) {
@@ -57,7 +56,6 @@ export default function AnalysisPage() {
     }
 
     if (isDemoMode) {
-      setHasAnalysisLoaded(true);
       setIsAnalysisLoading(false);
       return;
     }
@@ -77,7 +75,6 @@ export default function AnalysisPage() {
         }
       } finally {
         if (!isCancelled) {
-          setHasAnalysisLoaded(true);
           setIsAnalysisLoading(false);
         }
       }
@@ -165,10 +162,6 @@ export default function AnalysisPage() {
   const yearlyBalance = yearlyIncomeTotal - yearlyExpenseTotal - yearlySavingsTotal;
   const yearlyRecordCount = yearlyEntries.length;
   const categoryChartData = categorySummary.map(([label, value]) => ({ label, value }));
-
-  if (!isAuthResolved || (isAnalysisLoading && !hasAnalysisLoaded)) {
-    return <Loading message="월별 분석을 불러오는 중입니다" />;
-  }
 
   return (
     <div className="home-page analysis-page">
@@ -431,8 +424,8 @@ export default function AnalysisPage() {
           </section>
         </section>
       </main>
-      {isAnalysisLoading ? (
-        <Loading message="월별 분석을 새로 불러오는 중입니다" variant="overlay" />
+      {!isAuthResolved || isAnalysisLoading ? (
+        <Loading message="월별 분석을 불러오는 중입니다" variant="overlay" />
       ) : null}
     </div>
   );

@@ -104,7 +104,6 @@ export default function HomeClient() {
   const [storedFixedExpenseRules, setStoredFixedExpenseRules] = useState<FixedExpenseRule[]>([]);
   const [storedFixedExpensePayments, setStoredFixedExpensePayments] = useState<FixedExpensePayment[]>([]);
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
-  const [hasDashboardLoaded, setHasDashboardLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState(today);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [inlineFormMode, setInlineFormMode] = useState<InlineFormMode>("create");
@@ -197,7 +196,6 @@ export default function HomeClient() {
         setStoredSavingsPayments([]);
         setStoredFixedExpenseRules([]);
         setStoredFixedExpensePayments([]);
-        setHasDashboardLoaded(true);
         setIsDashboardLoading(false);
       });
       return;
@@ -238,7 +236,6 @@ export default function HomeClient() {
         }
       } finally {
         if (!isCancelled) {
-          setHasDashboardLoaded(true);
           setIsDashboardLoading(false);
         }
       }
@@ -1593,10 +1590,6 @@ export default function HomeClient() {
     setSelectedDate(value);
     setShowCalendarModal(false);
   };
-  if (!isAuthResolved || (isDashboardLoading && !hasDashboardLoaded)) {
-    return <Loading message="대시보드를 불러오는 중입니다" />;
-  }
-
   return (
     <div className="home-page">
       <SideMenu
@@ -2593,8 +2586,8 @@ export default function HomeClient() {
           </div>
         </Modal>
       ) : null}
-      {isDashboardLoading ? (
-        <Loading message="대시보드를 새로 불러오는 중입니다" variant="overlay" />
+      {!isAuthResolved || isDashboardLoading ? (
+        <Loading message="대시보드를 불러오는 중입니다" variant="overlay" />
       ) : null}
     </div>
   );
