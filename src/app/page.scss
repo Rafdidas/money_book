@@ -292,6 +292,32 @@
           color: var(--on-surface-high);
         }
 
+        &[type="date"] {
+          display: block;
+          min-height: 36px;
+          line-height: 20px;
+          appearance: none;
+          -webkit-appearance: none;
+          -webkit-text-fill-color: currentColor;
+          color-scheme: light;
+        }
+
+        &[type="date"]::-webkit-date-and-time-value {
+          min-height: 20px;
+          margin: 0;
+          text-align: left;
+        }
+
+        &[type="date"]::-webkit-calendar-picker-indicator {
+          margin: 0;
+          padding: 0;
+          opacity: 0.72;
+        }
+
+        &[type="date"]::-webkit-inner-spin-button {
+          display: none;
+        }
+
         &:focus,
         &:focus-visible {
           border-color: var(--primary-high);
