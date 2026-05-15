@@ -2,30 +2,23 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AppAlertProvider from "@/components/app-alert/AppAlertProvider";
-import { getExpenses } from "@/lib/api/expense";
-import { DEMO_USER_ID, isDemoModeEnabled, readDemoExpenses } from "@/lib/demo";
+import { isDemoModeEnabled } from "@/lib/demo";
 import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
-import type { Expense } from "@/types/expense";
-import type { Dispatch, ReactNode, SetStateAction } from "react";
+import type { ReactNode } from "react";
 
 type AppDataContextValue = {
-  expenses: Expense[];
-  setExpenses: Dispatch<SetStateAction<Expense[]>>;
   displayName: string;
   displayEmail: string;
   isDemoMode: boolean;
   isAuthResolved: boolean;
-  refreshExpenses: () => Promise<void>;
 };
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -42,30 +35,13 @@ export default function Providers({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isAppRoute = pathname === "/app" || pathname.startsWith("/app/");
-  const [userId, setUserId] = useState("");
-  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [displayName, setDisplayName] = useState("게스트");
   const [displayEmail, setDisplayEmail] = useState("");
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [isAuthResolved, setIsAuthResolved] = useState(false);
-  const hasFetchedRef = useRef(false);
-
-  const refreshExpenses = useCallback(async () => {
-    if (!userId) return;
-    if (userId === DEMO_USER_ID) {
-      setExpenses(readDemoExpenses());
-      return;
-    }
-    const data = await getExpenses(userId);
-    setExpenses(data || []);
-  }, [userId]);
 
   useEffect(() => {
     if (!isAppRoute) {
-      return;
-    }
-
-    if (hasFetchedRef.current && userId) {
       return;
     }
 
@@ -84,13 +60,10 @@ export default function Providers({ children }: { children: ReactNode }) {
       if (isDemoModeEnabled()) {
         if (isCancelled) return;
 
-        setUserId(DEMO_USER_ID);
-        setExpenses(readDemoExpenses());
         setDisplayName("데모 사용자");
         setDisplayEmail("demo@moneybook.local");
         setIsDemoMode(true);
         setIsAuthResolved(true);
-        hasFetchedRef.current = true;
         return;
       }
 
@@ -102,19 +75,15 @@ export default function Providers({ children }: { children: ReactNode }) {
         return;
       }
 
-      const data = await getExpenses(user.id);
       if (isCancelled) return;
 
       const metadataName =
         typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "";
 
-      setUserId(user.id);
-      setExpenses(data || []);
       setDisplayName(metadataName || user.email?.split("@")[0] || "게스트");
       setDisplayEmail(user.email || "");
       setIsDemoMode(false);
       setIsAuthResolved(true);
-      hasFetchedRef.current = true;
     };
 
     fetchAppData();
@@ -122,26 +91,21 @@ export default function Providers({ children }: { children: ReactNode }) {
     return () => {
       isCancelled = true;
     };
-  }, [isAppRoute, router, userId]);
+  }, [isAppRoute, router]);
 
   const value = useMemo<AppDataContextValue>(
     () => ({
-      expenses,
-      setExpenses,
       displayName,
       displayEmail,
       isDemoMode,
       isAuthResolved: !isAppRoute || isAuthResolved,
-      refreshExpenses,
     }),
     [
       displayEmail,
       displayName,
-      expenses,
       isAuthResolved,
       isDemoMode,
       isAppRoute,
-      refreshExpenses,
     ],
   );
 

@@ -3,21 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppData } from "@/app/providers";
-import { DEMO_USER_ID, writeDemoExpenses } from "@/lib/demo";
-import { createExpense } from "@/lib/api/expense";
-import type { Expense } from "@/types/expense";
 import type { StockPurchaseMeta, StockQuote, StockSearchItem } from "@/types/stock";
 import { formatDate } from "@/utils/date";
 import "../../invest/invest.scss";
 
 const formatWon = (value: number) =>
   `${value < 0 ? "-" : ""}${Math.round(Math.abs(value)).toLocaleString()}원`;
-const stockCategory = "📈주식";
-const stockMetaPrefix = "[[stock:";
-const stockMetaPattern = /\s*\[\[stock:([^\]]+)\]\]\s*$/;
 const stockAutoRefreshKey = "money-book-stock-last-refresh";
+const stockHoldingsStoragePrefix = "money-book:stock-holdings";
 
-type ExpenseFormData = Pick<Expense, "amount" | "category" | "memo" | "date" | "type">;
 type StockSortKey = "name" | "totalProfit" | "averagePrice" | "totalCost" | "dailyProfit";
 type SortDirection = "asc" | "desc";
 type StockSort = {
@@ -45,40 +39,6 @@ type InvestmentSummary = {
   dailyProfitRate: number;
 };
 
-const encodeStockMemo = (meta: StockPurchaseMeta) =>
-  `${meta.name} ${stockMetaPrefix}${encodeURIComponent(JSON.stringify(meta))}]]`;
-
-const parseStockMemo = (memo: string): StockPurchaseMeta | null => {
-  const match = memo.match(stockMetaPattern);
-  if (!match) return null;
-
-  try {
-    const parsed = JSON.parse(decodeURIComponent(match[1])) as Partial<StockPurchaseMeta>;
-    if (
-      typeof parsed.symbol !== "string" ||
-      typeof parsed.name !== "string" ||
-      typeof parsed.market !== "string" ||
-      typeof parsed.quantity !== "number" ||
-      typeof parsed.unitPrice !== "number" ||
-      typeof parsed.purchaseDate !== "string"
-    ) {
-      return null;
-    }
-    return {
-      symbol: parsed.symbol,
-      name: parsed.name,
-      market: parsed.market,
-      quantity: parsed.quantity,
-      unitPrice: parsed.unitPrice,
-      purchaseDate: parsed.purchaseDate,
-    };
-  } catch {
-    return null;
-  }
-};
-
-const isStockItem = (item: Expense) =>
-  item.type === "expense" && item.category === stockCategory && Boolean(parseStockMemo(item.memo));
 const getChangeClassName = (value: number) =>
   value > 0 ? "color-red" : value < 0 ? "color-blue" : "color-gray";
 const formatSignedPercent = (value: number) =>
@@ -92,11 +52,40 @@ const shouldRefreshStockQuotes = () => {
   return Date.now() - lastRefresh >= 1000 * 60 * 60 * 12;
 };
 
+const getStockHoldingsStorageKey = (ownerKey: string) =>
+  `${stockHoldingsStoragePrefix}:${ownerKey || "local"}`;
+
+const readStoredInvestmentStocks = (ownerKey: string): InvestmentStock[] => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(getStockHoldingsStorageKey(ownerKey)) || "[]",
+    ) as Partial<InvestmentStock>[];
+
+    return parsed.filter((item): item is InvestmentStock =>
+      typeof item.id === "string" &&
+      typeof item.createdAt === "string" &&
+      typeof item.symbol === "string" &&
+      typeof item.name === "string" &&
+      typeof item.market === "string" &&
+      typeof item.quantity === "number" &&
+      typeof item.unitPrice === "number" &&
+      typeof item.purchaseDate === "string",
+    );
+  } catch {
+    return [];
+  }
+};
+
+const writeStoredInvestmentStocks = (ownerKey: string, stocks: InvestmentStock[]) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(getStockHoldingsStorageKey(ownerKey), JSON.stringify(stocks));
+};
+
 export default function InvestPage() {
   const today = useMemo(() => new Date(), []);
   const {
-    expenses,
-    setExpenses,
     displayName,
     displayEmail,
     isDemoMode,
@@ -111,26 +100,12 @@ export default function InvestPage() {
   const [stockUnitPrice, setStockUnitPrice] = useState("");
   const [stockQuotes, setStockQuotes] = useState<Record<string, StockQuote>>({});
   const [stockSort, setStockSort] = useState<StockSort>(null);
+  const [investmentStocks, setInvestmentStocks] = useState<InvestmentStock[]>([]);
   const [isStockSearching, setIsStockSearching] = useState(false);
   const [isStockSubmitting, setIsStockSubmitting] = useState(false);
   const [isStockRefreshing, setIsStockRefreshing] = useState(false);
+  const storageOwnerKey = displayEmail || (isDemoMode ? "demo" : "local");
 
-  const investmentStocks = useMemo<InvestmentStock[]>(
-    () =>
-      expenses
-        .map((item) => {
-          if (!isStockItem(item)) return null;
-          const meta = parseStockMemo(item.memo);
-          if (!meta) return null;
-          return {
-            ...meta,
-            id: item.id,
-            createdAt: item.created_at,
-          };
-        })
-        .filter((item): item is InvestmentStock => Boolean(item)),
-    [expenses],
-  );
   const investmentSummaries = useMemo<InvestmentSummary[]>(() => {
     const grouped = investmentStocks.reduce<Record<string, InvestmentSummary>>((acc, stock) => {
       const quote = stockQuotes[stock.symbol];
@@ -268,40 +243,23 @@ export default function InvestPage() {
       return;
     }
 
-    const meta: StockPurchaseMeta = {
+    const nextStock: InvestmentStock = {
       ...selectedStock,
+      id: `stock-${selectedStock.symbol}-${Date.now()}`,
+      createdAt: new Date().toISOString(),
       quantity,
       unitPrice,
       purchaseDate: stockPurchaseDate,
     };
-    const payload: ExpenseFormData = {
-      amount: quantity * unitPrice,
-      category: stockCategory,
-      memo: encodeStockMemo(meta),
-      date: stockPurchaseDate,
-      type: "expense",
-    };
 
     try {
       setIsStockSubmitting(true);
-
-      if (isDemoMode) {
-        const demoExpense: Expense = {
-          id: `demo-stock-${selectedStock.symbol}-${Date.now()}`,
-          user_id: DEMO_USER_ID,
-          created_at: new Date().toISOString(),
-          ...payload,
-        };
-        setExpenses((prev) => {
-          const next = [demoExpense, ...prev];
-          writeDemoExpenses(next);
-          return next;
-        });
-      } else {
-        const saved = await createExpense(payload);
-        setExpenses((prev) => [...prev, ...(saved || [])]);
-        await refreshStockQuotes([selectedStock.symbol]);
-      }
+      setInvestmentStocks((prev) => {
+        const next = [nextStock, ...prev];
+        writeStoredInvestmentStocks(storageOwnerKey, next);
+        return next;
+      });
+      await refreshStockQuotes([selectedStock.symbol]);
 
       setSelectedDate(new Date(`${stockPurchaseDate}T00:00:00`));
       resetStockForm();
@@ -351,6 +309,13 @@ export default function InvestPage() {
       window.clearTimeout(timeoutId);
     };
   }, [selectedStock, stockQuery]);
+
+  useEffect(() => {
+    if (!isAuthResolved) return;
+    window.queueMicrotask(() => {
+      setInvestmentStocks(readStoredInvestmentStocks(storageOwnerKey));
+    });
+  }, [isAuthResolved, storageOwnerKey]);
 
   useEffect(() => {
     if (!isAuthResolved || isDemoMode || !displayEmail || !stockSymbols.length) return;

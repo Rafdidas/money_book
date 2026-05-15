@@ -1,23 +1,43 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CategoryDoughnutChart from "@/components/chart/CategoryDoughnutChart";
 import MonthlyFlowChart from "@/components/chart/MonthlyFlowChart";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppData } from "@/app/providers";
+import {
+  getMoneyBookEntriesByYear,
+  type MoneyBookEntry,
+} from "@/lib/api/moneyBookEntries";
+import { readDemoExpenses } from "@/lib/demo";
 
 const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
 const formatCurrency = (value: number) => `₩ ${value.toLocaleString()}`;
 const formatSignedCurrency = (value: number) =>
   `${value < 0 ? "-" : ""}₩ ${Math.abs(value).toLocaleString()}`;
 const isSavingsCategory = (category: string) => category.includes("적금");
-const isSavingsItem = (item: { type: string; category: string }) =>
-  item.type === "expense" && isSavingsCategory(item.category);
+const isSavingsItem = (item: { type: string }) => item.type === "saving";
+const mapDemoExpenseToEntry = (item: {
+  id: string;
+  amount: number;
+  type: "income" | "expense";
+  category: string;
+  memo: string;
+  date: string;
+}): MoneyBookEntry => ({
+  id: item.id,
+  source: isSavingsCategory(item.category) ? "legacy_savings" : "expense",
+  amount: item.amount,
+  type: isSavingsCategory(item.category) ? "saving" : item.type,
+  category: item.category,
+  memo: item.memo,
+  date: item.date,
+  originId: item.id,
+});
 
 export default function AnalysisPage() {
   const today = new Date();
   const {
-    expenses,
     displayName,
     displayEmail,
     isDemoMode,
@@ -25,19 +45,50 @@ export default function AnalysisPage() {
   } = useAppData();
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
+  const [analysisEntries, setAnalysisEntries] = useState<MoneyBookEntry[]>([]);
 
-  const yearlyExpenses = useMemo(
-    () => expenses.filter((item) => new Date(item.date).getFullYear() === selectedYear),
-    [expenses, selectedYear],
+  useEffect(() => {
+    if (!isAuthResolved || isDemoMode) return;
+
+    let isCancelled = false;
+
+    const fetchYearlyExpenses = async () => {
+      try {
+        const data = await getMoneyBookEntriesByYear(selectedYear);
+        if (!isCancelled) {
+          setAnalysisEntries(data || []);
+        }
+      } catch {
+        if (!isCancelled) {
+          setAnalysisEntries([]);
+        }
+      }
+    };
+
+    fetchYearlyExpenses();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isAuthResolved, isDemoMode, selectedYear]);
+
+  const yearlyEntries = useMemo(
+    () =>
+      isDemoMode
+        ? readDemoExpenses()
+            .filter((item) => new Date(item.date).getFullYear() === selectedYear)
+            .map(mapDemoExpenseToEntry)
+        : analysisEntries,
+    [analysisEntries, isDemoMode, selectedYear],
   );
   const monthlyBreakdown = useMemo(
     () =>
       monthNames.map((label, index) => {
-        const items = yearlyExpenses.filter(
+        const items = yearlyEntries.filter(
           (item) => new Date(item.date).getMonth() === index,
         );
         const expenseTotal = items
-          .filter((item) => item.type === "expense" && !isSavingsItem(item))
+          .filter((item) => item.type === "expense")
           .reduce((sum, item) => sum + item.amount, 0);
         const savingsTotal = items
           .filter(isSavingsItem)
@@ -55,15 +106,15 @@ export default function AnalysisPage() {
           count: items.length,
         };
       }),
-    [yearlyExpenses],
+    [yearlyEntries],
   );
   const selectedMonthItems = useMemo(
     () =>
-      yearlyExpenses.filter((item) => new Date(item.date).getMonth() === selectedMonth),
-    [selectedMonth, yearlyExpenses],
+      yearlyEntries.filter((item) => new Date(item.date).getMonth() === selectedMonth),
+    [selectedMonth, yearlyEntries],
   );
   const monthlyExpense = selectedMonthItems
-    .filter((item) => item.type === "expense" && !isSavingsItem(item))
+    .filter((item) => item.type === "expense")
     .reduce((sum, item) => sum + item.amount, 0);
   const monthlySavings = selectedMonthItems
     .filter(isSavingsItem)
@@ -72,29 +123,29 @@ export default function AnalysisPage() {
     .filter((item) => item.type === "income")
     .reduce((sum, item) => sum + item.amount, 0);
   const monthlyExpenseCount = selectedMonthItems.filter(
-    (item) => item.type === "expense" && !isSavingsItem(item),
+    (item) => item.type === "expense",
   ).length;
   const monthlySavingsCount = selectedMonthItems.filter(isSavingsItem).length;
   const categorySummary = Object.entries(
     selectedMonthItems
-      .filter((item) => item.type === "expense" && !isSavingsItem(item))
+      .filter((item) => item.type === "expense")
       .reduce<Record<string, number>>((acc, item) => {
         acc[item.category] = (acc[item.category] || 0) + item.amount;
         return acc;
       }, {}),
   ).sort(([, left], [, right]) => right - left);
   const topCategory = categorySummary[0];
-  const yearlyExpenseTotal = yearlyExpenses
-    .filter((item) => item.type === "expense" && !isSavingsItem(item))
+  const yearlyExpenseTotal = yearlyEntries
+    .filter((item) => item.type === "expense")
     .reduce((sum, item) => sum + item.amount, 0);
-  const yearlySavingsTotal = yearlyExpenses
+  const yearlySavingsTotal = yearlyEntries
     .filter(isSavingsItem)
     .reduce((sum, item) => sum + item.amount, 0);
-  const yearlyIncomeTotal = yearlyExpenses
+  const yearlyIncomeTotal = yearlyEntries
     .filter((item) => item.type === "income")
     .reduce((sum, item) => sum + item.amount, 0);
   const yearlyBalance = yearlyIncomeTotal - yearlyExpenseTotal - yearlySavingsTotal;
-  const yearlyRecordCount = yearlyExpenses.length;
+  const yearlyRecordCount = yearlyEntries.length;
   const categoryChartData = categorySummary.map(([label, value]) => ({ label, value }));
 
   if (!isAuthResolved) {

@@ -13,16 +13,41 @@ import Modal from "@/components/common/Modal";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppData } from "@/app/providers";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
-import { DEMO_USER_ID, writeDemoExpenses } from "@/lib/demo";
+import { DEMO_USER_ID, readDemoExpenses, writeDemoExpenses } from "@/lib/demo";
 import "@/lib/chart";
 import {
   createExpense,
   createExpenses,
   deleteExpense,
   deleteExpenses,
+  getExpensesByRange,
   updateExpense,
 } from "@/lib/api/expense";
+import {
+  cancelFutureFixedExpensePayments,
+  createFixedExpensePayments,
+  createFixedExpenseRule,
+  deleteFixedExpenseRule,
+  getFixedExpensePaymentsByRange,
+  getFixedExpenseRules,
+  updateFixedExpenseRule,
+} from "@/lib/api/fixedExpense";
+import {
+  cancelFutureSavingsPayments,
+  createSavingsAccount,
+  createSavingsPayments,
+  deleteSavingsAccount,
+  getSavingsAccounts,
+  getSavingsPaymentsByRange,
+  updateSavingsAccount,
+} from "@/lib/api/savings";
 import type { Expense } from "@/types/expense";
+import type {
+  FixedExpensePayment,
+  FixedExpenseRule,
+  SavingsAccount as StoredSavingsAccount,
+  SavingsPayment,
+} from "@/types/recurring";
 import { formatDate } from "@/utils/date";
 import CategoryPieChart from "./charts/CategoryPieChart";
 import OverviewLineChart from "./charts/OverviewLineChart";
@@ -66,14 +91,17 @@ import {
 export default function HomeClient() {
   const today = useMemo(() => new Date(), []);
   const {
-    expenses,
-    setExpenses,
     displayName,
     displayEmail,
     isDemoMode,
     isAuthResolved,
   } = useAppData();
   const { confirm } = useAppAlert();
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [storedSavingsAccounts, setStoredSavingsAccounts] = useState<StoredSavingsAccount[]>([]);
+  const [storedSavingsPayments, setStoredSavingsPayments] = useState<SavingsPayment[]>([]);
+  const [storedFixedExpenseRules, setStoredFixedExpenseRules] = useState<FixedExpenseRule[]>([]);
+  const [storedFixedExpensePayments, setStoredFixedExpensePayments] = useState<FixedExpensePayment[]>([]);
   const [selectedDate, setSelectedDate] = useState(today);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [inlineFormMode, setInlineFormMode] = useState<InlineFormMode>("create");
@@ -113,13 +141,217 @@ export default function HomeClient() {
   const currentMonth = selectedDate.getMonth();
   const selectedMonthStartKey = formatDate(new Date(currentYear, currentMonth, 1));
   const selectedMonthEndKey = formatDate(new Date(currentYear, currentMonth + 1, 0));
+  const dashboardRange = useMemo(
+    () => ({
+      from: formatDate(new Date(currentYear, currentMonth - 12, 1)),
+      to: formatDate(new Date(currentYear, currentMonth + 13, 0)),
+    }),
+    [currentMonth, currentYear],
+  );
+
+  const refreshStoredSavings = useCallback(async () => {
+    if (!isAuthResolved || isDemoMode) {
+      setStoredSavingsAccounts([]);
+      setStoredSavingsPayments([]);
+      return;
+    }
+
+    const [accounts, payments] = await Promise.all([
+      getSavingsAccounts(),
+      getSavingsPaymentsByRange(dashboardRange.from, dashboardRange.to),
+    ]);
+
+    setStoredSavingsAccounts(accounts);
+    setStoredSavingsPayments(payments);
+  }, [dashboardRange.from, dashboardRange.to, isAuthResolved, isDemoMode]);
+
+  const refreshStoredFixedExpenses = useCallback(async () => {
+    if (!isAuthResolved || isDemoMode) {
+      setStoredFixedExpenseRules([]);
+      setStoredFixedExpensePayments([]);
+      return;
+    }
+
+    const [rules, payments] = await Promise.all([
+      getFixedExpenseRules(),
+      getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to),
+    ]);
+
+    setStoredFixedExpenseRules(rules);
+    setStoredFixedExpensePayments(payments);
+  }, [dashboardRange.from, dashboardRange.to, isAuthResolved, isDemoMode]);
+
+  useEffect(() => {
+    if (!isAuthResolved) return;
+
+    if (isDemoMode) {
+      window.queueMicrotask(() => {
+        setExpenses(readDemoExpenses());
+        setStoredSavingsAccounts([]);
+        setStoredSavingsPayments([]);
+        setStoredFixedExpenseRules([]);
+        setStoredFixedExpensePayments([]);
+      });
+      return;
+    }
+
+    let isCancelled = false;
+
+    const fetchDashboardExpenses = async () => {
+      try {
+        const [
+          data,
+          accounts,
+          payments,
+          fixedRules,
+          fixedPayments,
+        ] = await Promise.all([
+          getExpensesByRange(dashboardRange.from, dashboardRange.to),
+          getSavingsAccounts(),
+          getSavingsPaymentsByRange(dashboardRange.from, dashboardRange.to),
+          getFixedExpenseRules(),
+          getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to),
+        ]);
+        if (!isCancelled) {
+          setExpenses(data || []);
+          setStoredSavingsAccounts(accounts);
+          setStoredSavingsPayments(payments);
+          setStoredFixedExpenseRules(fixedRules);
+          setStoredFixedExpensePayments(fixedPayments);
+        }
+      } catch {
+        if (!isCancelled) {
+          setExpenses([]);
+          setStoredSavingsAccounts([]);
+          setStoredSavingsPayments([]);
+          setStoredFixedExpenseRules([]);
+          setStoredFixedExpensePayments([]);
+        }
+      }
+    };
+
+    fetchDashboardExpenses();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    dashboardRange.from,
+    dashboardRange.to,
+    isAuthResolved,
+    isDemoMode,
+  ]);
+
+  const storedSavingsAccountMap = useMemo(
+    () => new Map(storedSavingsAccounts.map((account) => [account.id, account])),
+    [storedSavingsAccounts],
+  );
+  const activeStoredSavingsPayments = useMemo(
+    () => storedSavingsPayments.filter((payment) => payment.status !== "cancelled"),
+    [storedSavingsPayments],
+  );
+  const storedSavingsPaymentsByAccount = useMemo(() => {
+    const grouped = new Map<string, SavingsPayment[]>();
+
+    activeStoredSavingsPayments.forEach((payment) => {
+      const payments = grouped.get(payment.savings_account_id) ?? [];
+      payments.push(payment);
+      grouped.set(payment.savings_account_id, payments);
+    });
+
+    grouped.forEach((payments) => {
+      payments.sort((left, right) =>
+        left.payment_date.localeCompare(right.payment_date),
+      );
+    });
+
+    return grouped;
+  }, [activeStoredSavingsPayments]);
+  const storedFixedExpenseRuleMap = useMemo(
+    () => new Map(storedFixedExpenseRules.map((rule) => [rule.id, rule])),
+    [storedFixedExpenseRules],
+  );
+  const activeStoredFixedExpensePayments = useMemo(
+    () => storedFixedExpensePayments.filter((payment) => payment.status !== "cancelled"),
+    [storedFixedExpensePayments],
+  );
+  const storedFixedExpensePaymentsByRule = useMemo(() => {
+    const grouped = new Map<string, FixedExpensePayment[]>();
+
+    activeStoredFixedExpensePayments.forEach((payment) => {
+      const payments = grouped.get(payment.fixed_expense_rule_id) ?? [];
+      payments.push(payment);
+      grouped.set(payment.fixed_expense_rule_id, payments);
+    });
+
+    grouped.forEach((payments) => {
+      payments.sort((left, right) =>
+        left.payment_date.localeCompare(right.payment_date),
+      );
+    });
+
+    return grouped;
+  }, [activeStoredFixedExpensePayments]);
+  const storedSavingsExpenseItems = useMemo<Expense[]>(
+    () =>
+      activeStoredSavingsPayments.map((payment) => {
+        const account = storedSavingsAccountMap.get(payment.savings_account_id);
+
+        return {
+          id: payment.id,
+          user_id: payment.user_id,
+          amount: payment.amount,
+          type: "expense",
+          category: savingsCategory,
+          memo: account?.name ?? "적금",
+          date: payment.payment_date,
+          created_at: payment.created_at,
+        };
+      }),
+    [activeStoredSavingsPayments, storedSavingsAccountMap],
+  );
+  const storedFixedExpenseItems = useMemo<Expense[]>(
+    () =>
+      activeStoredFixedExpensePayments.map((payment) => {
+        const rule = storedFixedExpenseRuleMap.get(payment.fixed_expense_rule_id);
+
+        return {
+          id: payment.id,
+          user_id: payment.user_id,
+          amount: payment.amount,
+          type: "expense",
+          category: rule?.category || rule?.name || "고정지출",
+          memo: rule?.name ?? "고정지출",
+          date: payment.payment_date,
+          created_at: payment.created_at,
+        };
+      }),
+    [activeStoredFixedExpensePayments, storedFixedExpenseRuleMap],
+  );
+  const storedPaymentIds = useMemo(
+    () =>
+      new Set([
+        ...storedSavingsPayments.map((payment) => payment.id),
+        ...storedFixedExpensePayments.map((payment) => payment.id),
+      ]),
+    [storedFixedExpensePayments, storedSavingsPayments],
+  );
+  const dashboardExpenses = useMemo(
+    () => [...expenses, ...storedSavingsExpenseItems, ...storedFixedExpenseItems],
+    [expenses, storedFixedExpenseItems, storedSavingsExpenseItems],
+  );
+
   const monthlyExpenses = useMemo(
     () =>
-      expenses.filter((item) => {
+      dashboardExpenses.filter((item) => {
         const date = new Date(item.date);
         return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
       }),
-    [currentMonth, currentYear, expenses],
+    [currentMonth, currentYear, dashboardExpenses],
+  );
+  const monthlyEditableExpenses = useMemo(
+    () => monthlyExpenses.filter((item) => !storedPaymentIds.has(item.id)),
+    [monthlyExpenses, storedPaymentIds],
   );
   const monthlyExpenseItems = monthlyExpenses.filter(
     (item) => item.type === "expense" && !isSavingsItem(item),
@@ -142,13 +374,17 @@ export default function HomeClient() {
     ? monthlyExpenseTotal / monthlyExpenseCount
     : 0;
   const monthlyTotal = monthlyIncomeTotal - monthlyExpenseTotal - monthlySavingsTotal;
-  const cashflowSeries = getDailySeries(expenses, currentYear, currentMonth);
-  const incomeSeries = getDailySeries(expenses, currentYear, currentMonth, "income");
-  const expenseSeries = getDailySeries(expenses, currentYear, currentMonth, "expense");
-  const savingsSeries = getDailySeries(expenses, currentYear, currentMonth, "savings");
-  const selectedDayItems = useMemo(
+  const cashflowSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth);
+  const incomeSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "income");
+  const expenseSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "expense");
+  const savingsSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "savings");
+  const selectedCalendarItems = useMemo(
     () => monthlyExpenses.filter((item) => item.date === selectedDateKey),
     [monthlyExpenses, selectedDateKey],
+  );
+  const selectedDayItems = useMemo(
+    () => monthlyEditableExpenses.filter((item) => item.date === selectedDateKey),
+    [monthlyEditableExpenses, selectedDateKey],
   );
   const categoryExpenseItems = useMemo(() => {
     const categoryTotals = monthlyExpenses
@@ -171,6 +407,15 @@ export default function HomeClient() {
       .sort((left, right) => right.amount - left.amount);
   }, [monthlyExpenses]);
   const inlineEditItems = useMemo(
+    () =>
+      [...monthlyEditableExpenses].sort((left, right) => {
+        const dateDiff = new Date(right.date).getTime() - new Date(left.date).getTime();
+        if (dateDiff !== 0) return dateDiff;
+        return right.created_at.localeCompare(left.created_at);
+      }),
+    [monthlyEditableExpenses],
+  );
+  const detailItems = useMemo(
     () =>
       [...monthlyExpenses].sort((left, right) => {
         const dateDiff = new Date(right.date).getTime() - new Date(left.date).getTime();
@@ -198,6 +443,7 @@ export default function HomeClient() {
       if (!acc[meta.id]) {
         acc[meta.id] = {
           ...meta,
+          source: "legacy",
           items: [],
           currentAmount: meta.initialAmount,
           monthlyPayment: item.amount,
@@ -212,7 +458,7 @@ export default function HomeClient() {
       return acc;
     }, {});
 
-    return Object.values(grouped)
+    const legacyAccountItems = Object.values(grouped)
       .map((account) => {
         const sortedItems = [...account.items].sort((left, right) =>
           left.date.localeCompare(right.date),
@@ -231,9 +477,58 @@ export default function HomeClient() {
           monthlyPayment: selectedMonthPayment?.amount ?? account.monthlyPayment,
           nextPaymentDate: nextPayment?.date ?? account.maturityDate,
         };
-      })
-      .sort((left, right) => left.maturityDate.localeCompare(right.maturityDate));
-  }, [currentMonth, currentYear, expenses, today]);
+      });
+
+    const storedAccountItems = storedSavingsAccounts.map<SavingsAccount>((account) => {
+      const activePayments = storedSavingsPaymentsByAccount.get(account.id) ?? [];
+      const items: Expense[] = activePayments.map((payment) => ({
+        id: payment.id,
+        user_id: payment.user_id,
+        amount: payment.amount,
+        type: "expense",
+        category: savingsCategory,
+        memo: account.name,
+        date: payment.payment_date,
+        created_at: payment.created_at,
+      }));
+      const paidAmount = activePayments
+        .filter((payment) => payment.payment_date <= todayKey)
+        .reduce((sum, payment) => sum + payment.amount, 0);
+      const nextPayment =
+        activePayments.find((payment) => payment.payment_date >= todayKey) ??
+        activePayments.at(-1);
+      const selectedMonthPayment =
+        activePayments.find((payment) => payment.payment_date >= selectedMonthStartKey) ??
+        activePayments.at(-1);
+      const maturityDate =
+        account.maturity_date ?? activePayments.at(-1)?.payment_date ?? account.start_date;
+
+      return {
+        id: account.id,
+        name: account.name,
+        paymentDay: account.payment_day,
+        maturityDate,
+        initialAmount: account.initial_amount,
+        hasNoMaturity: account.has_no_maturity,
+        source: "new",
+        items,
+        currentAmount: account.initial_amount + paidAmount,
+        monthlyPayment: selectedMonthPayment?.amount ?? account.monthly_amount,
+        nextPaymentDate: nextPayment?.payment_date ?? maturityDate,
+      };
+    });
+
+    return [...legacyAccountItems, ...storedAccountItems].sort((left, right) =>
+      left.maturityDate.localeCompare(right.maturityDate),
+    );
+  }, [
+    currentMonth,
+    currentYear,
+    expenses,
+    storedSavingsAccounts,
+    storedSavingsPaymentsByAccount,
+    today,
+  ]);
   const selectedSavingsAccount =
     savingsAccounts.find((account) => account.id === savingsEditingId) ?? null;
   const visibleSavingsAccounts = useMemo(() => {
@@ -251,6 +546,7 @@ export default function HomeClient() {
       if (!acc[meta.id]) {
         acc[meta.id] = {
           ...meta,
+          source: "legacy",
           items: [],
           monthlyAmount: item.amount,
           nextPaymentDate: item.date,
@@ -263,7 +559,7 @@ export default function HomeClient() {
       return acc;
     }, {});
 
-    return Object.values(grouped)
+    const legacyRuleItems = Object.values(grouped)
       .map((account) => {
         const sortedItems = [...account.items].sort((left, right) =>
           left.date.localeCompare(right.date),
@@ -278,9 +574,54 @@ export default function HomeClient() {
           monthlyAmount: selectedMonthPayment?.amount ?? account.monthlyAmount,
           nextPaymentDate: nextPayment?.date ?? account.endDate,
         };
-      })
-      .sort((left, right) => left.paymentDay - right.paymentDay || left.name.localeCompare(right.name, "ko"));
-  }, [currentMonth, currentYear, expenses, today]);
+      });
+
+    const storedRuleItems = storedFixedExpenseRules.map<FixedExpenseAccount>((rule) => {
+      const activePayments = storedFixedExpensePaymentsByRule.get(rule.id) ?? [];
+      const items: Expense[] = activePayments.map((payment) => ({
+        id: payment.id,
+        user_id: payment.user_id,
+        amount: payment.amount,
+        type: "expense",
+        category: rule.category || rule.name,
+        memo: rule.name,
+        date: payment.payment_date,
+        created_at: payment.created_at,
+      }));
+      const nextPayment =
+        activePayments.find((payment) => payment.payment_date >= todayKey) ??
+        activePayments.at(-1);
+      const selectedMonthPayment =
+        activePayments.find((payment) => payment.payment_date >= selectedMonthStartKey) ??
+        activePayments.at(-1);
+      const endDate =
+        rule.end_date ?? activePayments.at(-1)?.payment_date ?? rule.start_date;
+
+      return {
+        id: rule.id,
+        name: rule.name,
+        paymentDay: rule.payment_day,
+        endDate,
+        hasNoEndDate: rule.has_no_end_date,
+        source: "new",
+        items,
+        monthlyAmount: selectedMonthPayment?.amount ?? rule.amount,
+        nextPaymentDate: nextPayment?.payment_date ?? endDate,
+      };
+    });
+
+    return [...legacyRuleItems, ...storedRuleItems].sort(
+      (left, right) =>
+        left.paymentDay - right.paymentDay || left.name.localeCompare(right.name, "ko"),
+    );
+  }, [
+    currentMonth,
+    currentYear,
+    expenses,
+    storedFixedExpensePaymentsByRule,
+    storedFixedExpenseRules,
+    today,
+  ]);
   const selectedFixedExpenseAccount =
     fixedExpenseAccounts.find((account) => account.id === fixedExpenseEditingId) ?? null;
   const visibleFixedExpenseAccounts = useMemo(() => {
@@ -528,6 +869,12 @@ export default function HomeClient() {
       return;
     }
 
+    if (account.source === "new") {
+      await deleteSavingsAccount(account.id);
+      await refreshStoredSavings();
+      return;
+    }
+
     await deleteExpenses(ids);
     setExpenses((prev) => prev.filter((item) => !ids.includes(item.id)));
   };
@@ -578,6 +925,12 @@ export default function HomeClient() {
         writeDemoExpenses(next);
         return next;
       });
+      return;
+    }
+
+    if (account.source === "new") {
+      await deleteFixedExpenseRule(account.id);
+      await refreshStoredFixedExpenses();
       return;
     }
 
@@ -700,11 +1053,36 @@ export default function HomeClient() {
           alert("수정할 적금을 선택해주세요.");
           return;
         }
-        await persistSavingsReplacement(
-          selectedSavingsAccount,
-          formatDate(savingsChangeStartDate),
-          encodeSavingsMemo(meta),
-        );
+        if (selectedSavingsAccount.source === "new") {
+          await updateSavingsAccount(selectedSavingsAccount.id, {
+            name,
+            monthly_amount: paymentAmount,
+            payment_day: paymentDay,
+            start_date: formatDate(savingsOriginalStartDate),
+            maturity_date: savingsHasNoMaturity ? null : savingsMaturityDate,
+            has_no_maturity: savingsHasNoMaturity,
+            initial_amount: initialAmount,
+            status: "active",
+          });
+          await cancelFutureSavingsPayments(
+            selectedSavingsAccount.id,
+            formatDate(savingsChangeStartDate),
+          );
+          await createSavingsPayments(
+            paymentDates.map((date) => ({
+              savings_account_id: selectedSavingsAccount.id,
+              amount: paymentAmount,
+              payment_date: date,
+            })),
+          );
+          await refreshStoredSavings();
+        } else {
+          await persistSavingsReplacement(
+            selectedSavingsAccount,
+            formatDate(savingsChangeStartDate),
+            encodeSavingsMemo(meta),
+          );
+        }
       }
 
       if (isDemoMode) {
@@ -720,7 +1098,25 @@ export default function HomeClient() {
           writeDemoExpenses(next);
           return next;
         });
-      } else {
+      } else if (savingsFormMode === "create") {
+        const account = await createSavingsAccount({
+          name,
+          monthly_amount: paymentAmount,
+          payment_day: paymentDay,
+          start_date: formatDate(savingsOriginalStartDate),
+          maturity_date: savingsHasNoMaturity ? null : savingsMaturityDate,
+          has_no_maturity: savingsHasNoMaturity,
+          initial_amount: initialAmount,
+        });
+        await createSavingsPayments(
+          paymentDates.map((date) => ({
+            savings_account_id: account.id,
+            amount: paymentAmount,
+            payment_date: date,
+          })),
+        );
+        await refreshStoredSavings();
+      } else if (selectedSavingsAccount?.source === "legacy") {
         const saved = await createExpenses(payloads);
         setExpenses((prev) => [...prev, ...(saved || [])]);
       }
@@ -829,12 +1225,37 @@ export default function HomeClient() {
           alert("수정할 고정지출을 선택해주세요.");
           return;
         }
-        await persistFixedExpenseReplacement(
-          selectedFixedExpenseAccount,
-          formatDate(changeStartDate),
-          memo,
-          name,
-        );
+        if (selectedFixedExpenseAccount.source === "new") {
+          await updateFixedExpenseRule(selectedFixedExpenseAccount.id, {
+            name,
+            amount,
+            category: name,
+            payment_day: paymentDay,
+            start_date: formatDate(originalStartDate),
+            end_date: fixedExpenseHasNoEndDate ? null : fixedExpenseEndDate,
+            has_no_end_date: fixedExpenseHasNoEndDate,
+            status: "active",
+          });
+          await cancelFutureFixedExpensePayments(
+            selectedFixedExpenseAccount.id,
+            formatDate(changeStartDate),
+          );
+          await createFixedExpensePayments(
+            paymentDates.map((date) => ({
+              fixed_expense_rule_id: selectedFixedExpenseAccount.id,
+              amount,
+              payment_date: date,
+            })),
+          );
+          await refreshStoredFixedExpenses();
+        } else {
+          await persistFixedExpenseReplacement(
+            selectedFixedExpenseAccount,
+            formatDate(changeStartDate),
+            memo,
+            name,
+          );
+        }
       }
 
       if (isDemoMode) {
@@ -850,7 +1271,25 @@ export default function HomeClient() {
           writeDemoExpenses(next);
           return next;
         });
-      } else {
+      } else if (fixedExpenseFormMode === "create") {
+        const rule = await createFixedExpenseRule({
+          name,
+          amount,
+          category: name,
+          payment_day: paymentDay,
+          start_date: formatDate(originalStartDate),
+          end_date: fixedExpenseHasNoEndDate ? null : fixedExpenseEndDate,
+          has_no_end_date: fixedExpenseHasNoEndDate,
+        });
+        await createFixedExpensePayments(
+          paymentDates.map((date) => ({
+            fixed_expense_rule_id: rule.id,
+            amount,
+            payment_date: date,
+          })),
+        );
+        await refreshStoredFixedExpenses();
+      } else if (selectedFixedExpenseAccount?.source === "legacy") {
         const saved = await createExpenses(payloads);
         setExpenses((prev) => [...prev, ...(saved || [])]);
       }
@@ -915,7 +1354,16 @@ export default function HomeClient() {
 
     try {
       setIsFixedExpenseDeleting(true);
-      if (isDemoMode) {
+      if (!isDemoMode && account.source === "new") {
+        const futureStartDate = formatDate(new Date(currentYear, currentMonth + 1, 1));
+        await updateFixedExpenseRule(account.id, {
+          end_date: endDate,
+          has_no_end_date: false,
+          status: "ended",
+        });
+        await cancelFutureFixedExpensePayments(account.id, futureStartDate);
+        await refreshStoredFixedExpenses();
+      } else if (isDemoMode) {
         setExpenses((prev) => {
           const next = prev
             .filter((item) => !deletedIds.has(item.id))
@@ -977,7 +1425,16 @@ export default function HomeClient() {
 
     try {
       setIsSavingsDeleting(true);
-      if (isDemoMode) {
+      if (!isDemoMode && account.source === "new") {
+        const futureStartDate = formatDate(new Date(currentYear, currentMonth + 1, 1));
+        await updateSavingsAccount(account.id, {
+          maturity_date: maturityDate,
+          has_no_maturity: false,
+          status: "completed",
+        });
+        await cancelFutureSavingsPayments(account.id, futureStartDate);
+        await refreshStoredSavings();
+      } else if (isDemoMode) {
         setExpenses((prev) => {
           const next = prev
             .filter((item) => !deletedIds.has(item.id))
@@ -1284,11 +1741,11 @@ export default function HomeClient() {
                     <div className="row-group row-group--center row-group--between">
                       <span className="bodyBold--md">선택일</span>
                       <strong className="bodyBold--md">
-                        {selectedDayItems.length}건
+                        {selectedCalendarItems.length}건
                       </strong>
                     </div>
                     <ul className="calendar-content column-group column-group--gap-4">
-                      {selectedDayItems.map((item) => {
+                      {selectedCalendarItems.map((item) => {
                         const isIncome = item.type === "income";
                         const isSavings = isSavingsItem(item);
                         return (
@@ -2033,8 +2490,8 @@ export default function HomeClient() {
                     </tr>
                   </thead>
                   <tbody>
-                    {inlineEditItems.length ? (
-                      inlineEditItems.map((item) => {
+                    {detailItems.length ? (
+                      detailItems.map((item) => {
                         const isIncome = item.type === "income";
                         const isSavings = isSavingsItem(item);
                         return (

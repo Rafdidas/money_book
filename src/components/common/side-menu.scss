@@ -83,6 +83,13 @@
     }
   }
 
+  .log-out--wrap {
+    border-top: 1px solid var(--outline-low);
+    > li {
+      cursor: pointer;
+    }
+  }
+
   @media (max-width: 760px) {
     position: static;
     width: 100%;
@@ -154,6 +161,13 @@
 
       > span {
         font-size: 20px;
+      }
+    }
+    .side-menu--wrap  {
+      display: block;
+      width: 100%;
+      .log-out--wrap {
+        display: none;
       }
     }
   }

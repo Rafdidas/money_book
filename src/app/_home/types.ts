@@ -19,6 +19,7 @@ export type SavingsMeta = {
 };
 
 export type SavingsAccount = SavingsMeta & {
+  source: "legacy" | "new";
   items: Expense[];
   currentAmount: number;
   monthlyPayment: number;
@@ -34,6 +35,7 @@ export type FixedExpenseMeta = {
 };
 
 export type FixedExpenseAccount = FixedExpenseMeta & {
+  source: "legacy" | "new";
   items: Expense[];
   monthlyAmount: number;
   nextPaymentDate: string;

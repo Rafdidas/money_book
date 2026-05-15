@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import { disableDemoMode } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
 
@@ -33,6 +34,7 @@ export default function SideMenu({
   isDemoMode = false,
 }: SideMenuProps) {
   const pathname = usePathname();
+  const { alert, confirm } = useAppAlert();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -65,6 +67,19 @@ export default function SideMenu({
   };
   const handleLogout = async () => {
     if (isLoggingOut) return;
+
+    const shouldLogout = await confirm(
+      isDemoMode ? "데모 종료 하시겠습니까?" : "로그아웃 하시겠습니까?",
+      {
+      title: isDemoMode ? "데모 종료" : "로그아웃",
+      confirmText: "확인",
+      cancelText: "취소",
+      },
+    );
+
+    if (!shouldLogout) {
+      return;
+    }
 
     handleMenuClose();
     setIsLoggingOut(true);
@@ -143,21 +158,40 @@ export default function SideMenu({
             </div>
           ) : null}
         </div>
-        <ul className="side-menu--list app-header__nav column-group column-group--gap-4">
-          {navItems.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${item.isActive(pathname) ? "is-active" : ""}`}
-              >
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
+        <div className="column-group side-menu--wrap">
+          <ul className="side-menu--list app-header__nav column-group column-group--gap-4">
+            {navItems.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${item.isActive(pathname) ? "is-active" : ""}`}
+                >
+                  <span className="material-symbols-outlined icon" aria-hidden="true">
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <ul className="side-menu--list app-header__nav column-group column-group--gap-4 log-out--wrap">
+            <li
+              className="side-menu--item row-group row-group--center row-group--gap-4 label--lg"
+              onClick={handleLogout}
+            >
+              <span className="material-symbols-outlined icon" aria-hidden="true">
+                logout
+              </span>
+              {isLoggingOut
+                ? isDemoMode
+                  ? "종료 중..."
+                  : "로그아웃 중..."
+                : isDemoMode
+                  ? "데모 종료"
+                  : "로그아웃"}
             </li>
-          ))}
-        </ul>
+          </ul>
+        </div>
       </div>
     </aside>
   );

@@ -83,6 +83,63 @@ export const getExpenses = async (userId?: string) => {
   return data;
 };
 
+export const getExpensesByYear = async (year: number, userId?: string) => {
+  let resolvedUserId = userId;
+
+  if (!resolvedUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error('로그인이 필요합니다.');
+    resolvedUserId = user.id;
+  }
+
+  const from = `${year}-01-01`;
+  const to = `${year}-12-31`;
+
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*')
+    .eq('user_id', resolvedUserId)
+    .gte('date', from)
+    .lte('date', to)
+    .order('date', { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return data;
+};
+
+export const getExpensesByRange = async (
+  from: string,
+  to: string,
+  userId?: string,
+) => {
+  let resolvedUserId = userId;
+
+  if (!resolvedUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error('로그인이 필요합니다.');
+    resolvedUserId = user.id;
+  }
+
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*')
+    .eq('user_id', resolvedUserId)
+    .gte('date', from)
+    .lte('date', to)
+    .order('date', { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return data;
+};
+
 export const deleteExpense = async (id: string) => {
   const {
     data: { user },

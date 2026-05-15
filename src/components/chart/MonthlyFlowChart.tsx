@@ -17,6 +17,14 @@ type Props = {
   height?: number;
 };
 
+const INCOME_COLOR = "rgba(34, 108, 255, 0.84)";
+const INCOME_MUTED_COLOR = "rgba(34, 108, 255, 0.42)";
+const EXPENSE_COLOR = "rgba(240, 68, 56, 0.84)";
+const EXPENSE_MUTED_COLOR = "rgba(240, 68, 56, 0.42)";
+const BAR_MAX_WIDTH = 22;
+const BAR_CATEGORY_WIDTH = 0.58;
+const BAR_WIDTH_RATIO = 0.52;
+
 export default function MonthlyFlowChart({
   data,
   currentMonth,
@@ -30,23 +38,25 @@ export default function MonthlyFlowChart({
           label: "수입",
           data: data.map((item) => item.incomeTotal),
           backgroundColor: data.map((_, index) =>
-            index === currentMonth ? "#45555d" : "#506169",
+            index === currentMonth ? INCOME_COLOR : INCOME_MUTED_COLOR,
           ),
           // borderRadius: 999,
           borderSkipped: false as const,
-          barThickness: 16,
-          maxBarThickness: 18,
+          maxBarThickness: BAR_MAX_WIDTH,
+          categoryPercentage: BAR_CATEGORY_WIDTH,
+          barPercentage: BAR_WIDTH_RATIO,
         },
         {
           label: "지출",
           data: data.map((item) => item.expenseTotal),
           backgroundColor: data.map((_, index) =>
-            index === currentMonth ? "#8b3432" : "#9f403d",
+            index === currentMonth ? EXPENSE_COLOR : EXPENSE_MUTED_COLOR,
           ),
           // borderRadius: 999,
           borderSkipped: false as const,
-          barThickness: 16,
-          maxBarThickness: 18,
+          maxBarThickness: BAR_MAX_WIDTH,
+          categoryPercentage: BAR_CATEGORY_WIDTH,
+          barPercentage: BAR_WIDTH_RATIO,
         },
       ],
     }),

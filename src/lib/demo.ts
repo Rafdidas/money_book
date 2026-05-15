@@ -2,6 +2,7 @@ import type { Expense } from "@/types/expense";
 
 export const DEMO_MODE_STORAGE_KEY = "money-book:demo-mode";
 export const DEMO_EXPENSES_STORAGE_KEY = "money-book:demo-expenses";
+export const DEMO_MODE_COOKIE_KEY = "money-book-demo-mode";
 export const DEMO_USER_ID = "demo-user";
 
 const demoSavingsId = "demo-savings-emergency";
@@ -232,6 +233,7 @@ export const writeDemoExpenses = (expenses: Expense[]) => {
 export const enableDemoMode = () => {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, "true");
+  window.document.cookie = `${DEMO_MODE_COOKIE_KEY}=true; Path=/; SameSite=Lax`;
   writeDemoExpenses(readDemoExpenses());
 };
 
@@ -239,9 +241,15 @@ export const disableDemoMode = () => {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(DEMO_MODE_STORAGE_KEY);
   window.localStorage.removeItem(DEMO_EXPENSES_STORAGE_KEY);
+  window.document.cookie = `${DEMO_MODE_COOKIE_KEY}=; Path=/; Max-Age=0; SameSite=Lax`;
 };
 
 export const isDemoModeEnabled = () => {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(DEMO_MODE_STORAGE_KEY) === "true";
+  return (
+    window.localStorage.getItem(DEMO_MODE_STORAGE_KEY) === "true" ||
+    window.document.cookie
+      .split("; ")
+      .some((cookie) => cookie === `${DEMO_MODE_COOKIE_KEY}=true`)
+  );
 };

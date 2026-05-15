@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { disableDemoMode } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
+import { getAuthCallbackUrl } from "@/lib/supabase/auth-url";
 import logo from "@/assets/img/monibuk-logo.svg";
 import Image from "next/image";
 
@@ -46,6 +47,7 @@ export default function SignupPage() {
         email,
         password,
         options: {
+          emailRedirectTo: getAuthCallbackUrl(),
           data: {
             name,
           },
