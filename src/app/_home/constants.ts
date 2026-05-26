@@ -1,8 +1,10 @@
 import type { OverviewLine } from "./types";
 
-export const categoryOptions = ["🍚식비", "🚗교통비", "🎨문화생활", "🍱생필품", "🧴미용", "💊병원/약", "🎓교육", "📩공과금", "📱통신비", "🎠회비", "📅경조사", "💳카드대금", "🎁선물", "🏢대출이자", "📈주식"];
+export const categoryOptions = ["🍚식비", "🚗교통비", "🎨문화생활", "🍱생필품", "🧴미용", "💊병원/약", "🎓교육", "📩공과금", "📱통신비", "🎠회비", "📅경조사", "💳카드대금", "🎁선물", "🏢대출이자"];
 export const incomeCategoryOptions = ["💵월급", "💸보너스", "📩용돈", "🪙부수입", "👷아르바이트"];
-export const savingsCategory = "📩적금";
+export const savingsCategory = "📩저축";
+export const savingsCategoryOptions = [savingsCategory];
+export const investmentCategoryOptions = ["📈주식"];
 export const savingsMetaPrefix = "[[savings:";
 export const savingsMetaPattern = /\s*\[\[savings:([^\]]+)\]\]\s*$/;
 export const fixedExpenseMetaPrefix = "[[fixed-expense:";

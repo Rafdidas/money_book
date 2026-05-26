@@ -223,6 +223,10 @@
         border: 1px solid var(--outline);
         border-radius: 8px;
         background: var(--surface-lower);
+
+        &__grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
       }
 
       &--tabs {
@@ -247,6 +251,10 @@
         flex-direction: column;
         gap: 10px;
         width: 100%;
+
+        .invest-noti {
+          color: var(--on-primary-mid);
+        }
       }
 
       &--type-toggle {
@@ -508,9 +516,6 @@
         .calendar-content {
           height: auto;
           max-height: 150px;
-
-          &--item {
-          }
         }
 
         .graph-section {

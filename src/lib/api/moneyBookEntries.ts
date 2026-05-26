@@ -27,7 +27,7 @@ export type MoneyBookEntry = {
   id: string;
   source: MoneyBookEntrySource;
   amount: number;
-  type: "income" | "expense" | "saving";
+  type: "income" | "expense" | "saving" | "investment";
   category: string;
   memo: string;
   date: string;
@@ -47,13 +47,16 @@ const getVisibleMemo = (memo: string) =>
 const isLegacyFixedExpense = (item: Expense) =>
   item.type === "expense" && fixedExpenseMetaPattern.test(item.memo);
 
-const isLegacySavings = (item: Expense) =>
+const isSavings = (item: Expense) =>
   item.type === "expense" &&
   !isLegacyFixedExpense(item) &&
-  item.category.includes("적금");
+  (item.category.includes("적금") || item.category.includes("저축"));
+
+const isInvestment = (item: Expense) =>
+  item.type === "expense" && item.category.includes("주식");
 
 const mapExpenseToEntry = (item: Expense): MoneyBookEntry => {
-  if (isLegacySavings(item)) {
+  if (isSavings(item)) {
     return {
       id: item.id,
       source: "legacy_savings",
@@ -74,6 +77,19 @@ const mapExpenseToEntry = (item: Expense): MoneyBookEntry => {
       type: "expense",
       category: item.category,
       memo: getVisibleMemo(item.memo),
+      date: item.date,
+      originId: item.id,
+    };
+  }
+
+  if (isInvestment(item)) {
+    return {
+      id: item.id,
+      source: "expense",
+      amount: item.amount,
+      type: "investment",
+      category: item.category,
+      memo: item.memo,
       date: item.date,
       originId: item.id,
     };

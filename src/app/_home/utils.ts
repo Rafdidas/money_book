@@ -1,6 +1,7 @@
 import {
   fixedExpenseMetaPattern,
   fixedExpenseMetaPrefix,
+  investmentCategoryOptions,
   openEndedSavingsYears,
   savingsMetaPattern,
   savingsMetaPrefix,
@@ -46,14 +47,15 @@ export const getDailySeries = (
   items: Expense[],
   year: number,
   month: number,
-  type?: Expense["type"] | "savings",
+  type?: Expense["type"] | "savings" | "investment",
 ) => {
   const dailyTotals = Array.from({ length: getDaysInMonth(year, month) }, () => 0);
 
   items.forEach((item) => {
     if (type === "savings" && !isSavingsItem(item)) return;
-    if (type && type !== "savings" && item.type !== type) return;
-    if (type === "expense" && isSavingsItem(item)) return;
+    if (type === "investment" && !isInvestmentItem(item)) return;
+    if (type && type !== "savings" && type !== "investment" && item.type !== type) return;
+    if (type === "expense" && (isSavingsItem(item) || isInvestmentItem(item))) return;
     const date = new Date(item.date);
     if (date.getFullYear() !== year || date.getMonth() !== month) return;
     const amount = type
@@ -148,10 +150,14 @@ export const getMemoWithPreservedMeta = (visibleMemo: string, sourceMemo: string
   return `${memo} ${hiddenMeta}`;
 };
 
-export const isSavingsCategory = (category: string) => category.includes("적금");
+export const isSavingsCategory = (category: string) =>
+  category.includes("적금") || category.includes("저축");
 
 export const isSavingsItem = (item: Expense) =>
   item.type === "expense" && !parseFixedExpenseMemo(item.memo) && isSavingsCategory(item.category);
+
+export const isInvestmentItem = (item: Expense) =>
+  item.type === "expense" && investmentCategoryOptions.includes(item.category);
 
 export const isFixedExpenseItem = (item: Expense) =>
   item.type === "expense" && Boolean(parseFixedExpenseMemo(item.memo));

@@ -16,8 +16,11 @@ const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
 const formatCurrency = (value: number) => `₩ ${value.toLocaleString()}`;
 const formatSignedCurrency = (value: number) =>
   `${value < 0 ? "-" : ""}₩ ${Math.abs(value).toLocaleString()}`;
-const isSavingsCategory = (category: string) => category.includes("적금");
+const isSavingsCategory = (category: string) =>
+  category.includes("적금") || category.includes("저축");
+const isInvestmentCategory = (category: string) => category.includes("주식");
 const isSavingsItem = (item: { type: string }) => item.type === "saving";
+const isInvestmentItem = (item: { type: string }) => item.type === "investment";
 const mapDemoExpenseToEntry = (item: {
   id: string;
   amount: number;
@@ -25,16 +28,21 @@ const mapDemoExpenseToEntry = (item: {
   category: string;
   memo: string;
   date: string;
-}): MoneyBookEntry => ({
-  id: item.id,
-  source: isSavingsCategory(item.category) ? "legacy_savings" : "expense",
-  amount: item.amount,
-  type: isSavingsCategory(item.category) ? "saving" : item.type,
-  category: item.category,
-  memo: item.memo,
-  date: item.date,
-  originId: item.id,
-});
+}): MoneyBookEntry => {
+  const isSavings = isSavingsCategory(item.category);
+  const isInvestment = isInvestmentCategory(item.category);
+
+  return {
+    id: item.id,
+    source: isSavings ? "legacy_savings" : "expense",
+    amount: item.amount,
+    type: isSavings ? "saving" : isInvestment ? "investment" : item.type,
+    category: item.category,
+    memo: item.memo,
+    date: item.date,
+    originId: item.id,
+  };
+};
 
 export default function AnalysisPage() {
   const today = new Date();
@@ -108,6 +116,9 @@ export default function AnalysisPage() {
         const savingsTotal = items
           .filter(isSavingsItem)
           .reduce((sum, item) => sum + item.amount, 0);
+        const investmentTotal = items
+          .filter(isInvestmentItem)
+          .reduce((sum, item) => sum + item.amount, 0);
         const incomeTotal = items
           .filter((item) => item.type === "income")
           .reduce((sum, item) => sum + item.amount, 0);
@@ -116,8 +127,9 @@ export default function AnalysisPage() {
           month: index,
           expenseTotal,
           savingsTotal,
+          investmentTotal,
           incomeTotal,
-          net: incomeTotal - expenseTotal - savingsTotal,
+          net: incomeTotal - expenseTotal - savingsTotal - investmentTotal,
           count: items.length,
         };
       }),
@@ -134,6 +146,9 @@ export default function AnalysisPage() {
   const monthlySavings = selectedMonthItems
     .filter(isSavingsItem)
     .reduce((sum, item) => sum + item.amount, 0);
+  const monthlyInvestment = selectedMonthItems
+    .filter(isInvestmentItem)
+    .reduce((sum, item) => sum + item.amount, 0);
   const monthlyIncome = selectedMonthItems
     .filter((item) => item.type === "income")
     .reduce((sum, item) => sum + item.amount, 0);
@@ -141,6 +156,7 @@ export default function AnalysisPage() {
     (item) => item.type === "expense",
   ).length;
   const monthlySavingsCount = selectedMonthItems.filter(isSavingsItem).length;
+  const monthlyInvestmentCount = selectedMonthItems.filter(isInvestmentItem).length;
   const categorySummary = Object.entries(
     selectedMonthItems
       .filter((item) => item.type === "expense")
@@ -156,10 +172,14 @@ export default function AnalysisPage() {
   const yearlySavingsTotal = yearlyEntries
     .filter(isSavingsItem)
     .reduce((sum, item) => sum + item.amount, 0);
+  const yearlyInvestmentTotal = yearlyEntries
+    .filter(isInvestmentItem)
+    .reduce((sum, item) => sum + item.amount, 0);
   const yearlyIncomeTotal = yearlyEntries
     .filter((item) => item.type === "income")
     .reduce((sum, item) => sum + item.amount, 0);
-  const yearlyBalance = yearlyIncomeTotal - yearlyExpenseTotal - yearlySavingsTotal;
+  const yearlyBalance =
+    yearlyIncomeTotal - yearlyExpenseTotal - yearlySavingsTotal - yearlyInvestmentTotal;
   const yearlyRecordCount = yearlyEntries.length;
   const categoryChartData = categorySummary.map(([label, value]) => ({ label, value }));
 
@@ -214,11 +234,12 @@ export default function AnalysisPage() {
                   {monthNames[selectedMonth]} 현금흐름
                 </h4>
                 <strong className="analysis-card--value title--lg">
-                  {formatSignedCurrency(monthlyIncome - monthlyExpense - monthlySavings)}
+                  {formatSignedCurrency(monthlyIncome - monthlyExpense - monthlySavings - monthlyInvestment)}
                 </strong>
                 <p className="analysis-card--meta label--md">
                   수입 {formatCurrency(monthlyIncome)} · 지출{" "}
                   {formatCurrency(monthlyExpense)} · 저축 {formatCurrency(monthlySavings)}
+                  {" "}· 투자원금 {formatCurrency(monthlyInvestment)}
                 </p>
               </article>
               <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
@@ -231,6 +252,8 @@ export default function AnalysisPage() {
                 <p className="analysis-card--meta label--md">
                   지출 {monthlyExpenseCount.toLocaleString()}건 · 저축{" "}
                   {monthlySavingsCount.toLocaleString()}건 {formatCurrency(monthlySavings)}
+                  {" "}· 투자 {monthlyInvestmentCount.toLocaleString()}건{" "}
+                  {formatCurrency(monthlyInvestment)}
                 </p>
               </article>
               <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
@@ -256,7 +279,8 @@ export default function AnalysisPage() {
                 <p className="analysis-card--meta label--md">
                   총 {yearlyRecordCount.toLocaleString()}건 · 수입{" "}
                   {formatCurrency(yearlyIncomeTotal)} · 저축{" "}
-                  {formatCurrency(yearlySavingsTotal)}
+                  {formatCurrency(yearlySavingsTotal)} · 투자원금{" "}
+                  {formatCurrency(yearlyInvestmentTotal)}
                 </p>
               </article>
             </div>
@@ -323,7 +347,7 @@ export default function AnalysisPage() {
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <h4 className="main-overview--title title--sm">1월부터 12월까지</h4>
               <span className="label--md analysis-section--meta">
-                월별 수입, 지출, 저축, 현금흐름
+                월별 수입, 지출, 저축, 투자원금, 현금흐름
               </span>
             </div>
             <div className="analysis-year-grid">
@@ -349,6 +373,12 @@ export default function AnalysisPage() {
                       <span className="analysis-card--meta label--md">저축</span>
                       <strong className="bodyBold--md">
                         {formatCurrency(item.savingsTotal)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="analysis-card--meta label--md">투자원금</span>
+                      <strong className="bodyBold--md">
+                        {formatCurrency(item.investmentTotal)}
                       </strong>
                     </div>
                     <div>

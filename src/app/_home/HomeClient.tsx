@@ -57,13 +57,16 @@ import {
   categoryOptions,
   customCategoryValue,
   incomeCategoryOptions,
+  investmentCategoryOptions,
   savingsCategory,
+  savingsCategoryOptions,
   weekdayLabels,
 } from "./constants";
 import type {
   ExpenseFormData,
   FixedExpenseAccount,
   FixedExpenseMeta,
+  InlineEntryType,
   InlineFormMode,
   SavingsAccount,
   SavingsMeta,
@@ -83,11 +86,25 @@ import {
   getOpenEndedSavingsDate,
   getSavingsPaymentDates,
   getVisibleMemo,
-  isSavingsCategory,
+  isInvestmentItem,
   isSavingsItem,
   parseFixedExpenseMemo,
   parseSavingsMemo,
 } from "./utils";
+
+const getInlineCategoryOptions = (type: InlineEntryType) => {
+  if (type === "income") return incomeCategoryOptions;
+  if (type === "savings") return savingsCategoryOptions;
+  if (type === "investment") return investmentCategoryOptions;
+  return categoryOptions;
+};
+
+const getInlineEntryType = (expense: Expense): InlineEntryType => {
+  if (expense.type === "income") return "income";
+  if (isSavingsItem(expense)) return "savings";
+  if (isInvestmentItem(expense)) return "investment";
+  return "expense";
+};
 
 export default function HomeClient() {
   const today = useMemo(() => new Date(), []);
@@ -97,7 +114,7 @@ export default function HomeClient() {
     isDemoMode,
     isAuthResolved,
   } = useAppData();
-  const { confirm } = useAppAlert();
+  const { alert, confirm } = useAppAlert();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [storedSavingsAccounts, setStoredSavingsAccounts] = useState<StoredSavingsAccount[]>([]);
   const [storedSavingsPayments, setStoredSavingsPayments] = useState<SavingsPayment[]>([]);
@@ -113,7 +130,8 @@ export default function HomeClient() {
   const [inlineCustomCategory, setInlineCustomCategory] = useState("");
   const [inlineMemo, setInlineMemo] = useState("");
   const [inlineDate, setInlineDate] = useState(formatDate(today));
-  const [inlineType, setInlineType] = useState<Expense["type"]>("expense");
+  const [inlineType, setInlineType] = useState<InlineEntryType>("expense");
+  const [inlineEditListType, setInlineEditListType] = useState<InlineEntryType>("expense");
   const [isInlineSubmitting, setIsInlineSubmitting] = useState(false);
   const [isInlineDeleting, setIsInlineDeleting] = useState(false);
   const [savingsFormMode, setSavingsFormMode] = useState<InlineFormMode>("create");
@@ -361,16 +379,25 @@ export default function HomeClient() {
     [currentMonth, currentYear, dashboardExpenses],
   );
   const monthlyEditableExpenses = useMemo(
-    () => monthlyExpenses.filter((item) => !storedPaymentIds.has(item.id)),
+    () =>
+      monthlyExpenses.filter(
+        (item) =>
+          !storedPaymentIds.has(item.id) &&
+          !parseSavingsMemo(item.memo) &&
+          !parseFixedExpenseMemo(item.memo),
+      ),
     [monthlyExpenses, storedPaymentIds],
   );
   const monthlyExpenseItems = monthlyExpenses.filter(
-    (item) => item.type === "expense" && !isSavingsItem(item),
+    (item) => item.type === "expense" && !isSavingsItem(item) && !isInvestmentItem(item),
   );
   const monthlySavingsItems = monthlyExpenses.filter(isSavingsItem);
+  const monthlyInvestmentItems = monthlyExpenses.filter(isInvestmentItem);
   const monthlyExpenseTotal = monthlyExpenseItems
     .reduce((sum, item) => sum + item.amount, 0);
   const monthlySavingsTotal = monthlySavingsItems
+    .reduce((sum, item) => sum + item.amount, 0);
+  const monthlyInvestmentTotal = monthlyInvestmentItems
     .reduce((sum, item) => sum + item.amount, 0);
   const monthlyIncomeTotal = monthlyExpenses
     .filter((item) => item.type === "income")
@@ -378,13 +405,15 @@ export default function HomeClient() {
   const monthlyIncomeCount = monthlyExpenses.filter((item) => item.type === "income").length;
   const monthlyExpenseCount = monthlyExpenseItems.length;
   const monthlySavingsCount = monthlySavingsItems.length;
+  const monthlyInvestmentCount = monthlyInvestmentItems.length;
   const monthlyIncomeAverage = monthlyIncomeCount
     ? monthlyIncomeTotal / monthlyIncomeCount
     : 0;
   const monthlyExpenseAverage = monthlyExpenseCount
     ? monthlyExpenseTotal / monthlyExpenseCount
     : 0;
-  const monthlyTotal = monthlyIncomeTotal - monthlyExpenseTotal - monthlySavingsTotal;
+  const monthlyTotal =
+    monthlyIncomeTotal - monthlyExpenseTotal - monthlySavingsTotal - monthlyInvestmentTotal;
   const cashflowSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth);
   const incomeSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "income");
   const expenseSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "expense");
@@ -394,12 +423,18 @@ export default function HomeClient() {
     [monthlyExpenses, selectedDateKey],
   );
   const selectedDayItems = useMemo(
-    () => monthlyEditableExpenses.filter((item) => item.date === selectedDateKey),
-    [monthlyEditableExpenses, selectedDateKey],
+    () =>
+      monthlyEditableExpenses.filter(
+        (item) =>
+          item.date === selectedDateKey && getInlineEntryType(item) === inlineEditListType,
+      ),
+    [inlineEditListType, monthlyEditableExpenses, selectedDateKey],
   );
   const categoryExpenseItems = useMemo(() => {
     const categoryTotals = monthlyExpenses
-      .filter((item) => item.type === "expense" && !isSavingsItem(item))
+      .filter(
+        (item) => item.type === "expense" && !isSavingsItem(item) && !isInvestmentItem(item),
+      )
       .reduce<Record<string, number>>((acc, item) => {
         acc[item.category] = (acc[item.category] || 0) + item.amount;
         return acc;
@@ -419,12 +454,14 @@ export default function HomeClient() {
   }, [monthlyExpenses]);
   const inlineEditItems = useMemo(
     () =>
-      [...monthlyEditableExpenses].sort((left, right) => {
-        const dateDiff = new Date(right.date).getTime() - new Date(left.date).getTime();
-        if (dateDiff !== 0) return dateDiff;
-        return right.created_at.localeCompare(left.created_at);
-      }),
-    [monthlyEditableExpenses],
+      monthlyEditableExpenses
+        .filter((item) => getInlineEntryType(item) === inlineEditListType)
+        .sort((left, right) => {
+          const dateDiff = new Date(right.date).getTime() - new Date(left.date).getTime();
+          if (dateDiff !== 0) return dateDiff;
+          return right.created_at.localeCompare(left.created_at);
+        }),
+    [inlineEditListType, monthlyEditableExpenses],
   );
   const detailItems = useMemo(
     () =>
@@ -442,14 +479,21 @@ export default function HomeClient() {
     return acc;
   }, {});
   const calendarDays = getCalendarDays(selectedDate);
-  const activeCategoryOptions =
-    inlineType === "income" ? incomeCategoryOptions : categoryOptions;
+  const activeCategoryOptions = getInlineCategoryOptions(inlineType);
+  const activeInlineTabType =
+    inlineFormMode === "edit" ? inlineEditListType : inlineType;
   const savingsAccounts = useMemo<SavingsAccount[]>(() => {
     const todayKey = formatDate(today);
     const selectedMonthStartKey = formatDate(new Date(currentYear, currentMonth, 1));
     const grouped = expenses.reduce<Record<string, SavingsAccount>>((acc, item) => {
-      if (item.type !== "expense" || !isSavingsCategory(item.category)) return acc;
-      const meta = parseSavingsMemo(item.memo) ?? getFallbackSavingsMeta(item);
+      const parsedMeta = parseSavingsMemo(item.memo);
+      if (
+        item.type !== "expense" ||
+        (!parsedMeta && !item.category.includes("적금"))
+      ) {
+        return acc;
+      }
+      const meta = parsedMeta ?? getFallbackSavingsMeta(item);
 
       if (!acc[meta.id]) {
         acc[meta.id] = {
@@ -651,8 +695,8 @@ export default function HomeClient() {
   }, [selectedDateKey]);
 
   const fillInlineEditForm = useCallback((expense: Expense) => {
-    const categoryList =
-      expense.type === "income" ? incomeCategoryOptions : categoryOptions;
+    const type = getInlineEntryType(expense);
+    const categoryList = getInlineCategoryOptions(type);
 
     setInlineAmount(String(expense.amount));
     setInlineCategory(
@@ -663,7 +707,7 @@ export default function HomeClient() {
     );
     setInlineMemo(getVisibleMemo(expense.memo));
     setInlineDate(expense.date);
-    setInlineType(expense.type);
+    setInlineType(type);
   }, []);
 
   const resetSavingsCreateForm = useCallback(() => {
@@ -827,11 +871,29 @@ export default function HomeClient() {
     setInlineFormMode(mode);
     if (mode === "create") {
       resetInlineCreateForm();
+    } else {
+      setInlineEditListType(inlineType);
     }
   };
-  const handleInlineTypeChange = (type: Expense["type"]) => {
-    const nextCategoryOptions =
-      type === "income" ? incomeCategoryOptions : categoryOptions;
+  const handleInlineTypeChange = (type: InlineEntryType) => {
+    if (inlineFormMode === "edit") {
+      if (!monthlyEditableExpenses.some((item) => getInlineEntryType(item) === type)) {
+        alert("수정할 내역이 없습니다.");
+        return;
+      }
+
+      setInlineEditListType(type);
+      return;
+    }
+
+    const nextCategoryOptions = getInlineCategoryOptions(type);
+
+    setInlineType(type);
+    setInlineCategory(nextCategoryOptions[0]);
+    setInlineCustomCategory("");
+  };
+  const handleInlineClassificationChange = (type: InlineEntryType) => {
+    const nextCategoryOptions = getInlineCategoryOptions(type);
 
     setInlineType(type);
     setInlineCategory(nextCategoryOptions[0]);
@@ -1506,7 +1568,7 @@ export default function HomeClient() {
       category,
       memo,
       date: inlineDate,
-      type: inlineType,
+      type: inlineType === "income" ? "income" : "expense",
     };
 
     try {
@@ -1531,6 +1593,9 @@ export default function HomeClient() {
               item.id === selectedInlineExpense.id ? { ...item, ...payload } : item,
             ),
           );
+        }
+        if (getInlineEntryType(selectedInlineExpense) !== inlineType) {
+          setInlineEditListType(inlineType);
         }
       } else {
         if (isDemoMode) {
@@ -1624,10 +1689,17 @@ export default function HomeClient() {
                     {formatWon(monthlyTotal)}
                   </p>
                 </div>
-                <p className="main-overview--last label--md">
-                  수입 {formatWon(monthlyIncomeTotal)} · 지출{" "}
-                  {formatWon(monthlyExpenseTotal)} · 저축 {formatWon(monthlySavingsTotal)}
-                </p>
+                <div className="column-group column-group--gap-4">
+                  <p className="main-overview--last label--md">
+                    수입 {formatWon(monthlyIncomeTotal)} · 지출{" "}
+                    {formatWon(monthlyExpenseTotal)}
+                  </p>
+                  <p className="main-overview--last label--md">
+                    저축 {formatWon(monthlySavingsTotal)} · 투자원금{" "}
+                    {formatWon(monthlyInvestmentTotal)}
+                  </p>
+                </div>
+
                 <OverviewLineChart
                   lines={[{ values: cashflowSeries, color: "teal", label: "현금흐름" }]}
                 />
@@ -1664,14 +1736,19 @@ export default function HomeClient() {
               </div>
               {/* 저축 */}
               <div className="card overview-card column-group column-group--center column-group--gap-8">
-                <h4 className="main-overview--title title--sm">이번 달 저축</h4>
-                <div className="row-group row-group--center row-group--between">
-                  <p className="main-overview--num title--lg">
-                    {formatWon(monthlySavingsTotal)}
+                <h4 className="main-overview--title title--sm">
+                  이번 달 저축 및 투자원금
+                </h4>
+                <div className="row-group row-group--center row-group--gap-12">
+                  <p className="main-overview--num title--md">
+                    저축: {formatWon(monthlySavingsTotal)}
+                  </p>
+                  <p className="main-overview--num title--md">
+                    투자원금: {formatWon(monthlyInvestmentTotal)}
                   </p>
                 </div>
                 <p className="main-overview--last label--md">
-                  총 {monthlySavingsCount}건
+                  총 {monthlySavingsCount + monthlyInvestmentCount}건
                 </p>
                 <OverviewLineChart
                   lines={[{ values: savingsSeries, color: "blue", label: "저축" }]}
@@ -1755,6 +1832,7 @@ export default function HomeClient() {
                       {selectedCalendarItems.map((item) => {
                         const isIncome = item.type === "income";
                         const isSavings = isSavingsItem(item);
+                        const isInvestment = isInvestmentItem(item);
                         return (
                           <li
                             key={item.id}
@@ -1763,14 +1841,22 @@ export default function HomeClient() {
                             <p className="calendar-content--sort">
                               <span
                                 className={`badge ${
-                                  isSavings
-                                    ? "badge--blue"
-                                    : isIncome
-                                      ? "badge--green"
-                                      : "badge--red"
+                                  isInvestment
+                                    ? "badge--violet"
+                                    : isSavings
+                                      ? "badge--blue"
+                                      : isIncome
+                                        ? "badge--green"
+                                        : "badge--red"
                                 }`}
                               >
-                                {isSavings ? "저축" : isIncome ? "수입" : "지출"}
+                                {isInvestment
+                                  ? "투자"
+                                  : isSavings
+                                    ? "저축"
+                                    : isIncome
+                                      ? "수입"
+                                      : "지출"}
                               </span>
                             </p>
                             <div className="row-group row-group--center row-group--gap-8">
@@ -1844,22 +1930,61 @@ export default function HomeClient() {
                         </select>
                       </label>
                     ) : null}
-                    <div className="main-overview--type-toggle">
+                    <div className="main-overview--type-toggle main-overview--type-toggle__grid">
                       <button
                         type="button"
-                        className={`main-overview--type bodyBold--sm ${inlineType === "expense" ? "is-active" : ""}`}
+                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "expense" ? "is-active" : ""}`}
                         onClick={() => handleInlineTypeChange("expense")}
                       >
                         지출
                       </button>
                       <button
                         type="button"
-                        className={`main-overview--type bodyBold--sm ${inlineType === "income" ? "is-active" : ""}`}
+                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "income" ? "is-active" : ""}`}
                         onClick={() => handleInlineTypeChange("income")}
                       >
                         수입
                       </button>
+                      <button
+                        type="button"
+                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "savings" ? "is-active" : ""}`}
+                        onClick={() => handleInlineTypeChange("savings")}
+                      >
+                        저축
+                      </button>
+                      <button
+                        type="button"
+                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "investment" ? "is-active" : ""}`}
+                        onClick={() => handleInlineTypeChange("investment")}
+                      >
+                        투자
+                      </button>
                     </div>
+                    {inlineType === "investment" ? (
+                      <p className="label--md invest-noti">
+                        투자금은 현재 주가와 무관하게, 투자한 금액을 기록하기 위한
+                        내역입니다.
+                      </p>
+                    ) : null}
+                    {inlineFormMode === "edit" ? (
+                      <label className="main-overview--field">
+                        <span className="label--md">대카테고리 변경</span>
+                        <select
+                          className="main-overview--control body--sm"
+                          value={inlineType}
+                          onChange={(event) =>
+                            handleInlineClassificationChange(
+                              event.target.value as InlineEntryType,
+                            )
+                          }
+                        >
+                          <option value="expense">지출</option>
+                          <option value="income">수입</option>
+                          <option value="savings">저축</option>
+                          <option value="investment">투자</option>
+                        </select>
+                      </label>
+                    ) : null}
                     <div className="main-overview--form-grid">
                       <label className="main-overview--field">
                         <span className="label--md">카테고리</span>
@@ -2501,20 +2626,29 @@ export default function HomeClient() {
                       detailItems.map((item) => {
                         const isIncome = item.type === "income";
                         const isSavings = isSavingsItem(item);
+                        const isInvestment = isInvestmentItem(item);
                         return (
                           <tr key={item.id}>
                             <td>{item.category}</td>
                             <td>
                               <span
                                 className={`badge ${
-                                  isSavings
-                                    ? "badge--blue"
-                                    : isIncome
-                                      ? "badge--green"
-                                      : "badge--red"
+                                  isInvestment
+                                    ? "badge--violet"
+                                    : isSavings
+                                      ? "badge--blue"
+                                      : isIncome
+                                        ? "badge--green"
+                                        : "badge--red"
                                 }`}
                               >
-                                {isSavings ? "저축" : isIncome ? "수입" : "지출"}
+                                {isInvestment
+                                  ? "투자"
+                                  : isSavings
+                                    ? "저축"
+                                    : isIncome
+                                      ? "수입"
+                                      : "지출"}
                               </span>
                             </td>
                             <td>{formatCurrency(item.amount)}</td>

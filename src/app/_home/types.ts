@@ -8,6 +8,7 @@ export type OverviewLine = {
 
 export type ExpenseFormData = Pick<Expense, "amount" | "category" | "memo" | "date" | "type">;
 export type InlineFormMode = "create" | "edit";
+export type InlineEntryType = Expense["type"] | "savings" | "investment";
 
 export type SavingsMeta = {
   id: string;
