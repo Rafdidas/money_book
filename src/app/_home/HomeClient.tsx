@@ -1740,16 +1740,21 @@ export default function HomeClient() {
                   이번 달 저축 및 투자원금
                 </h4>
                 <div className="row-group row-group--center row-group--gap-12">
-                  <p className="main-overview--num title--md">
-                    저축: {formatWon(monthlySavingsTotal)}
-                  </p>
-                  <p className="main-overview--num title--md">
-                    투자원금: {formatWon(monthlyInvestmentTotal)}
+                  <p className="main-overview--num title--lg">
+                    {formatWon(monthlySavingsTotal + monthlyInvestmentTotal)}
                   </p>
                 </div>
-                <p className="main-overview--last label--md">
-                  총 {monthlySavingsCount + monthlyInvestmentCount}건
-                </p>
+                <div className="row-group row-group--center row-group--gap-4">
+                  <p className="main-overview--last label--md">
+                    저축: {formatWon(monthlySavingsTotal)}
+                  </p>
+                  <p className="main-overview--last label--md">
+                     · 투자원금: {formatWon(monthlyInvestmentTotal)}
+                  </p>
+                  <p className="main-overview--last label--md">
+                     · 총 {monthlySavingsCount + monthlyInvestmentCount}건
+                  </p>
+                </div>
                 <OverviewLineChart
                   lines={[{ values: savingsSeries, color: "blue", label: "저축" }]}
                 />
