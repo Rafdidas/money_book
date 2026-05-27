@@ -24,3 +24,7 @@ export const getKisConfig = (): KisConfig => ({
 
 export const hasKisConfig = () =>
   Boolean(process.env.KIS_APP_KEY?.trim() && process.env.KIS_APP_SECRET?.trim());
+
+export const isKisPublicQuoteEnabled = () =>
+  process.env.NODE_ENV !== "production" ||
+  process.env.KIS_PUBLIC_QUOTE_ENABLED?.trim().toLowerCase() === "true";

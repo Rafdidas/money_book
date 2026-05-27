@@ -107,3 +107,9 @@ supabase/
 ## 배포
 
 Vercel 등 Next.js를 지원하는 플랫폼에 배포할 수 있습니다. 배포 환경에도 `.env.local`과 같은 Supabase 환경 변수를 등록해야 합니다.
+
+투자 현재가 기능은 `KIS_APP_KEY`, `KIS_APP_SECRET`, `KIS_BASE_URL`을 서버
+환경변수로 사용합니다. 프로덕션에서는 KIS 시세를 서비스 화면에 제공할 수
+있는 이용 범위를 확인한 뒤에만 `KIS_PUBLIC_QUOTE_ENABLED=true`를 설정하세요.
+값을 설정하지 않거나 `false`이면 `/api/stocks/quotes`는 현재가 조회를
+비활성화합니다.
