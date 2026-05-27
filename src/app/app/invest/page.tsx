@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppData } from "@/app/providers";
+import {
+  DEMO_INVESTMENT_OWNER_KEY,
+  DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY,
+} from "@/lib/demo";
 import type { StockPurchaseMeta, StockQuote, StockSearchItem } from "@/types/stock";
 import { formatDate } from "@/utils/date";
 import "../../invest/invest.scss";
@@ -11,6 +15,7 @@ const formatWon = (value: number) =>
   `${value < 0 ? "-" : ""}${Math.round(Math.abs(value)).toLocaleString()}원`;
 const stockAutoRefreshKey = "money-book-stock-last-refresh";
 const stockHoldingsStoragePrefix = "money-book:stock-holdings";
+const currentDemoStockHoldingsVersion = "1";
 
 type StockSortKey = "name" | "totalProfit" | "averagePrice" | "totalCost" | "dailyProfit";
 type SortDirection = "asc" | "desc";
@@ -83,6 +88,44 @@ const writeStoredInvestmentStocks = (ownerKey: string, stocks: InvestmentStock[]
   window.localStorage.setItem(getStockHoldingsStorageKey(ownerKey), JSON.stringify(stocks));
 };
 
+const createDemoInvestmentStocks = (referenceDate: Date): InvestmentStock[] => {
+  const formatPurchaseDate = (monthOffset: number, day: number) =>
+    formatDate(new Date(referenceDate.getFullYear(), referenceDate.getMonth() + monthOffset, day));
+
+  return [
+    {
+      id: "demo-stock-samsung-current",
+      symbol: "005930",
+      name: "삼성전자",
+      market: "KOSPI",
+      quantity: 6,
+      unitPrice: 70000,
+      purchaseDate: formatPurchaseDate(0, 8),
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "demo-stock-samsung-prev",
+      symbol: "005930",
+      name: "삼성전자",
+      market: "KOSPI",
+      quantity: 5,
+      unitPrice: 70000,
+      purchaseDate: formatPurchaseDate(-1, 8),
+      createdAt: new Date().toISOString(),
+    },
+  ];
+};
+
+const createDemoStockQuotes = (): Record<string, StockQuote> => ({
+  "005930": {
+    symbol: "005930",
+    currentPrice: 74500,
+    dailyChange: 900,
+    dailyChangeRate: 1.22,
+    updatedAt: new Date().toISOString(),
+  },
+});
+
 export default function InvestPage() {
   const today = useMemo(() => new Date(), []);
   const {
@@ -104,7 +147,7 @@ export default function InvestPage() {
   const [isStockSearching, setIsStockSearching] = useState(false);
   const [isStockSubmitting, setIsStockSubmitting] = useState(false);
   const [isStockRefreshing, setIsStockRefreshing] = useState(false);
-  const storageOwnerKey = displayEmail || (isDemoMode ? "demo" : "local");
+  const storageOwnerKey = isDemoMode ? DEMO_INVESTMENT_OWNER_KEY : displayEmail || "local";
 
   const investmentSummaries = useMemo<InvestmentSummary[]>(() => {
     const grouped = investmentStocks.reduce<Record<string, InvestmentSummary>>((acc, stock) => {
@@ -313,9 +356,28 @@ export default function InvestPage() {
   useEffect(() => {
     if (!isAuthResolved) return;
     window.queueMicrotask(() => {
-      setInvestmentStocks(readStoredInvestmentStocks(storageOwnerKey));
+      let storedStocks = readStoredInvestmentStocks(storageOwnerKey);
+
+      if (isDemoMode) {
+        if (
+          window.localStorage.getItem(DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY) !==
+          currentDemoStockHoldingsVersion
+        ) {
+          if (!storedStocks.length) {
+            storedStocks = createDemoInvestmentStocks(today);
+            writeStoredInvestmentStocks(storageOwnerKey, storedStocks);
+          }
+          window.localStorage.setItem(
+            DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY,
+            currentDemoStockHoldingsVersion,
+          );
+        }
+        setStockQuotes(createDemoStockQuotes());
+      }
+
+      setInvestmentStocks(storedStocks);
     });
-  }, [isAuthResolved, storageOwnerKey]);
+  }, [isAuthResolved, isDemoMode, storageOwnerKey, today]);
 
   useEffect(() => {
     if (!isAuthResolved || isDemoMode || !displayEmail || !stockSymbols.length) return;
@@ -632,7 +694,6 @@ export default function InvestPage() {
                   </table>
                 </div>
               </div>
-              <div className="empty title--md">업데이트 예정</div>
             </div>
           </div>
         </section>
