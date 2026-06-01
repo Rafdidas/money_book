@@ -17,6 +17,22 @@ export const formatCurrency = (value: number) =>
 export const formatWon = (value: number) =>
   `${value < 0 ? "-" : ""}${Math.round(Math.abs(value)).toLocaleString()}원`;
 
+export const formatCompactWon = (value: number) => {
+  const roundedValue = Math.round(value);
+  const absoluteValue = Math.abs(roundedValue);
+
+  if (absoluteValue < 10000) return formatWon(roundedValue);
+
+  const manWon = absoluteValue / 10000;
+  const formattedManWon = Number.isInteger(manWon)
+    ? manWon.toLocaleString()
+    : manWon.toLocaleString(undefined, {
+        maximumFractionDigits: 1,
+      });
+
+  return `${roundedValue < 0 ? "-" : ""}${formattedManWon}만원`;
+};
+
 export const formatHeaderDate = (date: Date) =>
   new Intl.DateTimeFormat("en-US", {
     month: "short",

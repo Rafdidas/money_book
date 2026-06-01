@@ -81,6 +81,7 @@ import type {
 import {
   encodeFixedExpenseMemo,
   encodeSavingsMemo,
+  formatCompactWon,
   formatCurrency,
   formatDetailDate,
   formatHeaderDate,
@@ -2813,13 +2814,13 @@ export default function HomeClient() {
                                 <div className="row-group row-group--center row-group--gap-4">
                                   <span className="label--sm">납입액 :</span>
                                   <p className="savings--num bodyBold--sm">
-                                    {formatWon(account.monthlyPayment)}
+                                    {formatCompactWon(account.monthlyPayment)}
                                   </p>
                                 </div>
                                 <div className="row-group row-group--center row-group--gap-4">
                                   <span className="label--sm">누적 납입액 :</span>
                                   <p className="savings--num bodyBold--sm">
-                                    {formatWon(account.currentAmount)}
+                                    {formatCompactWon(account.currentAmount)}
                                   </p>
                                 </div>
                               </div>

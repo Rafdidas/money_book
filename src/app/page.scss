@@ -390,11 +390,17 @@
           margin-top: 16px;
         }
         &--items {
+          position: relative;
           flex-wrap: wrap;
           padding: 4px 8px;
           background: var(--surface-lowest);
           border: 1px solid var(--outline);
           border-radius: 8px;
+          .side-menu--dropdown {
+            position: absolute;
+            top: 0;
+            right: 33px;
+          }
         }
         &--dates {
           margin-left: auto;
