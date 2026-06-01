@@ -116,6 +116,10 @@ type RecurringPaymentRecord = {
   created_at: string;
 };
 
+type DashboardExpense = Expense & {
+  status?: PaymentStatus;
+};
+
 const getLatestPayment = <T extends RecurringPaymentRecord>(payments: T[]) =>
   [...payments].sort((left, right) => {
     const createdDiff = right.created_at.localeCompare(left.created_at);
@@ -140,6 +144,25 @@ const getEffectiveActivePayments = <T extends RecurringPaymentRecord>(
 
   return Array.from(grouped.values())
     .map((group) => getLatestPayment(group))
+    .filter((payment): payment is T => Boolean(payment));
+};
+
+const getEffectivePausedPayments = <T extends RecurringPaymentRecord>(
+  payments: T[],
+  getOwnerId: (payment: T) => string,
+) => {
+  const grouped = new Map<string, T[]>();
+
+  payments.forEach((payment) => {
+    const key = `${getOwnerId(payment)}:${payment.payment_date}`;
+    const group = grouped.get(key) ?? [];
+    group.push(payment);
+    grouped.set(key, group);
+  });
+
+  return Array.from(grouped.values())
+    .filter((group) => !hasActivePayment(group))
+    .map((group) => getLatestPayment(group.filter((payment) => payment.status === "cancelled")))
     .filter((payment): payment is T => Boolean(payment));
 };
 
@@ -354,6 +377,14 @@ export default function HomeClient() {
       ),
     [storedSavingsPayments],
   );
+  const pausedStoredSavingsPayments = useMemo(
+    () =>
+      getEffectivePausedPayments(
+        storedSavingsPayments,
+        (payment) => payment.savings_account_id,
+      ),
+    [storedSavingsPayments],
+  );
   const storedSavingsPaymentsForListByAccount = useMemo(() => {
     const grouped = new Map<string, SavingsPayment[]>();
 
@@ -400,6 +431,14 @@ export default function HomeClient() {
       ),
     [storedFixedExpensePayments],
   );
+  const pausedStoredFixedExpensePayments = useMemo(
+    () =>
+      getEffectivePausedPayments(
+        storedFixedExpensePayments,
+        (payment) => payment.fixed_expense_rule_id,
+      ),
+    [storedFixedExpensePayments],
+  );
   const storedFixedExpensePaymentsForListByRule = useMemo(() => {
     const grouped = new Map<string, FixedExpensePayment[]>();
 
@@ -434,7 +473,7 @@ export default function HomeClient() {
 
     return grouped;
   }, [activeStoredFixedExpensePayments]);
-  const storedSavingsExpenseItems = useMemo<Expense[]>(
+  const storedSavingsExpenseItems = useMemo<DashboardExpense[]>(
     () =>
       activeStoredSavingsPayments.map((payment) => {
         const account = storedSavingsAccountMap.get(payment.savings_account_id);
@@ -447,12 +486,32 @@ export default function HomeClient() {
           category: savingsCategory,
           memo: account?.name ?? "적금",
           date: payment.payment_date,
+          status: payment.status,
           created_at: payment.created_at,
         };
       }),
     [activeStoredSavingsPayments, storedSavingsAccountMap],
   );
-  const storedFixedExpenseItems = useMemo<Expense[]>(
+  const pausedStoredSavingsExpenseItems = useMemo<DashboardExpense[]>(
+    () =>
+      pausedStoredSavingsPayments.map((payment) => {
+        const account = storedSavingsAccountMap.get(payment.savings_account_id);
+
+        return {
+          id: payment.id,
+          user_id: payment.user_id,
+          amount: payment.amount,
+          type: "expense",
+          category: savingsCategory,
+          memo: account?.name ?? "적금",
+          date: payment.payment_date,
+          status: payment.status,
+          created_at: payment.created_at,
+        };
+      }),
+    [pausedStoredSavingsPayments, storedSavingsAccountMap],
+  );
+  const storedFixedExpenseItems = useMemo<DashboardExpense[]>(
     () =>
       activeStoredFixedExpensePayments.map((payment) => {
         const rule = storedFixedExpenseRuleMap.get(payment.fixed_expense_rule_id);
@@ -465,10 +524,30 @@ export default function HomeClient() {
           category: rule?.category || rule?.name || "고정지출",
           memo: rule?.name ?? "고정지출",
           date: payment.payment_date,
+          status: payment.status,
           created_at: payment.created_at,
         };
       }),
     [activeStoredFixedExpensePayments, storedFixedExpenseRuleMap],
+  );
+  const pausedStoredFixedExpenseItems = useMemo<DashboardExpense[]>(
+    () =>
+      pausedStoredFixedExpensePayments.map((payment) => {
+        const rule = storedFixedExpenseRuleMap.get(payment.fixed_expense_rule_id);
+
+        return {
+          id: payment.id,
+          user_id: payment.user_id,
+          amount: payment.amount,
+          type: "expense",
+          category: rule?.category || rule?.name || "고정지출",
+          memo: rule?.name ?? "고정지출",
+          date: payment.payment_date,
+          status: payment.status,
+          created_at: payment.created_at,
+        };
+      }),
+    [pausedStoredFixedExpensePayments, storedFixedExpenseRuleMap],
   );
   const storedPaymentIds = useMemo(
     () =>
@@ -482,6 +561,18 @@ export default function HomeClient() {
     () => [...expenses, ...storedSavingsExpenseItems, ...storedFixedExpenseItems],
     [expenses, storedFixedExpenseItems, storedSavingsExpenseItems],
   );
+  const displayDashboardExpenses = useMemo<DashboardExpense[]>(
+    () => [
+      ...dashboardExpenses,
+      ...pausedStoredSavingsExpenseItems,
+      ...pausedStoredFixedExpenseItems,
+    ],
+    [
+      dashboardExpenses,
+      pausedStoredFixedExpenseItems,
+      pausedStoredSavingsExpenseItems,
+    ],
+  );
 
   const monthlyExpenses = useMemo(
     () =>
@@ -490,6 +581,14 @@ export default function HomeClient() {
         return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
       }),
     [currentMonth, currentYear, dashboardExpenses],
+  );
+  const displayMonthlyExpenses = useMemo<DashboardExpense[]>(
+    () =>
+      displayDashboardExpenses.filter((item) => {
+        const date = new Date(item.date);
+        return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
+      }),
+    [currentMonth, currentYear, displayDashboardExpenses],
   );
   const monthlyEditableExpenses = useMemo(
     () =>
@@ -532,8 +631,8 @@ export default function HomeClient() {
   const expenseSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "expense");
   const savingsSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "savings");
   const selectedCalendarItems = useMemo(
-    () => monthlyExpenses.filter((item) => item.date === selectedDateKey),
-    [monthlyExpenses, selectedDateKey],
+    () => displayMonthlyExpenses.filter((item) => item.date === selectedDateKey),
+    [displayMonthlyExpenses, selectedDateKey],
   );
   const selectedDayItems = useMemo(
     () =>
@@ -578,16 +677,16 @@ export default function HomeClient() {
   );
   const detailItems = useMemo(
     () =>
-      [...monthlyExpenses].sort((left, right) => {
+      [...displayMonthlyExpenses].sort((left, right) => {
         const dateDiff = new Date(right.date).getTime() - new Date(left.date).getTime();
         if (dateDiff !== 0) return dateDiff;
         return right.created_at.localeCompare(left.created_at);
       }),
-    [monthlyExpenses],
+    [displayMonthlyExpenses],
   );
   const selectedInlineExpense =
     inlineEditItems.find((item) => item.id === inlineEditingId) ?? null;
-  const dayMap = monthlyExpenses.reduce<Record<string, number>>((acc, item) => {
+  const dayMap = displayMonthlyExpenses.reduce<Record<string, number>>((acc, item) => {
     acc[item.date] = (acc[item.date] || 0) + 1;
     return acc;
   }, {});
@@ -2136,6 +2235,7 @@ export default function HomeClient() {
                         const isIncome = item.type === "income";
                         const isSavings = isSavingsItem(item);
                         const isInvestment = isInvestmentItem(item);
+                        const isPaused = item.status === "cancelled";
                         return (
                           <li
                             key={item.id}
@@ -2161,6 +2261,7 @@ export default function HomeClient() {
                                       ? "수입"
                                       : "지출"}
                               </span>
+                              {isPaused ? <span className="badge">일시정지</span> : null}
                             </p>
                             <div className="row-group row-group--center row-group--gap-8">
                               <p className="calendar-content--num label--lg">
@@ -3047,6 +3148,7 @@ export default function HomeClient() {
                         const isIncome = item.type === "income";
                         const isSavings = isSavingsItem(item);
                         const isInvestment = isInvestmentItem(item);
+                        const isPaused = item.status === "cancelled";
                         return (
                           <tr key={item.id}>
                             <td>{item.category}</td>
@@ -3070,6 +3172,9 @@ export default function HomeClient() {
                                       ? "수입"
                                       : "지출"}
                               </span>
+                              {isPaused ? (
+                                <span className="recurring-status badge">일시정지</span>
+                              ) : null}
                             </td>
                             <td>{formatCurrency(item.amount)}</td>
                             <td>{getVisibleMemo(item.memo) || "-"}</td>
