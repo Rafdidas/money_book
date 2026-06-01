@@ -94,17 +94,26 @@ export const getSavingsAccounts = async () => {
   return (data || []) as SavingsAccount[];
 };
 
-export const getSavingsPaymentsByRange = async (from: string, to: string) => {
+export const getSavingsPaymentsByRange = async (
+  from: string,
+  to: string,
+  options: { includeCancelled?: boolean } = {},
+) => {
   const userId = await getCurrentUserId();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("savings_payments")
     .select("*")
     .eq("user_id", userId)
-    .neq("status", "cancelled")
     .gte("payment_date", from)
     .lte("payment_date", to)
     .order("payment_date", { ascending: false });
+
+  if (!options.includeCancelled) {
+    query = query.neq("status", "cancelled");
+  }
+
+  const { data, error } = await query;
 
   if (error) throw new Error(error.message);
 

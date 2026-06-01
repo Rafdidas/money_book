@@ -188,3 +188,25 @@
     }
   }
 }
+
+.recurring-actions {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  .side-menu--dropdown {
+    top: calc(100% + 4px);
+    right: 0;
+    bottom: auto;
+    z-index: 30;
+  }
+}
+
+.recurring-actions-cell {
+  position: relative;
+  overflow: visible;
+}
+
+.recurring-status {
+  margin-left: 6px;
+}

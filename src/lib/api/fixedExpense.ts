@@ -96,17 +96,26 @@ export const getFixedExpenseRules = async () => {
   return (data || []) as FixedExpenseRule[];
 };
 
-export const getFixedExpensePaymentsByRange = async (from: string, to: string) => {
+export const getFixedExpensePaymentsByRange = async (
+  from: string,
+  to: string,
+  options: { includeCancelled?: boolean } = {},
+) => {
   const userId = await getCurrentUserId();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("fixed_expense_payments")
     .select("*")
     .eq("user_id", userId)
-    .neq("status", "cancelled")
     .gte("payment_date", from)
     .lte("payment_date", to)
     .order("payment_date", { ascending: false });
+
+  if (!options.includeCancelled) {
+    query = query.neq("status", "cancelled");
+  }
+
+  const { data, error } = await query;
 
   if (error) throw new Error(error.message);
 

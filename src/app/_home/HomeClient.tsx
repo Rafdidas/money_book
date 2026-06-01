@@ -32,6 +32,7 @@ import {
   getFixedExpensePaymentsByRange,
   getFixedExpenseRules,
   updateFixedExpenseRule,
+  updateFixedExpensePayments,
 } from "@/lib/api/fixedExpense";
 import {
   cancelFutureSavingsPayments,
@@ -41,11 +42,13 @@ import {
   getSavingsAccounts,
   getSavingsPaymentsByRange,
   updateSavingsAccount,
+  updateSavingsPayments,
 } from "@/lib/api/savings";
 import type { Expense } from "@/types/expense";
 import type {
   FixedExpensePayment,
   FixedExpenseRule,
+  PaymentStatus,
   SavingsAccount as StoredSavingsAccount,
   SavingsPayment,
 } from "@/types/recurring";
@@ -106,6 +109,62 @@ const getInlineEntryType = (expense: Expense): InlineEntryType => {
   return "expense";
 };
 
+type RecurringPaymentRecord = {
+  id: string;
+  payment_date: string;
+  status: PaymentStatus;
+  created_at: string;
+};
+
+const getLatestPayment = <T extends RecurringPaymentRecord>(payments: T[]) =>
+  [...payments].sort((left, right) => {
+    const createdDiff = right.created_at.localeCompare(left.created_at);
+    if (createdDiff !== 0) return createdDiff;
+    return right.id.localeCompare(left.id);
+  })[0];
+
+const getEffectiveActivePayments = <T extends RecurringPaymentRecord>(
+  payments: T[],
+  getOwnerId: (payment: T) => string,
+) => {
+  const grouped = new Map<string, T[]>();
+
+  payments
+    .filter((payment) => payment.status !== "cancelled")
+    .forEach((payment) => {
+      const key = `${getOwnerId(payment)}:${payment.payment_date}`;
+      const group = grouped.get(key) ?? [];
+      group.push(payment);
+      grouped.set(key, group);
+    });
+
+  return Array.from(grouped.values())
+    .map((group) => getLatestPayment(group))
+    .filter((payment): payment is T => Boolean(payment));
+};
+
+const getPaymentsByDate = <T extends RecurringPaymentRecord>(payments: T[]) => {
+  const grouped = new Map<string, T[]>();
+
+  payments.forEach((payment) => {
+    const group = grouped.get(payment.payment_date) ?? [];
+    group.push(payment);
+    grouped.set(payment.payment_date, group);
+  });
+
+  return Array.from(grouped.values());
+};
+
+const hasActivePayment = (payments: RecurringPaymentRecord[]) =>
+  payments.some((payment) => payment.status !== "cancelled");
+
+const getRestorablePaymentIds = (payments: RecurringPaymentRecord[]) =>
+  getPaymentsByDate(payments)
+    .filter((group) => !hasActivePayment(group))
+    .map((group) => getLatestPayment(group.filter((payment) => payment.status === "cancelled")))
+    .filter((payment): payment is RecurringPaymentRecord => Boolean(payment))
+    .map((payment) => payment.id);
+
 export default function HomeClient() {
   const today = useMemo(() => new Date(), []);
   const {
@@ -145,6 +204,8 @@ export default function HomeClient() {
   const [savingsName, setSavingsName] = useState("");
   const [isSavingsSubmitting, setIsSavingsSubmitting] = useState(false);
   const [isSavingsDeleting, setIsSavingsDeleting] = useState(false);
+  const [isSavingsSkipping, setIsSavingsSkipping] = useState(false);
+  const [openSavingsPauseMenuId, setOpenSavingsPauseMenuId] = useState("");
   const [fixedExpenseFormMode, setFixedExpenseFormMode] = useState<InlineFormMode>("create");
   const [fixedExpenseEditingId, setFixedExpenseEditingId] = useState("");
   const [fixedExpenseAmount, setFixedExpenseAmount] = useState("");
@@ -155,6 +216,8 @@ export default function HomeClient() {
   const [fixedExpenseName, setFixedExpenseName] = useState("");
   const [isFixedExpenseSubmitting, setIsFixedExpenseSubmitting] = useState(false);
   const [isFixedExpenseDeleting, setIsFixedExpenseDeleting] = useState(false);
+  const [isFixedExpenseSkipping, setIsFixedExpenseSkipping] = useState(false);
+  const [openFixedExpensePauseMenuId, setOpenFixedExpensePauseMenuId] = useState("");
 
   const selectedDateKey = formatDate(selectedDate);
   const currentYear = selectedDate.getFullYear();
@@ -178,7 +241,9 @@ export default function HomeClient() {
 
     const [accounts, payments] = await Promise.all([
       getSavingsAccounts(),
-      getSavingsPaymentsByRange(dashboardRange.from, dashboardRange.to),
+      getSavingsPaymentsByRange(dashboardRange.from, dashboardRange.to, {
+        includeCancelled: true,
+      }),
     ]);
 
     setStoredSavingsAccounts(accounts);
@@ -194,7 +259,9 @@ export default function HomeClient() {
 
     const [rules, payments] = await Promise.all([
       getFixedExpenseRules(),
-      getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to),
+      getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to, {
+        includeCancelled: true,
+      }),
     ]);
 
     setStoredFixedExpenseRules(rules);
@@ -233,9 +300,13 @@ export default function HomeClient() {
         ] = await Promise.all([
           getExpensesByRange(dashboardRange.from, dashboardRange.to),
           getSavingsAccounts(),
-          getSavingsPaymentsByRange(dashboardRange.from, dashboardRange.to),
+          getSavingsPaymentsByRange(dashboardRange.from, dashboardRange.to, {
+            includeCancelled: true,
+          }),
           getFixedExpenseRules(),
-          getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to),
+          getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to, {
+            includeCancelled: true,
+          }),
         ]);
         if (!isCancelled) {
           setExpenses(data || []);
@@ -276,9 +347,30 @@ export default function HomeClient() {
     [storedSavingsAccounts],
   );
   const activeStoredSavingsPayments = useMemo(
-    () => storedSavingsPayments.filter((payment) => payment.status !== "cancelled"),
+    () =>
+      getEffectiveActivePayments(
+        storedSavingsPayments,
+        (payment) => payment.savings_account_id,
+      ),
     [storedSavingsPayments],
   );
+  const storedSavingsPaymentsForListByAccount = useMemo(() => {
+    const grouped = new Map<string, SavingsPayment[]>();
+
+    storedSavingsPayments.forEach((payment) => {
+      const payments = grouped.get(payment.savings_account_id) ?? [];
+      payments.push(payment);
+      grouped.set(payment.savings_account_id, payments);
+    });
+
+    grouped.forEach((payments) => {
+      payments.sort((left, right) =>
+        left.payment_date.localeCompare(right.payment_date),
+      );
+    });
+
+    return grouped;
+  }, [storedSavingsPayments]);
   const storedSavingsPaymentsByAccount = useMemo(() => {
     const grouped = new Map<string, SavingsPayment[]>();
 
@@ -301,9 +393,30 @@ export default function HomeClient() {
     [storedFixedExpenseRules],
   );
   const activeStoredFixedExpensePayments = useMemo(
-    () => storedFixedExpensePayments.filter((payment) => payment.status !== "cancelled"),
+    () =>
+      getEffectiveActivePayments(
+        storedFixedExpensePayments,
+        (payment) => payment.fixed_expense_rule_id,
+      ),
     [storedFixedExpensePayments],
   );
+  const storedFixedExpensePaymentsForListByRule = useMemo(() => {
+    const grouped = new Map<string, FixedExpensePayment[]>();
+
+    storedFixedExpensePayments.forEach((payment) => {
+      const payments = grouped.get(payment.fixed_expense_rule_id) ?? [];
+      payments.push(payment);
+      grouped.set(payment.fixed_expense_rule_id, payments);
+    });
+
+    grouped.forEach((payments) => {
+      payments.sort((left, right) =>
+        left.payment_date.localeCompare(right.payment_date),
+      );
+    });
+
+    return grouped;
+  }, [storedFixedExpensePayments]);
   const storedFixedExpensePaymentsByRule = useMemo(() => {
     const grouped = new Map<string, FixedExpensePayment[]>();
 
@@ -588,9 +701,22 @@ export default function HomeClient() {
     savingsAccounts.find((account) => account.id === savingsEditingId) ?? null;
   const visibleSavingsAccounts = useMemo(() => {
     return savingsAccounts.filter((account) =>
-      account.items.some((item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey),
+      account.source === "new"
+        ? (storedSavingsPaymentsForListByAccount.get(account.id) ?? []).some(
+            (payment) =>
+              payment.payment_date >= selectedMonthStartKey &&
+              payment.payment_date <= selectedMonthEndKey,
+          )
+        : account.items.some(
+            (item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey,
+          ),
     );
-  }, [savingsAccounts, selectedMonthEndKey, selectedMonthStartKey]);
+  }, [
+    savingsAccounts,
+    selectedMonthEndKey,
+    selectedMonthStartKey,
+    storedSavingsPaymentsForListByAccount,
+  ]);
   const fixedExpenseAccounts = useMemo<FixedExpenseAccount[]>(() => {
     const todayKey = formatDate(today);
     const selectedMonthStartKey = formatDate(new Date(currentYear, currentMonth, 1));
@@ -681,9 +807,22 @@ export default function HomeClient() {
     fixedExpenseAccounts.find((account) => account.id === fixedExpenseEditingId) ?? null;
   const visibleFixedExpenseAccounts = useMemo(() => {
     return fixedExpenseAccounts.filter((account) =>
-      account.items.some((item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey),
+      account.source === "new"
+        ? (storedFixedExpensePaymentsForListByRule.get(account.id) ?? []).some(
+            (payment) =>
+              payment.payment_date >= selectedMonthStartKey &&
+              payment.payment_date <= selectedMonthEndKey,
+          )
+        : account.items.some(
+            (item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey,
+          ),
     );
-  }, [fixedExpenseAccounts, selectedMonthEndKey, selectedMonthStartKey]);
+  }, [
+    fixedExpenseAccounts,
+    selectedMonthEndKey,
+    selectedMonthStartKey,
+    storedFixedExpensePaymentsForListByRule,
+  ]);
 
   const resetInlineCreateForm = useCallback((date = selectedDateKey) => {
     setInlineAmount("");
@@ -1054,6 +1193,165 @@ export default function HomeClient() {
         ),
     );
   };
+  const getSelectedMonthItemIds = (items: Expense[]) =>
+    items
+      .filter((item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey)
+      .map((item) => item.id);
+
+  const getSelectedMonthSavingsPayments = (account: SavingsAccount) => {
+    if (account.source !== "new") return [];
+
+    return (storedSavingsPaymentsForListByAccount.get(account.id) ?? []).filter(
+      (payment) =>
+        payment.payment_date >= selectedMonthStartKey &&
+        payment.payment_date <= selectedMonthEndKey,
+    );
+  };
+
+  const getSelectedMonthFixedExpensePayments = (account: FixedExpenseAccount) => {
+    if (account.source !== "new") return [];
+
+    return (storedFixedExpensePaymentsForListByRule.get(account.id) ?? []).filter(
+      (payment) =>
+        payment.payment_date >= selectedMonthStartKey &&
+        payment.payment_date <= selectedMonthEndKey,
+    );
+  };
+
+  const isSavingsPausedForSelectedMonth = (account: SavingsAccount) =>
+    getSelectedMonthSavingsPayments(account).length > 0 &&
+    !hasActivePayment(getSelectedMonthSavingsPayments(account));
+
+  const isFixedExpensePausedForSelectedMonth = (account: FixedExpenseAccount) =>
+    getSelectedMonthFixedExpensePayments(account).length > 0 &&
+    !hasActivePayment(getSelectedMonthFixedExpensePayments(account));
+
+  const handleSavingsPauseToggle = async (account: SavingsAccount) => {
+    const selectedPayments = getSelectedMonthSavingsPayments(account);
+    const isPaused = selectedPayments.length > 0 && !hasActivePayment(selectedPayments);
+    const itemIds =
+      account.source === "new"
+        ? isPaused
+          ? getRestorablePaymentIds(selectedPayments)
+          : selectedPayments
+              .filter((payment) => payment.status !== "cancelled")
+              .map((payment) => payment.id)
+        : getSelectedMonthItemIds(account.items);
+
+    if (!itemIds.length) {
+      alert(
+        isPaused
+          ? "이번 달 일시정지를 취소할 적금 납입 내역이 없습니다."
+          : "이번 달 일시정지할 적금 납입 내역이 없습니다.",
+      );
+      return;
+    }
+
+    const confirmed = await confirm(
+      isPaused
+        ? "이번 달 적금 납입 일시정지를 취소할까요?"
+        : "이번 달 적금 납입을 일시정지할까요?",
+    );
+    if (!confirmed) return;
+
+    setIsSavingsSkipping(true);
+    setOpenSavingsPauseMenuId("");
+
+    try {
+      if (account.source === "new" && !isDemoMode) {
+        await updateSavingsPayments(itemIds, {
+          status: isPaused ? "scheduled" : "cancelled",
+          paid_at: null,
+        });
+        await refreshStoredSavings();
+      } else if (isPaused) {
+        alert("이전 방식으로 저장된 적금은 일시정지 취소를 지원하지 않습니다.");
+      } else {
+        if (isDemoMode) {
+          setExpenses((prev) => {
+            const skipIds = new Set(itemIds);
+            const next = prev.filter((item) => !skipIds.has(item.id));
+            writeDemoExpenses(next);
+            return next;
+          });
+        } else {
+          await deleteExpenses(itemIds);
+          setExpenses((prev) => prev.filter((item) => !itemIds.includes(item.id)));
+        }
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "적금 일시정지 중 오류가 발생했습니다.";
+      alert(message);
+    } finally {
+      setIsSavingsSkipping(false);
+    }
+  };
+
+  const handleFixedExpensePauseToggle = async (account: FixedExpenseAccount) => {
+    const selectedPayments = getSelectedMonthFixedExpensePayments(account);
+    const isPaused = selectedPayments.length > 0 && !hasActivePayment(selectedPayments);
+    const itemIds =
+      account.source === "new"
+        ? isPaused
+          ? getRestorablePaymentIds(selectedPayments)
+          : selectedPayments
+              .filter((payment) => payment.status !== "cancelled")
+              .map((payment) => payment.id)
+        : getSelectedMonthItemIds(account.items);
+
+    if (!itemIds.length) {
+      alert(
+        isPaused
+          ? "이번 달 일시정지를 취소할 고정지출 내역이 없습니다."
+          : "이번 달 일시정지할 고정지출 내역이 없습니다.",
+      );
+      return;
+    }
+
+    const confirmed = await confirm(
+      isPaused
+        ? "이번 달 고정지출 일시정지를 취소할까요?"
+        : "이번 달 고정지출을 일시정지할까요?",
+    );
+    if (!confirmed) return;
+
+    setIsFixedExpenseSkipping(true);
+    setOpenFixedExpensePauseMenuId("");
+
+    try {
+      if (account.source === "new" && !isDemoMode) {
+        await updateFixedExpensePayments(itemIds, {
+          status: isPaused ? "scheduled" : "cancelled",
+          paid_at: null,
+        });
+        await refreshStoredFixedExpenses();
+      } else if (isPaused) {
+        alert("이전 방식으로 저장된 고정지출은 일시정지 취소를 지원하지 않습니다.");
+      } else {
+        if (isDemoMode) {
+          setExpenses((prev) => {
+            const skipIds = new Set(itemIds);
+            const next = prev.filter((item) => !skipIds.has(item.id));
+            writeDemoExpenses(next);
+            return next;
+          });
+        } else {
+          await deleteExpenses(itemIds);
+          setExpenses((prev) => prev.filter((item) => !itemIds.includes(item.id)));
+        }
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "고정지출 일시정지 중 오류가 발생했습니다.";
+      alert(message);
+    } finally {
+      setIsFixedExpenseSkipping(false);
+    }
+  };
+
   const handleSavingsSubmit = async () => {
     const paymentAmount = Number(savingsPaymentAmount);
     const paymentDay = Number(savingsPaymentDay);
@@ -2321,6 +2619,7 @@ export default function HomeClient() {
                             !account.hasNoMaturity &&
                             account.maturityDate >= selectedMonthStartKey &&
                             account.maturityDate <= selectedMonthEndKey;
+                          const isPaused = isSavingsPausedForSelectedMonth(account);
 
                           return (
                             <li
@@ -2343,7 +2642,7 @@ export default function HomeClient() {
                                   </p>
                                 </div>
                               </div>
-                              <p className="savings--dates row-group row-group--center row-group--gap-8">
+                              <div className="savings--dates row-group row-group--center row-group--gap-8">
                                 <span className="label--sm">납입일</span>
                                 <span className="label--sm">
                                   매월 {account.paymentDay}일
@@ -2355,6 +2654,9 @@ export default function HomeClient() {
                                     ? "만기일 없음"
                                     : formatDetailDate(account.maturityDate)}
                                 </span>
+                                {isPaused ? (
+                                  <span className="badge">일시정지</span>
+                                ) : null}
                                 <button
                                   type="button"
                                   className="button button--xs button--secondary"
@@ -2363,7 +2665,59 @@ export default function HomeClient() {
                                 >
                                   {isMatured ? "만기됨" : "만기 처리"}
                                 </button>
-                              </p>
+                                <span className="recurring-actions">
+                                  <button
+                                    type="button"
+                                    aria-label="적금 메뉴 열기"
+                                    aria-controls={`savings-actions-${account.id}`}
+                                    aria-expanded={
+                                      openSavingsPauseMenuId === account.id ? "true" : "false"
+                                    }
+                                    aria-haspopup="menu"
+                                    className="button button--icon-only button--sm button--subtle side-menu--more"
+                                    onClick={() =>
+                                      setOpenSavingsPauseMenuId((current) =>
+                                        current === account.id ? "" : account.id,
+                                      )
+                                    }
+                                    disabled={isSavingsSkipping}
+                                  >
+                                    <span
+                                      className="material-symbols-outlined"
+                                      aria-hidden="true"
+                                    >
+                                      more_vert
+                                    </span>
+                                  </button>
+                                  {openSavingsPauseMenuId === account.id ? (
+                                    <div
+                                      className="side-menu--dropdown column-group"
+                                      id={`savings-actions-${account.id}`}
+                                      role="menu"
+                                    >
+                                      <ul>
+                                        <li>
+                                          <button
+                                            type="button"
+                                            className="side-menu--dropdown-item"
+                                            role="menuitem"
+                                            onClick={() =>
+                                              handleSavingsPauseToggle(account)
+                                            }
+                                            disabled={isSavingsSkipping}
+                                          >
+                                            {isSavingsSkipping
+                                              ? "처리 중..."
+                                              : isPaused
+                                                ? "이번 달 일시정지 취소"
+                                                : "이번 달 일시정지"}
+                                          </button>
+                                        </li>
+                                      </ul>
+                                    </div>
+                                  ) : null}
+                                </span>
+                              </div>
                             </li>
                           );
                         })
@@ -2558,6 +2912,7 @@ export default function HomeClient() {
                           <th>다음 지출</th>
                           <th>종료일</th>
                           <th>종료처리</th>
+                          <th>메뉴</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2567,6 +2922,7 @@ export default function HomeClient() {
                               !account.hasNoEndDate &&
                               account.endDate >= selectedMonthStartKey &&
                               account.endDate <= selectedMonthEndKey;
+                            const isPaused = isFixedExpensePausedForSelectedMonth(account);
 
                             return (
                               <tr key={account.id}>
@@ -2578,6 +2934,9 @@ export default function HomeClient() {
                                   {account.hasNoEndDate
                                     ? "기한 없음"
                                     : formatDetailDate(account.endDate)}
+                                  {isPaused ? (
+                                    <span className="recurring-status badge">일시정지</span>
+                                  ) : null}
                                 </td>
                                 <td>
                                   <button
@@ -2589,12 +2948,68 @@ export default function HomeClient() {
                                     {isEnded ? "종료됨" : "종료"}
                                   </button>
                                 </td>
+                                <td className="recurring-actions-cell">
+                                  <span className="recurring-actions">
+                                    <button
+                                      type="button"
+                                      aria-label="고정지출 메뉴 열기"
+                                      aria-controls={`fixed-expense-actions-${account.id}`}
+                                      aria-expanded={
+                                        openFixedExpensePauseMenuId === account.id
+                                          ? "true"
+                                          : "false"
+                                      }
+                                      aria-haspopup="menu"
+                                      className="button button--icon-only button--sm button--subtle side-menu--more"
+                                      onClick={() =>
+                                        setOpenFixedExpensePauseMenuId((current) =>
+                                          current === account.id ? "" : account.id,
+                                        )
+                                      }
+                                      disabled={isFixedExpenseSkipping}
+                                    >
+                                      <span
+                                        className="material-symbols-outlined"
+                                        aria-hidden="true"
+                                      >
+                                        more_vert
+                                      </span>
+                                    </button>
+                                    {openFixedExpensePauseMenuId === account.id ? (
+                                      <div
+                                        className="side-menu--dropdown column-group"
+                                        id={`fixed-expense-actions-${account.id}`}
+                                        role="menu"
+                                      >
+                                        <ul>
+                                          <li>
+                                            <button
+                                              type="button"
+                                              className="side-menu--dropdown-item"
+                                              role="menuitem"
+                                              onClick={() =>
+                                                handleFixedExpensePauseToggle(account)
+                                              }
+                                              disabled={isFixedExpenseSkipping}
+                                            >
+                                              {isFixedExpenseSkipping
+                                                ? "처리 중..."
+                                                : isPaused
+                                                  ? "이번 달 일시정지 취소"
+                                                  : "이번 달 일시정지"}
+                                            </button>
+                                          </li>
+                                        </ul>
+                                      </div>
+                                    ) : null}
+                                  </span>
+                                </td>
                               </tr>
                             );
                           })
                         ) : (
                           <tr>
-                            <td colSpan={6}>등록된 고정지출이 없습니다.</td>
+                            <td colSpan={7}>등록된 고정지출이 없습니다.</td>
                           </tr>
                         )}
                       </tbody>
