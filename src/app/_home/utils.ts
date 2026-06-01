@@ -3,6 +3,7 @@ import {
   fixedExpenseMetaPrefix,
   investmentCategoryOptions,
   openEndedSavingsYears,
+  recurringPausePattern,
   savingsMetaPattern,
   savingsMetaPrefix,
 } from "./constants";
@@ -135,6 +136,7 @@ export const parseFixedExpenseMemo = (memo: string): FixedExpenseMeta | null => 
 
 export const getVisibleMemo = (memo: string) =>
   memo
+    .replace(recurringPausePattern, "")
     .replace(savingsMetaPattern, "")
     .replace(fixedExpenseMetaPattern, "")
     .trim();

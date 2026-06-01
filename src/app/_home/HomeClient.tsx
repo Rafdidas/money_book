@@ -59,10 +59,14 @@ import {
   categoryChartColors,
   categoryOptions,
   customCategoryValue,
+  fixedExpenseMetaPattern,
   incomeCategoryOptions,
   investmentCategoryOptions,
+  recurringPauseMarker,
+  recurringPausePattern,
   savingsCategory,
   savingsCategoryOptions,
+  savingsMetaPattern,
   weekdayLabels,
 } from "./constants";
 import type {
@@ -187,6 +191,28 @@ const getRestorablePaymentIds = (payments: RecurringPaymentRecord[]) =>
     .map((group) => getLatestPayment(group.filter((payment) => payment.status === "cancelled")))
     .filter((payment): payment is RecurringPaymentRecord => Boolean(payment))
     .map((payment) => payment.id);
+
+const isLegacyRecurringPaused = (item: Expense) =>
+  Boolean(item.memo.match(recurringPausePattern));
+
+const getMemoWithPauseState = (memo: string, isPaused: boolean) => {
+  const cleanMemo = memo.replace(recurringPausePattern, "").trim();
+  if (!isPaused) return cleanMemo;
+
+  const savingsMatch = cleanMemo.match(savingsMetaPattern)?.[0];
+  const fixedExpenseMatch = cleanMemo.match(fixedExpenseMetaPattern)?.[0];
+  const metaMatch = savingsMatch ?? fixedExpenseMatch;
+
+  if (!metaMatch) return `${cleanMemo} ${recurringPauseMarker}`.trim();
+
+  const visibleMemo = cleanMemo.replace(metaMatch, "").trim();
+  return `${visibleMemo} ${recurringPauseMarker} ${metaMatch.trim()}`.trim();
+};
+
+const mapLegacyPausedExpense = (item: Expense): DashboardExpense => ({
+  ...item,
+  status: "cancelled",
+});
 
 export default function HomeClient() {
   const today = useMemo(() => new Date(), []);
@@ -557,18 +583,28 @@ export default function HomeClient() {
       ]),
     [storedFixedExpensePayments, storedSavingsPayments],
   );
+  const activeExpenses = useMemo(
+    () => expenses.filter((item) => !isLegacyRecurringPaused(item)),
+    [expenses],
+  );
+  const pausedLegacyExpenseItems = useMemo<DashboardExpense[]>(
+    () => expenses.filter(isLegacyRecurringPaused).map(mapLegacyPausedExpense),
+    [expenses],
+  );
   const dashboardExpenses = useMemo(
-    () => [...expenses, ...storedSavingsExpenseItems, ...storedFixedExpenseItems],
-    [expenses, storedFixedExpenseItems, storedSavingsExpenseItems],
+    () => [...activeExpenses, ...storedSavingsExpenseItems, ...storedFixedExpenseItems],
+    [activeExpenses, storedFixedExpenseItems, storedSavingsExpenseItems],
   );
   const displayDashboardExpenses = useMemo<DashboardExpense[]>(
     () => [
       ...dashboardExpenses,
+      ...pausedLegacyExpenseItems,
       ...pausedStoredSavingsExpenseItems,
       ...pausedStoredFixedExpenseItems,
     ],
     [
       dashboardExpenses,
+      pausedLegacyExpenseItems,
       pausedStoredFixedExpenseItems,
       pausedStoredSavingsExpenseItems,
     ],
@@ -731,7 +767,7 @@ export default function HomeClient() {
           left.date.localeCompare(right.date),
         );
         const paidAmount = sortedItems
-          .filter((item) => item.date <= todayKey)
+          .filter((item) => item.date <= todayKey && !isLegacyRecurringPaused(item))
           .reduce((sum, item) => sum + item.amount, 0);
         const nextPayment =
           sortedItems.find((item) => item.date >= todayKey) ?? sortedItems.at(-1);
@@ -1292,10 +1328,12 @@ export default function HomeClient() {
         ),
     );
   };
-  const getSelectedMonthItemIds = (items: Expense[]) =>
+  const getSelectedMonthItems = (items: Expense[]) =>
     items
-      .filter((item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey)
-      .map((item) => item.id);
+      .filter((item) => item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey);
+
+  const getSelectedMonthItemIds = (items: Expense[]) =>
+    getSelectedMonthItems(items).map((item) => item.id);
 
   const getSelectedMonthSavingsPayments = (account: SavingsAccount) => {
     if (account.source !== "new") return [];
@@ -1318,12 +1356,18 @@ export default function HomeClient() {
   };
 
   const isSavingsPausedForSelectedMonth = (account: SavingsAccount) =>
-    getSelectedMonthSavingsPayments(account).length > 0 &&
-    !hasActivePayment(getSelectedMonthSavingsPayments(account));
+    account.source === "new"
+      ? getSelectedMonthSavingsPayments(account).length > 0 &&
+        !hasActivePayment(getSelectedMonthSavingsPayments(account))
+      : getSelectedMonthItems(account.items).length > 0 &&
+        getSelectedMonthItems(account.items).every(isLegacyRecurringPaused);
 
   const isFixedExpensePausedForSelectedMonth = (account: FixedExpenseAccount) =>
-    getSelectedMonthFixedExpensePayments(account).length > 0 &&
-    !hasActivePayment(getSelectedMonthFixedExpensePayments(account));
+    account.source === "new"
+      ? getSelectedMonthFixedExpensePayments(account).length > 0 &&
+        !hasActivePayment(getSelectedMonthFixedExpensePayments(account))
+      : getSelectedMonthItems(account.items).length > 0 &&
+        getSelectedMonthItems(account.items).every(isLegacyRecurringPaused);
 
   const handleSavingsPauseToggle = async (account: SavingsAccount) => {
     const selectedPayments = getSelectedMonthSavingsPayments(account);
@@ -1363,19 +1407,37 @@ export default function HomeClient() {
           paid_at: null,
         });
         await refreshStoredSavings();
-      } else if (isPaused) {
-        alert("이전 방식으로 저장된 적금은 일시정지 취소를 지원하지 않습니다.");
       } else {
+        const targetIds = new Set(itemIds);
         if (isDemoMode) {
           setExpenses((prev) => {
-            const skipIds = new Set(itemIds);
-            const next = prev.filter((item) => !skipIds.has(item.id));
+            const next = prev.map((item) =>
+              targetIds.has(item.id)
+                ? { ...item, memo: getMemoWithPauseState(item.memo, !isPaused) }
+                : item,
+            );
             writeDemoExpenses(next);
             return next;
           });
         } else {
-          await deleteExpenses(itemIds);
-          setExpenses((prev) => prev.filter((item) => !itemIds.includes(item.id)));
+          await Promise.all(
+            getSelectedMonthItems(account.items).map((item) =>
+              updateExpense(item.id, {
+                amount: item.amount,
+                category: item.category,
+                memo: getMemoWithPauseState(item.memo, !isPaused),
+                date: item.date,
+                type: item.type,
+              }),
+            ),
+          );
+          setExpenses((prev) =>
+            prev.map((item) =>
+              targetIds.has(item.id)
+                ? { ...item, memo: getMemoWithPauseState(item.memo, !isPaused) }
+                : item,
+            ),
+          );
         }
       }
     } catch (error) {
@@ -1425,19 +1487,37 @@ export default function HomeClient() {
           paid_at: null,
         });
         await refreshStoredFixedExpenses();
-      } else if (isPaused) {
-        alert("이전 방식으로 저장된 고정지출은 일시정지 취소를 지원하지 않습니다.");
       } else {
+        const targetIds = new Set(itemIds);
         if (isDemoMode) {
           setExpenses((prev) => {
-            const skipIds = new Set(itemIds);
-            const next = prev.filter((item) => !skipIds.has(item.id));
+            const next = prev.map((item) =>
+              targetIds.has(item.id)
+                ? { ...item, memo: getMemoWithPauseState(item.memo, !isPaused) }
+                : item,
+            );
             writeDemoExpenses(next);
             return next;
           });
         } else {
-          await deleteExpenses(itemIds);
-          setExpenses((prev) => prev.filter((item) => !itemIds.includes(item.id)));
+          await Promise.all(
+            getSelectedMonthItems(account.items).map((item) =>
+              updateExpense(item.id, {
+                amount: item.amount,
+                category: item.category,
+                memo: getMemoWithPauseState(item.memo, !isPaused),
+                date: item.date,
+                type: item.type,
+              }),
+            ),
+          );
+          setExpenses((prev) =>
+            prev.map((item) =>
+              targetIds.has(item.id)
+                ? { ...item, memo: getMemoWithPauseState(item.memo, !isPaused) }
+                : item,
+            ),
+          );
         }
       }
     } catch (error) {
