@@ -80,6 +80,10 @@ const formatSignedPercent = (value: number) =>
   `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 const formatSignedWon = (value: number) =>
   `${value > 0 ? "+" : value < 0 ? "-" : ""}${Math.round(Math.abs(value)).toLocaleString()}원`;
+const formatBaseDate = (baseDate: string | undefined) => {
+  if (!baseDate || !/^\d{8}$/.test(baseDate)) return "";
+  return `${baseDate.slice(0, 4)}.${baseDate.slice(4, 6)}.${baseDate.slice(6, 8)}`;
+};
 const getStockAutoRefreshKey = (ownerKey: string) =>
   `${stockAutoRefreshKeyPrefix}:${ownerKey || "local"}`;
 const shouldRefreshStockQuotes = (ownerKey: string) => {
@@ -245,6 +249,7 @@ const createDemoStockQuotes = (): Record<string, StockQuote> => ({
     currentPrice: 74500,
     dailyChange: 900,
     dailyChangeRate: 1.22,
+    baseDate: formatDate(new Date()).replaceAll("-", ""),
     updatedAt: new Date().toISOString(),
   },
 });
@@ -515,6 +520,15 @@ export default function InvestPage() {
       minute: "2-digit",
     });
   }, [stockQuotes]);
+  const latestQuoteBaseDate = useMemo(() => {
+    const baseDates = Object.values(stockQuotes)
+      .map((quote) => quote.baseDate)
+      .filter((baseDate): baseDate is string => Boolean(baseDate && /^\d{8}$/.test(baseDate)));
+
+    if (!baseDates.length) return "";
+
+    return formatBaseDate(baseDates.sort((left, right) => right.localeCompare(left))[0]);
+  }, [stockQuotes]);
 
   const resetStockForm = useCallback(() => {
     setStockQuery("");
@@ -564,11 +578,12 @@ export default function InvestPage() {
       });
       const data = (await response.json()) as {
         quotes?: StockQuote[];
+        failures?: { symbol: string; message: string }[];
         message?: string;
       };
 
       if (!response.ok) {
-        throw new Error(data.message || "현재가 업데이트에 실패했습니다.");
+        throw new Error(data.message || "최근 종가 업데이트에 실패했습니다.");
       }
 
       setStockQuotes((prev) => {
@@ -582,14 +597,18 @@ export default function InvestPage() {
         writeStoredStockQuotes(storageOwnerKey, next);
         return next;
       });
-      setStockQuoteMessage("");
+      setStockQuoteMessage(
+        data.failures?.length
+          ? `${data.failures.length}개 종목은 최근 종가를 불러오지 못했습니다.`
+          : "",
+      );
       window.localStorage.setItem(getStockAutoRefreshKey(storageOwnerKey), String(Date.now()));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "현재가 업데이트 중 오류가 발생했습니다.";
+        error instanceof Error ? error.message : "최근 종가 업데이트 중 오류가 발생했습니다.";
       setStockQuoteMessage(
         Object.keys(stockQuotes).length
-          ? "현재가를 새로 불러오지 못해 마지막 조회 값을 표시하고 있습니다."
+          ? "최근 종가를 새로 불러오지 못해 마지막 조회 값을 표시하고 있습니다."
           : message,
       );
       if (!Object.keys(stockQuotes).length) {
@@ -798,7 +817,7 @@ export default function InvestPage() {
           <div>
             <h2 className="main-header--title headline--sm">투자</h2>
             <p className="invest-header--description label--md">
-              직접 입력한 보유 종목의 평가금액과 수익률을 확인합니다.
+              직접 입력한 보유 종목의 최근 거래일 종가 기준 평가금액과 수익률을 확인합니다.
             </p>
           </div>
           <div className="invest-header--actions row-group row-group--center row-group--gap-8">
@@ -811,7 +830,7 @@ export default function InvestPage() {
               <span className="material-symbols-outlined" aria-hidden="true">
                 refresh
               </span>
-              {isStockRefreshing ? "업데이트 중" : "현재가 업데이트"}
+              {isStockRefreshing ? "업데이트 중" : "최근 종가 업데이트"}
             </button>
             <button
               type="button"
@@ -838,10 +857,12 @@ export default function InvestPage() {
               </strong>
               <span className="caption--md color-gray">
                 {investmentTotals.isValuationReady
-                  ? latestQuoteUpdatedAt
-                    ? `${latestQuoteUpdatedAt} 조회 기준`
-                    : "현재가 기준 평가"
-                  : "현재가 업데이트 후 표시"}
+                  ? latestQuoteBaseDate
+                    ? `기준일 ${latestQuoteBaseDate}`
+                    : latestQuoteUpdatedAt
+                      ? `${latestQuoteUpdatedAt} 조회 기준`
+                      : "최근 거래일 종가 기준 평가"
+                  : "최근 종가 업데이트 후 표시"}
               </span>
             </article>
             <article className="card invest-summary--item">
@@ -861,14 +882,14 @@ export default function InvestPage() {
               </strong>
             </article>
             <article className="card invest-summary--item">
-              <span className="label--md color-gray">오늘 손익</span>
+              <span className="label--md color-gray">전일 대비</span>
               <strong className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.dailyProfit) : ""}`}>
                 {investmentTotals.isValuationReady ? formatSignedWon(investmentTotals.dailyProfit) : "-"}
               </strong>
               <span className={`caption--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.dailyProfitRate) : "color-gray"}`}>
                 {investmentTotals.isValuationReady
                   ? `전일 대비 ${formatSignedPercent(investmentTotals.dailyProfitRate)}`
-                  : "현재가 업데이트 후 표시"}
+                  : "최근 종가 업데이트 후 표시"}
               </span>
             </article>
           </div>
@@ -945,7 +966,7 @@ export default function InvestPage() {
             <div>
               <h3 className="title--sm">포트폴리오 비중</h3>
               <p className="caption--md color-gray">
-                현재 평가금액 기준으로 자산 구성을 보여줍니다.
+                최근 거래일 종가 기준 평가금액으로 자산 구성을 보여줍니다.
               </p>
             </div>
             <div className="invest-allocation--grid">
@@ -990,7 +1011,7 @@ export default function InvestPage() {
                   ) : (
                     <p className="invest-allocation-card--empty caption--md color-gray">
                       {investmentSummaries.length
-                        ? "현재가 업데이트 후 비중을 표시합니다."
+                        ? "최근 종가 업데이트 후 비중을 표시합니다."
                         : "종목을 추가하면 비중을 표시합니다."}
                     </p>
                   )}
@@ -1005,7 +1026,10 @@ export default function InvestPage() {
                 <div>
                   <h3 className="main-overview--title title--sm">보유 종목</h3>
                   <p className="invest-section--description caption--md">
-                    현재가는 참고용이며 실제 계좌 평가와 차이가 있을 수 있습니다.
+                    금융위원회 데이터는 실시간이 아니며 최근 거래일 종가 기준입니다. 데이터는 일 1회 갱신되고, 기준일자로부터 영업일 하루 뒤 오후 1시 이후 업데이트됩니다.
+                  </p>
+                  <p className="invest-section--description caption--md">
+                    데이터 보유기관 연계 후 개방되는 정보라 실제 계좌 평가와 차이가 있을 수 있습니다. 금요일 데이터는 보통 다음 영업일에 제공됩니다.
                   </p>
                   {stockQuoteMessage ? (
                     <p className="invest-section--notice caption--md">{stockQuoteMessage}</p>
@@ -1027,7 +1051,7 @@ export default function InvestPage() {
                           </button>
                         </div>
                       </th>
-                      <th>현재가</th>
+                      <th>최근 종가</th>
                       <th>
                         <div className="row-group row-group--center row-group--gap-4">
                           평가손익
@@ -1046,8 +1070,8 @@ export default function InvestPage() {
                       </th>
                       <th>
                         <div className="row-group row-group--center row-group--gap-4">
-                          오늘 손익
-                          <button type="button" className="material-symbols-outlined sort-btn" aria-label="일간 수익 정렬" onClick={() => handleStockSort("dailyProfit")}>
+                          전일 대비
+                          <button type="button" className="material-symbols-outlined sort-btn" aria-label="전일 대비 정렬" onClick={() => handleStockSort("dailyProfit")}>
                             unfold_more
                           </button>
                         </div>
@@ -1134,13 +1158,13 @@ export default function InvestPage() {
                   </div>
                   <div className="invest-detail--daily">
                     <div>
-                      <span className="caption--md color-gray">현재가</span>
+                      <span className="caption--md color-gray">최근 종가</span>
                       <strong className="title--md">
                         {selectedSummary.hasQuote ? formatWon(selectedSummary.currentPrice) : "-"}
                       </strong>
                     </div>
                     <div className="tr">
-                      <span className="caption--md color-gray">오늘 변동</span>
+                      <span className="caption--md color-gray">전일 대비</span>
                       <strong
                         className={`label--lg ${
                           selectedSummary.hasQuote
@@ -1150,7 +1174,7 @@ export default function InvestPage() {
                       >
                         {selectedSummary.hasQuote
                           ? `${formatSignedWon(selectedSummary.dailyProfit)} (${formatSignedPercent(selectedSummary.dailyProfitRate)})`
-                          : "현재가 업데이트 후 표시"}
+                          : "최근 종가 업데이트 후 표시"}
                       </strong>
                     </div>
                   </div>

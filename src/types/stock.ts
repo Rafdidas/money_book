@@ -9,6 +9,7 @@ export type StockQuote = {
   currentPrice: number;
   dailyChange: number;
   dailyChangeRate: number;
+  baseDate?: string;
   updatedAt: string;
 };
 

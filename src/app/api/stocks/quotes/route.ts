@@ -1,11 +1,10 @@
-import { getKisDomesticQuote } from "@/lib/kis/client";
-import { isKisPublicQuoteEnabled } from "@/lib/kis/config";
+import { getFscDomesticStockQuote } from "@/lib/fsc/stock";
 import { createClient } from "@/lib/supabase/server";
 import type { StockQuote } from "@/types/stock";
 
 export const runtime = "nodejs";
 const MAX_QUOTE_SYMBOLS = 20;
-const QUOTE_CACHE_TTL = 1000 * 60 * 2;
+const QUOTE_CACHE_TTL = 1000 * 60 * 60 * 6;
 const RATE_LIMIT_WINDOW = 1000 * 60;
 const MAX_REQUESTS_PER_USER = 5;
 
@@ -17,6 +16,11 @@ type QuoteCacheEntry = {
 type RateLimitEntry = {
   count: number;
   resetsAt: number;
+};
+
+type QuoteFailure = {
+  symbol: string;
+  message: string;
 };
 
 const quoteCache = new Map<string, QuoteCacheEntry>();
@@ -52,7 +56,7 @@ const takeRateLimit = (userId: string) => {
   return { isAllowed: true, retryAfter: 0 };
 };
 
-const getCachedKisDomesticQuote = async (symbol: string) => {
+const getCachedDomesticStockQuote = async (symbol: string) => {
   const now = Date.now();
   const cached = quoteCache.get(symbol);
 
@@ -63,7 +67,7 @@ const getCachedKisDomesticQuote = async (symbol: string) => {
   const pending = pendingQuoteRequests.get(symbol);
   if (pending) return pending;
 
-  const quoteRequest = getKisDomesticQuote(symbol)
+  const quoteRequest = getFscDomesticStockQuote(symbol)
     .then((quote) => {
       quoteCache.set(symbol, {
         quote,
@@ -93,17 +97,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!isKisPublicQuoteEnabled()) {
-      return Response.json(
-        { message: "공개 서비스의 현재가 제공은 이용 승인 확인 후 활성화됩니다." },
-        { status: 503 },
-      );
-    }
-
     const rateLimit = takeRateLimit(user.id);
     if (!rateLimit.isAllowed) {
       return Response.json(
-        { message: "현재가 업데이트 요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
+        { message: "최근 종가 업데이트 요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
         {
           status: 429,
           headers: { "Retry-After": String(rateLimit.retryAfter) },
@@ -127,23 +124,38 @@ export async function POST(request: Request) {
 
     if (uniqueSymbols.length > MAX_QUOTE_SYMBOLS) {
       return Response.json(
-        { message: `현재가는 한 번에 ${MAX_QUOTE_SYMBOLS}개 종목까지 조회할 수 있습니다.` },
+        { message: `최근 종가는 한 번에 ${MAX_QUOTE_SYMBOLS}개 종목까지 조회할 수 있습니다.` },
         { status: 400 },
       );
     }
 
-    const quotes = [];
+    const quotes: StockQuote[] = [];
+    const failures: QuoteFailure[] = [];
 
     for (const symbol of uniqueSymbols) {
-      quotes.push(await getCachedKisDomesticQuote(symbol));
+      try {
+        quotes.push(await getCachedDomesticStockQuote(symbol));
+      } catch (error) {
+        failures.push({
+          symbol,
+          message: error instanceof Error ? error.message : "최근 종가 조회에 실패했습니다.",
+        });
+      }
     }
 
-    return Response.json({ quotes });
+    if (!quotes.length && failures.length) {
+      return Response.json(
+        { message: failures[0].message, failures },
+        { status: 502 },
+      );
+    }
+
+    return Response.json({ quotes, failures });
   } catch (error) {
     return Response.json(
       {
         message:
-          error instanceof Error ? error.message : "현재가 조회에 실패했습니다.",
+          error instanceof Error ? error.message : "최근 종가 조회에 실패했습니다.",
       },
       { status: 500 },
     );
