@@ -65,11 +65,12 @@ const fetchFscPriceItems = async (
   config: ReturnType<typeof getFscConfig>,
   range: ReturnType<typeof getRecentBasDtRange>,
 ) => {
+  const normalizedSymbol = symbol.trim().toUpperCase();
   const params = new URLSearchParams({
     numOfRows: "10",
     pageNo: "1",
     resultType: "json",
-    likeSrtnCd: symbol,
+    likeSrtnCd: normalizedSymbol,
     beginBasDt: range.beginBasDt,
     endBasDt: range.endBasDt,
   });
@@ -88,28 +89,39 @@ const fetchFscPriceItems = async (
   }
 
   return toItems(data.response?.body?.items?.item)
-    .filter((item) => item.srtnCd === symbol && item.basDt)
+    .filter((item) => item.srtnCd?.trim().toUpperCase() === normalizedSymbol && item.basDt)
     .sort((left, right) => String(right.basDt).localeCompare(String(left.basDt)));
 };
 
 export const getFscDomesticStockQuote = async (symbol: string): Promise<StockQuote> => {
+  const normalizedSymbol = symbol.trim().toUpperCase();
   const stockConfig = getFscConfig();
   const range = getRecentBasDtRange();
-  const stockItems = await fetchFscPriceItems("getStockPriceInfo", symbol, stockConfig, range);
+  const stockItems = await fetchFscPriceItems(
+    "getStockPriceInfo",
+    normalizedSymbol,
+    stockConfig,
+    range,
+  );
   let quote = stockItems[0];
 
   if (!quote) {
     const productConfig = getFscSecuritiesProductConfig();
-    const etfItems = await fetchFscPriceItems("getETFPriceInfo", symbol, productConfig, range);
+    const etfItems = await fetchFscPriceItems(
+      "getETFPriceInfo",
+      normalizedSymbol,
+      productConfig,
+      range,
+    );
     quote = etfItems[0];
   }
 
   if (!quote) {
-    throw new Error(`${symbol}의 최근 거래일 종가를 찾지 못했습니다. 주식시세와 ETF시세를 조회했지만 결과가 없었습니다.`);
+    throw new Error(`${normalizedSymbol}의 최근 거래일 종가를 찾지 못했습니다. 주식시세와 ETF시세를 조회했지만 결과가 없었습니다.`);
   }
 
   return {
-    symbol,
+    symbol: normalizedSymbol,
     currentPrice: toNumber(quote.clpr),
     dailyChange: toNumber(quote.vs),
     dailyChangeRate: toNumber(quote.fltRt),

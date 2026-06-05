@@ -67,6 +67,16 @@
     --button-radius: 6px;
   }
 
+  &--xmd {
+    --button-height: 36px;
+    --button-padding-inline: 10px;
+    --button-gap: 4px;
+    --button-icon-size: 20px;
+    --button-font-size: 14px;
+    --button-font-weight: 400;
+    --button-radius: 6px;
+  }
+
   &--sm {
     --button-height: 32px;
     --button-padding-inline: 10px;
@@ -85,10 +95,6 @@
     --button-font-size: 13px;
     --button-font-weight: 500;
     --button-radius: 4px;
-  }
-
-  &.refresh-btn {
-    height: 38px !important;
   }
 
   &--icon-left.button--lg {

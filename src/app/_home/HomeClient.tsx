@@ -53,6 +53,7 @@ import type {
   SavingsPayment,
 } from "@/types/recurring";
 import { formatDate } from "@/utils/date";
+import { formatIntegerInput, parseFormattedNumber } from "@/utils/numberInput";
 import CategoryPieChart from "./charts/CategoryPieChart";
 import OverviewLineChart from "./charts/OverviewLineChart";
 import {
@@ -973,7 +974,7 @@ export default function HomeClient() {
     const type = getInlineEntryType(expense);
     const categoryList = getInlineCategoryOptions(type);
 
-    setInlineAmount(String(expense.amount));
+    setInlineAmount(expense.amount.toLocaleString());
     setInlineCategory(
       categoryList.includes(expense.category) ? expense.category : customCategoryValue,
     );
@@ -1005,17 +1006,17 @@ export default function HomeClient() {
   }, [selectedDate]);
 
   const fillSavingsEditForm = useCallback((account: SavingsAccount) => {
-    setSavingsPaymentAmount(String(account.monthlyPayment));
+    setSavingsPaymentAmount(account.monthlyPayment.toLocaleString());
     setSavingsPaymentDay(String(account.paymentDay));
     setSavingsMaturityDate(account.maturityDate);
     setSavingsHasNoMaturity(account.hasNoMaturity);
     setSavingsStartsThisMonth(true);
-    setSavingsCurrentAmount(String(account.initialAmount));
+    setSavingsCurrentAmount(account.initialAmount.toLocaleString());
     setSavingsName(account.name);
   }, []);
 
   const fillFixedExpenseEditForm = useCallback((account: FixedExpenseAccount) => {
-    setFixedExpenseAmount(String(account.monthlyAmount));
+    setFixedExpenseAmount(account.monthlyAmount.toLocaleString());
     setFixedExpensePaymentDay(String(account.paymentDay));
     setFixedExpenseEndDate(account.endDate);
     setFixedExpenseHasNoEndDate(account.hasNoEndDate);
@@ -1533,9 +1534,9 @@ export default function HomeClient() {
   };
 
   const handleSavingsSubmit = async () => {
-    const paymentAmount = Number(savingsPaymentAmount);
+    const paymentAmount = parseFormattedNumber(savingsPaymentAmount);
     const paymentDay = Number(savingsPaymentDay);
-    const initialAmount = Number(savingsCurrentAmount) || 0;
+    const initialAmount = parseFormattedNumber(savingsCurrentAmount) || 0;
     const name = savingsName.trim();
     const maturityDate = new Date(`${savingsMaturityDate}T00:00:00`);
 
@@ -1706,7 +1707,7 @@ export default function HomeClient() {
     }
   };
   const handleFixedExpenseSubmit = async () => {
-    const amount = Number(fixedExpenseAmount);
+    const amount = parseFormattedNumber(fixedExpenseAmount);
     const paymentDay = Number(fixedExpensePaymentDay);
     const name = fixedExpenseName.trim();
     const endDate = new Date(`${fixedExpenseEndDate}T00:00:00`);
@@ -2020,7 +2021,7 @@ export default function HomeClient() {
     }
   };
   const handleInlineSubmit = async () => {
-    const amount = Number(inlineAmount);
+    const amount = parseFormattedNumber(inlineAmount);
     const category =
       inlineCategory === customCategoryValue
         ? inlineCustomCategory.trim()
@@ -2515,11 +2516,13 @@ export default function HomeClient() {
                         <span className="label--md">금액</span>
                         <input
                           className="main-overview--control body--sm"
-                          type="number"
-                          min="0"
+                          type="text"
+                          inputMode="numeric"
                           placeholder="0"
                           value={inlineAmount}
-                          onChange={(event) => setInlineAmount(event.target.value)}
+                          onChange={(event) =>
+                            setInlineAmount(formatIntegerInput(event.target.value))
+                          }
                         />
                       </label>
                       <label className="main-overview--field">
@@ -2688,12 +2691,12 @@ export default function HomeClient() {
                         </div>
                         <input
                           className="main-overview--control body--sm"
-                          type="number"
-                          min="0"
+                          type="text"
+                          inputMode="numeric"
                           placeholder="0"
                           value={savingsPaymentAmount}
                           onChange={(event) =>
-                            setSavingsPaymentAmount(event.target.value)
+                            setSavingsPaymentAmount(formatIntegerInput(event.target.value))
                           }
                         />
                       </label>
@@ -2742,12 +2745,12 @@ export default function HomeClient() {
                         <span className="form-label label--md">현재 금액</span>
                         <input
                           className="main-overview--control body--sm"
-                          type="number"
-                          min="0"
+                          type="text"
+                          inputMode="numeric"
                           placeholder="0"
                           value={savingsCurrentAmount}
                           onChange={(event) =>
-                            setSavingsCurrentAmount(event.target.value)
+                            setSavingsCurrentAmount(formatIntegerInput(event.target.value))
                           }
                         />
                       </label>
@@ -2988,11 +2991,13 @@ export default function HomeClient() {
                         </div>
                         <input
                           className="main-overview--control body--sm"
-                          type="number"
-                          min="0"
+                          type="text"
+                          inputMode="numeric"
                           placeholder="0"
                           value={fixedExpenseAmount}
-                          onChange={(event) => setFixedExpenseAmount(event.target.value)}
+                          onChange={(event) =>
+                            setFixedExpenseAmount(formatIntegerInput(event.target.value))
+                          }
                         />
                       </label>
                       <label className="main-overview--field  flex-fill">

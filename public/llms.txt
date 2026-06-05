@@ -13,6 +13,14 @@ Primary URL: https://money-book-one.vercel.app/
 - Supports savings-account style records and stock purchase records.
 - Provides a demo mode for trying the core workflows without creating an account.
 
+## Investment management
+
+- Searches Korean domestic stocks and records stock purchases.
+- Calculates valuation amounts, profit, and return using the latest trading-day closing price.
+- Shows portfolio allocation by stock, account, and market.
+- Separates general, ISA, and pension savings accounts.
+- Tracks annual ISA and pension savings investment limits.
+
 ## Audience
 
 Korean users who want a simple personal bookkeeping dashboard for household

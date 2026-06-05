@@ -4,18 +4,14 @@ import type { StockQuote } from "@/types/stock";
 
 export const runtime = "nodejs";
 const MAX_QUOTE_SYMBOLS = 20;
+const QUOTE_FETCH_CONCURRENCY = 5;
 const QUOTE_CACHE_TTL = 1000 * 60 * 60 * 6;
-const RATE_LIMIT_WINDOW = 1000 * 60;
-const MAX_REQUESTS_PER_USER = 5;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+const MAX_REQUESTS_PER_USER = 30;
 
 type QuoteCacheEntry = {
   quote: StockQuote;
   expiresAt: number;
-};
-
-type RateLimitEntry = {
-  count: number;
-  resetsAt: number;
 };
 
 type QuoteFailure = {
@@ -25,36 +21,6 @@ type QuoteFailure = {
 
 const quoteCache = new Map<string, QuoteCacheEntry>();
 const pendingQuoteRequests = new Map<string, Promise<StockQuote>>();
-const userRateLimit = new Map<string, RateLimitEntry>();
-let lastRateLimitCleanup = 0;
-
-const takeRateLimit = (userId: string) => {
-  const now = Date.now();
-
-  if (lastRateLimitCleanup + RATE_LIMIT_WINDOW <= now) {
-    userRateLimit.forEach((entry, key) => {
-      if (entry.resetsAt <= now) userRateLimit.delete(key);
-    });
-    lastRateLimitCleanup = now;
-  }
-
-  const current = userRateLimit.get(userId);
-
-  if (!current || current.resetsAt <= now) {
-    userRateLimit.set(userId, { count: 1, resetsAt: now + RATE_LIMIT_WINDOW });
-    return { isAllowed: true, retryAfter: 0 };
-  }
-
-  if (current.count >= MAX_REQUESTS_PER_USER) {
-    return {
-      isAllowed: false,
-      retryAfter: Math.max(1, Math.ceil((current.resetsAt - now) / 1000)),
-    };
-  }
-
-  current.count += 1;
-  return { isAllowed: true, retryAfter: 0 };
-};
 
 const getCachedDomesticStockQuote = async (symbol: string) => {
   const now = Date.now();
@@ -97,13 +63,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const rateLimit = takeRateLimit(user.id);
-    if (!rateLimit.isAllowed) {
+    const { data: rateLimitRows, error: rateLimitError } = await supabase.rpc(
+      "take_stock_quote_rate_limit",
+      {
+        max_requests: MAX_REQUESTS_PER_USER,
+        window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+      },
+    );
+
+    if (rateLimitError) {
+      throw new Error(`종가 조회 요청 제한을 확인하지 못했습니다: ${rateLimitError.message}`);
+    }
+
+    const rateLimit = Array.isArray(rateLimitRows) ? rateLimitRows[0] : rateLimitRows;
+    if (!rateLimit?.is_allowed) {
       return Response.json(
         { message: "최근 종가 업데이트 요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
         {
           status: 429,
-          headers: { "Retry-After": String(rateLimit.retryAfter) },
+          headers: { "Retry-After": String(rateLimit?.retry_after || 1) },
         },
       );
     }
@@ -112,8 +90,8 @@ export async function POST(request: Request) {
     const symbols = Array.isArray(body.symbols)
       ? body.symbols
           .filter((symbol): symbol is string => typeof symbol === "string")
-          .map((symbol) => symbol.trim())
-          .filter((symbol) => /^\d{6}$/.test(symbol))
+          .map((symbol) => symbol.trim().toUpperCase())
+          .filter((symbol) => /^[0-9A-Z]{6}$/.test(symbol))
       : [];
 
     if (!symbols.length) {
@@ -132,15 +110,24 @@ export async function POST(request: Request) {
     const quotes: StockQuote[] = [];
     const failures: QuoteFailure[] = [];
 
-    for (const symbol of uniqueSymbols) {
-      try {
-        quotes.push(await getCachedDomesticStockQuote(symbol));
-      } catch (error) {
+    for (let index = 0; index < uniqueSymbols.length; index += QUOTE_FETCH_CONCURRENCY) {
+      const batch = uniqueSymbols.slice(index, index + QUOTE_FETCH_CONCURRENCY);
+      const results = await Promise.allSettled(batch.map(getCachedDomesticStockQuote));
+
+      results.forEach((result, resultIndex) => {
+        if (result.status === "fulfilled") {
+          quotes.push(result.value);
+          return;
+        }
+
         failures.push({
-          symbol,
-          message: error instanceof Error ? error.message : "최근 종가 조회에 실패했습니다.",
+          symbol: batch[resultIndex],
+          message:
+            result.reason instanceof Error
+              ? result.reason.message
+              : "최근 종가 조회에 실패했습니다.",
         });
-      }
+      });
     }
 
     if (!quotes.length && failures.length) {

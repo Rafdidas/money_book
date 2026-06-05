@@ -108,8 +108,16 @@ supabase/
 
 Vercel 등 Next.js를 지원하는 플랫폼에 배포할 수 있습니다. 배포 환경에도 `.env.local`과 같은 Supabase 환경 변수를 등록해야 합니다.
 
-투자 현재가 기능은 `KIS_APP_KEY`, `KIS_APP_SECRET`, `KIS_BASE_URL`을 서버
-환경변수로 사용합니다. 프로덕션에서는 KIS 시세를 서비스 화면에 제공할 수
-있는 이용 범위를 확인한 뒤에만 `KIS_PUBLIC_QUOTE_ENABLED=true`를 설정하세요.
-값을 설정하지 않거나 `false`이면 `/api/stocks/quotes`는 현재가 조회를
-비활성화합니다.
+투자 종목 검색은 한국투자증권에서 공개하는 KOSPI/KOSDAQ 종목 마스터 파일을
+사용합니다. 종목 마스터는 서버에서 12시간 캐시되며 별도 KIS 인증키가 필요하지
+않습니다.
+
+최근 종가와 전일 대비 정보는 금융위원회 공공데이터 API를 사용합니다. 배포
+환경에 `FSC_STOCK_SERVICE_KEY`, `FSC_SECURITIES_PRODUCT_SERVICE_KEY`를 등록하고
+필요하면 각 API의 기본 URL도 함께 설정하세요. `/api/stocks/quotes`는 로그인한
+사용자만 호출할 수 있으며 한 요청당 20개 종목, 사용자당 분당 30개 배치 요청으로
+제한됩니다. 많은 종목은 화면에서 자동으로 20개씩 나누어 조회합니다.
+
+로그인 사용자의 투자 매수 기록과 연도별 ISA·연금저축 한도는 Supabase에
+저장되고 RLS로 사용자별 접근을 제한합니다. 데모 모드 데이터만 브라우저
+`localStorage`에 저장됩니다.

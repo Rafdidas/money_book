@@ -101,6 +101,21 @@ export default function IntroPage() {
           <li className="card-list--items">
             <div className="card-item--img">
               <span className="material-symbols-outlined" aria-hidden="true">
+                finance_mode
+              </span>
+            </div>
+            <div className="card-item--text">
+              <h4>투자를 시작한 분</h4>
+              <p>
+                투자 내역을 기록하고
+                <br />
+                성과를 관리하고 싶은 분들
+              </p>
+            </div>
+          </li>
+          <li className="card-list--items">
+            <div className="card-item--img">
+              <span className="material-symbols-outlined" aria-hidden="true">
                 calendar_month
               </span>
             </div>
@@ -160,6 +175,21 @@ export default function IntroPage() {
                 적금 및 저축을 등록하여
                 <br />
                 달성 현황 및 리스트를 확인할 수 있어요.
+              </p>
+            </div>
+          </li>
+          <li className="function-list--items">
+            <div className="function-item--img">
+              <span className="material-symbols-outlined" aria-hidden="true">
+                waterfall_chart
+              </span>
+            </div>
+            <div className="function-item--text">
+              <h4>투자기록</h4>
+              <p>
+                투자 내역과 수익률을 기록하고
+                <br />
+                포트폴리오를 관리할 수 있어요.
               </p>
             </div>
           </li>
@@ -228,7 +258,10 @@ export default function IntroPage() {
               가계부로 이동
             </Link>
           ) : (
-            <Link href="/auth/login" className="button button--md button--outline-primary">
+            <Link
+              href="/auth/login"
+              className="button button--md button--outline-primary"
+            >
               무료로 시작하기
             </Link>
           )}

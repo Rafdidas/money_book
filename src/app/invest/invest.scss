@@ -140,9 +140,11 @@
     min-height: 176px;
 
     &--items {
+      overflow: auto;
       display: flex;
       flex-direction: column;
       gap: 14px;
+      max-height: 500px;
     }
 
     &--empty {
@@ -188,6 +190,11 @@
     }
   }
 
+  .table--wrap__invest {
+    overflow-y: auto;
+    max-height: 700px;
+  }
+
   .invest-holdings {
     min-width: 0;
 
@@ -197,6 +204,19 @@
       tbody td {
         padding-top: 14px;
         padding-bottom: 14px;
+      }
+
+      tbody tr[role="button"] {
+        cursor: pointer;
+      }
+
+      tbody tr[role="button"]:hover td {
+        background: var(--surface-lowest);
+      }
+
+      tbody tr[role="button"]:focus-visible {
+        outline: 2px solid var(--primary-high);
+        outline-offset: -2px;
       }
 
       tbody tr.is-selected td {
@@ -213,12 +233,6 @@
     &--select {
       width: 100%;
       text-align: left;
-
-      &:focus-visible {
-        border-radius: 6px;
-        outline: 2px solid var(--primary-high);
-        outline-offset: 2px;
-      }
     }
   }
 
@@ -301,7 +315,7 @@
   .invest-editor {
     align-self: start;
     position: sticky;
-    top: 16px;
+    top: 52px;
 
     .grid-col-2 {
       gap: 10px;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import { useAppData } from "@/app/providers";
@@ -8,17 +8,75 @@ import {
   DEMO_INVESTMENT_OWNER_KEY,
   DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY,
 } from "@/lib/demo";
-import type { StockPurchaseMeta, StockQuote, StockSearchItem } from "@/types/stock";
+import {
+  createInvestmentStock,
+  createInvestmentStocks,
+  deleteInvestmentStock,
+  getInvestmentAccountLimits,
+  getInvestmentStocks,
+  updateInvestmentStock,
+  upsertInvestmentAccountLimit,
+} from "@/lib/api/investments";
+import type {
+  InvestmentAccountLimits,
+  InvestmentAccountType,
+  InvestmentCurrency,
+  InvestmentStock,
+  LimitAccountType,
+  StockQuote,
+  StockSearchItem,
+} from "@/types/stock";
 import { formatDate } from "@/utils/date";
+import {
+  formatDecimalInput,
+  formatIntegerInput,
+  parseFormattedNumber,
+} from "@/utils/numberInput";
+import { normalizeStockSearchText } from "@/utils/stock";
 import "../../invest/invest.scss";
 
 const formatWon = (value: number) =>
   `${value < 0 ? "-" : ""}${Math.round(Math.abs(value)).toLocaleString()}원`;
+const formatKoreanNumber = (value: number) => {
+  const units = [
+    { value: 1000, label: "천" },
+    { value: 100, label: "백" },
+    { value: 10, label: "십" },
+  ];
+  let remainder = value;
+  let result = "";
+
+  units.forEach((unit) => {
+    const count = Math.floor(remainder / unit.value);
+    if (!count) return;
+    result += `${count === 1 ? "" : count}${unit.label}`;
+    remainder %= unit.value;
+  });
+
+  return `${result}${remainder || ""}`;
+};
+const formatKoreanWon = (value: number) => {
+  const roundedValue = Math.floor(value);
+  if (!roundedValue) return "";
+  if (roundedValue < 10000) return formatWon(roundedValue);
+
+  const eok = Math.floor(roundedValue / 100000000);
+  const man = Math.floor((roundedValue % 100000000) / 10000);
+  const parts = [];
+
+  if (eok) parts.push(`${formatKoreanNumber(eok)}억`);
+  if (man) parts.push(`${formatKoreanNumber(man)}만`);
+
+  return `${parts.join(" ")}원`;
+};
 const stockAutoRefreshKeyPrefix = "money-book-stock-last-refresh";
 const stockHoldingsStoragePrefix = "money-book:stock-holdings";
 const stockQuotesStoragePrefix = "money-book:stock-quotes";
 const investmentAccountLimitsStoragePrefix = "money-book:investment-account-limits";
 const currentDemoStockHoldingsVersion = "1";
+const stockSearchResultCache = new Map<string, StockSearchItem[]>();
+const stockSearchResultCacheLimit = 50;
+const stockQuoteBatchSize = 20;
 
 type StockSortKey = "name" | "totalProfit" | "averagePrice" | "totalCost" | "dailyProfit";
 type SortDirection = "asc" | "desc";
@@ -26,20 +84,6 @@ type StockSort = {
   key: StockSortKey;
   direction: SortDirection;
 } | null;
-
-type InvestmentAccountType = "GENERAL" | "ISA" | "PENSION";
-type InvestmentCurrency = "KRW";
-type LimitAccountType = Extract<InvestmentAccountType, "ISA" | "PENSION">;
-
-type InvestmentAccountLimits = Record<LimitAccountType, number>;
-
-type InvestmentStock = StockPurchaseMeta & {
-  id: string;
-  createdAt: string;
-  accountType: InvestmentAccountType;
-  currency: InvestmentCurrency;
-  memo: string;
-};
 
 type InvestmentSummary = {
   groupKey: string;
@@ -101,6 +145,17 @@ const getInvestmentGroupKey = (stock: {
   symbol: string;
   currency: InvestmentCurrency;
 }) => `${stock.accountType}:${stock.market}:${stock.symbol}:${stock.currency}`;
+const toInvestmentStockPayload = (stock: InvestmentStock) => ({
+  symbol: stock.symbol,
+  name: stock.name,
+  market: stock.market,
+  quantity: stock.quantity,
+  unitPrice: stock.unitPrice,
+  purchaseDate: stock.purchaseDate,
+  accountType: stock.accountType,
+  currency: stock.currency,
+  memo: stock.memo,
+});
 
 const readStoredInvestmentStocks = (ownerKey: string): InvestmentStock[] => {
   if (typeof window === "undefined") return [];
@@ -265,6 +320,7 @@ export default function InvestPage() {
   const { alert, confirm } = useAppAlert();
   const [selectedDate, setSelectedDate] = useState(today);
   const [stockQuery, setStockQuery] = useState("");
+  const [isStockQueryComposing, setIsStockQueryComposing] = useState(false);
   const [stockSearchItems, setStockSearchItems] = useState<StockSearchItem[]>([]);
   const [selectedStock, setSelectedStock] = useState<StockSearchItem | null>(null);
   const [stockPurchaseDate, setStockPurchaseDate] = useState(formatDate(today));
@@ -292,6 +348,7 @@ export default function InvestPage() {
     ISA: "",
     PENSION: "",
   });
+  const stockSearchRequestId = useRef(0);
   const storageOwnerKey = isDemoMode ? DEMO_INVESTMENT_OWNER_KEY : displayEmail || "local";
 
   const investmentSummaries = useMemo<InvestmentSummary[]>(() => {
@@ -556,8 +613,8 @@ export default function InvestPage() {
     setStockQuery(`${stock.name} (${stock.symbol})`);
     setStockSearchItems([]);
     setStockPurchaseDate(stock.purchaseDate);
-    setStockQuantity(String(stock.quantity));
-    setStockUnitPrice(String(stock.unitPrice));
+    setStockQuantity(stock.quantity.toLocaleString());
+    setStockUnitPrice(stock.unitPrice.toLocaleString());
     setStockAccountType(stock.accountType);
     setStockMemo(stock.memo);
     setEditingStockId(stock.id);
@@ -569,27 +626,37 @@ export default function InvestPage() {
 
     try {
       setIsStockRefreshing(true);
-      const response = await fetch("/api/stocks/quotes", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({ symbols }),
-      });
-      const data = (await response.json()) as {
-        quotes?: StockQuote[];
-        failures?: { symbol: string; message: string }[];
-        message?: string;
-      };
+      const uniqueSymbols = [...new Set(symbols)];
+      const quotes: StockQuote[] = [];
+      const failures: { symbol: string; message: string }[] = [];
 
-      if (!response.ok) {
-        throw new Error(data.message || "최근 종가 업데이트에 실패했습니다.");
+      for (let index = 0; index < uniqueSymbols.length; index += stockQuoteBatchSize) {
+        const batch = uniqueSymbols.slice(index, index + stockQuoteBatchSize);
+        const response = await fetch("/api/stocks/quotes", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ symbols: batch }),
+        });
+        const data = (await response.json()) as {
+          quotes?: StockQuote[];
+          failures?: { symbol: string; message: string }[];
+          message?: string;
+        };
+
+        if (!response.ok) {
+          throw new Error(data.message || "최근 종가 업데이트에 실패했습니다.");
+        }
+
+        quotes.push(...(data.quotes || []));
+        failures.push(...(data.failures || []));
       }
 
       setStockQuotes((prev) => {
         const next = {
           ...prev,
-          ...(data.quotes || []).reduce<Record<string, StockQuote>>((acc, quote) => {
+          ...quotes.reduce<Record<string, StockQuote>>((acc, quote) => {
             acc[quote.symbol] = quote;
             return acc;
           }, {}),
@@ -598,8 +665,8 @@ export default function InvestPage() {
         return next;
       });
       setStockQuoteMessage(
-        data.failures?.length
-          ? `${data.failures.length}개 종목은 최근 종가를 불러오지 못했습니다.`
+        failures.length
+          ? `${failures.length}개 종목은 최근 종가를 불러오지 못했습니다.`
           : "",
       );
       window.localStorage.setItem(getStockAutoRefreshKey(storageOwnerKey), String(Date.now()));
@@ -628,8 +695,8 @@ export default function InvestPage() {
   };
 
   const handleStockSubmit = async () => {
-    const quantity = Number(stockQuantity);
-    const unitPrice = Number(stockUnitPrice);
+    const quantity = parseFormattedNumber(stockQuantity);
+    const unitPrice = parseFormattedNumber(stockUnitPrice);
     const purchaseDate = new Date(`${stockPurchaseDate}T00:00:00`);
 
     if (!selectedStock) {
@@ -649,12 +716,8 @@ export default function InvestPage() {
       return;
     }
 
-    const nextStock: InvestmentStock = {
+    const stockPayload: Omit<InvestmentStock, "id" | "createdAt"> = {
       ...selectedStock,
-      id: editingStockId || `stock-${selectedStock.symbol}-${Date.now()}`,
-      createdAt:
-        investmentStocks.find((stock) => stock.id === editingStockId)?.createdAt ??
-        new Date().toISOString(),
       quantity,
       unitPrice,
       purchaseDate: stockPurchaseDate,
@@ -665,14 +728,35 @@ export default function InvestPage() {
 
     try {
       setIsStockSubmitting(true);
-      setInvestmentStocks((prev) => {
-        const next = editingStockId
-          ? prev.map((stock) => (stock.id === editingStockId ? nextStock : stock))
-          : [nextStock, ...prev];
-        writeStoredInvestmentStocks(storageOwnerKey, next);
-        return next;
-      });
-      setSelectedGroupKey(getInvestmentGroupKey(nextStock));
+      let savedStock: InvestmentStock;
+
+      if (isDemoMode) {
+        savedStock = {
+          ...stockPayload,
+          id: editingStockId || `stock-${selectedStock.symbol}-${Date.now()}`,
+          createdAt:
+            investmentStocks.find((stock) => stock.id === editingStockId)?.createdAt ??
+            new Date().toISOString(),
+        };
+        setInvestmentStocks((prev) => {
+          const next = editingStockId
+            ? prev.map((stock) => (stock.id === editingStockId ? savedStock : stock))
+            : [savedStock, ...prev];
+          writeStoredInvestmentStocks(storageOwnerKey, next);
+          return next;
+        });
+      } else {
+        savedStock = editingStockId
+          ? await updateInvestmentStock(editingStockId, stockPayload)
+          : await createInvestmentStock(stockPayload);
+        setInvestmentStocks((prev) =>
+          editingStockId
+            ? prev.map((stock) => (stock.id === editingStockId ? savedStock : stock))
+            : [savedStock, ...prev],
+        );
+      }
+
+      setSelectedGroupKey(getInvestmentGroupKey(savedStock));
       await refreshStockQuotes([selectedStock.symbol]);
 
       setSelectedDate(new Date(`${stockPurchaseDate}T00:00:00`));
@@ -694,22 +778,27 @@ export default function InvestPage() {
 
     try {
       setDeletingStockId(stock.id);
+      if (!isDemoMode) {
+        await deleteInvestmentStock(stock.id);
+      }
       setInvestmentStocks((prev) => {
         const next = prev.filter((item) => item.id !== stock.id);
-        writeStoredInvestmentStocks(storageOwnerKey, next);
+        if (isDemoMode) writeStoredInvestmentStocks(storageOwnerKey, next);
         return next;
       });
 
       if (editingStockId === stock.id) {
         resetStockForm();
       }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "매수 기록 삭제에 실패했습니다.");
     } finally {
       setDeletingStockId("");
     }
   };
 
-  const handleAccountLimitSave = (accountType: LimitAccountType) => {
-    const value = Number(accountLimitInputs[accountType]);
+  const handleAccountLimitSave = async (accountType: LimitAccountType) => {
+    const value = parseFormattedNumber(accountLimitInputs[accountType]);
 
     if (!Number.isFinite(value) || value < 0) {
       alert("연간 한도는 0원 이상의 금액으로 입력해주세요.");
@@ -717,15 +806,42 @@ export default function InvestPage() {
     }
 
     const next = { ...accountLimits, [accountType]: value };
-    setAccountLimits(next);
-    writeStoredInvestmentAccountLimits(storageOwnerKey, limitYear, next);
+    try {
+      if (isDemoMode) {
+        writeStoredInvestmentAccountLimits(storageOwnerKey, limitYear, next);
+      } else {
+        await upsertInvestmentAccountLimit(limitYear, accountType, value);
+      }
+      setAccountLimits(next);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "연간 한도 저장에 실패했습니다.");
+    }
   };
 
   useEffect(() => {
+    const requestId = ++stockSearchRequestId.current;
     const query = stockQuery.trim();
-    if (query.length < 2 || selectedStock?.name === query || selectedStock?.symbol === query) {
+    const normalizedQuery = normalizeStockSearchText(query);
+    const selectedStockLabel = selectedStock
+      ? `${selectedStock.name} (${selectedStock.symbol})`
+      : "";
+
+    if (
+      isStockQueryComposing ||
+      normalizedQuery.length < 2 ||
+      normalizeStockSearchText(selectedStockLabel) === normalizedQuery
+    ) {
       setStockSearchItems([]);
       setIsStockSearching(false);
+      return;
+    }
+
+    const cachedItems = stockSearchResultCache.get(normalizedQuery);
+    if (cachedItems) {
+      if (requestId === stockSearchRequestId.current) {
+        setStockSearchItems(cachedItems);
+        setIsStockSearching(false);
+      }
       return;
     }
 
@@ -733,7 +849,7 @@ export default function InvestPage() {
     const timeoutId = window.setTimeout(async () => {
       try {
         setIsStockSearching(true);
-        const response = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`, {
+        const response = await fetch(`/api/stocks/search?q=${encodeURIComponent(normalizedQuery)}`, {
           signal: controller.signal,
         });
         const data = (await response.json()) as {
@@ -744,30 +860,45 @@ export default function InvestPage() {
         if (!response.ok) {
           throw new Error(data.message || "종목 검색에 실패했습니다.");
         }
-        setStockSearchItems(data.items || []);
+        const items = data.items || [];
+        if (stockSearchResultCache.size >= stockSearchResultCacheLimit) {
+          const oldestKey = stockSearchResultCache.keys().next().value;
+          if (oldestKey) stockSearchResultCache.delete(oldestKey);
+        }
+        stockSearchResultCache.set(normalizedQuery, items);
+        if (requestId === stockSearchRequestId.current) {
+          setStockSearchItems(items);
+        }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        setStockSearchItems([]);
+        if (requestId === stockSearchRequestId.current) {
+          setStockSearchItems([]);
+        }
       } finally {
-        setIsStockSearching(false);
+        if (requestId === stockSearchRequestId.current) {
+          setIsStockSearching(false);
+        }
       }
-    }, 250);
+    }, 150);
 
     return () => {
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [selectedStock, stockQuery]);
+  }, [isStockQueryComposing, selectedStock, stockQuery]);
 
   useEffect(() => {
     if (!isAuthResolved) return;
-    window.queueMicrotask(() => {
-      let storedStocks = readStoredInvestmentStocks(storageOwnerKey);
-      const storedLimits = readStoredInvestmentAccountLimits(storageOwnerKey, limitYear);
+    let isCancelled = false;
+
+    const loadInvestments = async () => {
       const storedQuotes = readStoredStockQuotes(storageOwnerKey);
       setStockQuoteMessage("");
 
       if (isDemoMode) {
+        let storedStocks = readStoredInvestmentStocks(storageOwnerKey);
+        const storedLimits = readStoredInvestmentAccountLimits(storageOwnerKey, limitYear);
+
         if (
           window.localStorage.getItem(DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY) !==
           currentDemoStockHoldingsVersion
@@ -782,18 +913,62 @@ export default function InvestPage() {
           );
         }
         setStockQuotes(createDemoStockQuotes());
-      } else {
-        setStockQuotes(storedQuotes);
+        if (!isCancelled) {
+          setInvestmentStocks(storedStocks);
+          setAccountLimits(storedLimits);
+          setAccountLimitInputs({
+            ISA: storedLimits.ISA ? storedLimits.ISA.toLocaleString() : "",
+            PENSION: storedLimits.PENSION ? storedLimits.PENSION.toLocaleString() : "",
+          });
+        }
+        return;
       }
 
-      setInvestmentStocks(storedStocks);
-      setAccountLimits(storedLimits);
-      setAccountLimitInputs({
-        ISA: storedLimits.ISA ? String(storedLimits.ISA) : "",
-        PENSION: storedLimits.PENSION ? String(storedLimits.PENSION) : "",
-      });
-    });
-  }, [isAuthResolved, isDemoMode, limitYear, storageOwnerKey, today]);
+      try {
+        let [stocks, limits] = await Promise.all([
+          getInvestmentStocks(),
+          getInvestmentAccountLimits(limitYear),
+        ]);
+        const legacyStocks = readStoredInvestmentStocks(storageOwnerKey);
+        const legacyLimits = readStoredInvestmentAccountLimits(storageOwnerKey, limitYear);
+
+        if (!stocks.length && legacyStocks.length) {
+          stocks = await createInvestmentStocks(legacyStocks.map(toInvestmentStockPayload));
+          window.localStorage.removeItem(getStockHoldingsStorageKey(storageOwnerKey));
+        }
+
+        for (const accountType of limitAccountTypes) {
+          if (!limits[accountType] && legacyLimits[accountType]) {
+            await upsertInvestmentAccountLimit(limitYear, accountType, legacyLimits[accountType]);
+            limits = { ...limits, [accountType]: legacyLimits[accountType] };
+          }
+        }
+        window.localStorage.removeItem(
+          getInvestmentAccountLimitsStorageKey(storageOwnerKey, limitYear),
+        );
+
+        if (!isCancelled) {
+          setStockQuotes(storedQuotes);
+          setInvestmentStocks(stocks);
+          setAccountLimits(limits);
+          setAccountLimitInputs({
+            ISA: limits.ISA ? limits.ISA.toLocaleString() : "",
+            PENSION: limits.PENSION ? limits.PENSION.toLocaleString() : "",
+          });
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          alert(error instanceof Error ? error.message : "투자 데이터를 불러오지 못했습니다.");
+        }
+      }
+    };
+
+    void loadInvestments();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [alert, isAuthResolved, isDemoMode, limitYear, storageOwnerKey, today]);
 
   useEffect(() => {
     if (!isAuthResolved || isDemoMode || !displayEmail || !stockSymbols.length) return;
@@ -817,7 +992,8 @@ export default function InvestPage() {
           <div>
             <h2 className="main-header--title headline--sm">투자</h2>
             <p className="invest-header--description label--md">
-              직접 입력한 보유 종목의 최근 거래일 종가 기준 평가금액과 수익률을 확인합니다.
+              직접 입력한 보유 종목의 최근 거래일 종가 기준 평가금액과 수익률을
+              확인합니다.
             </p>
           </div>
           <div className="invest-header--actions row-group row-group--center row-group--gap-8">
@@ -853,7 +1029,9 @@ export default function InvestPage() {
             <article className="card invest-summary--primary">
               <span className="label--md color-gray">총 평가금액</span>
               <strong className="invest-summary--major title--lg">
-                {investmentTotals.isValuationReady ? formatWon(investmentTotals.currentValue) : "-"}
+                {investmentTotals.isValuationReady
+                  ? formatWon(investmentTotals.currentValue)
+                  : "-"}
               </strong>
               <span className="caption--md color-gray">
                 {investmentTotals.isValuationReady
@@ -867,26 +1045,42 @@ export default function InvestPage() {
             </article>
             <article className="card invest-summary--item">
               <span className="label--md color-gray">총 투자금액</span>
-              <strong className="title--md">{formatWon(investmentTotals.totalCost)}</strong>
+              <strong className="title--md">
+                {formatWon(investmentTotals.totalCost)}
+              </strong>
             </article>
             <article className="card invest-summary--item">
               <span className="label--md color-gray">총 평가손익</span>
-              <strong className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.totalProfit) : ""}`}>
-                {investmentTotals.isValuationReady ? formatSignedWon(investmentTotals.totalProfit) : "-"}
+              <strong
+                className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.totalProfit) : ""}`}
+              >
+                {investmentTotals.isValuationReady
+                  ? formatSignedWon(investmentTotals.totalProfit)
+                  : "-"}
               </strong>
             </article>
             <article className="card invest-summary--item">
               <span className="label--md color-gray">총 수익률</span>
-              <strong className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.totalProfitRate) : ""}`}>
-                {investmentTotals.isValuationReady ? formatSignedPercent(investmentTotals.totalProfitRate) : "-"}
+              <strong
+                className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.totalProfitRate) : ""}`}
+              >
+                {investmentTotals.isValuationReady
+                  ? formatSignedPercent(investmentTotals.totalProfitRate)
+                  : "-"}
               </strong>
             </article>
             <article className="card invest-summary--item">
               <span className="label--md color-gray">전일 대비</span>
-              <strong className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.dailyProfit) : ""}`}>
-                {investmentTotals.isValuationReady ? formatSignedWon(investmentTotals.dailyProfit) : "-"}
+              <strong
+                className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.dailyProfit) : ""}`}
+              >
+                {investmentTotals.isValuationReady
+                  ? formatSignedWon(investmentTotals.dailyProfit)
+                  : "-"}
               </strong>
-              <span className={`caption--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.dailyProfitRate) : "color-gray"}`}>
+              <span
+                className={`caption--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.dailyProfitRate) : "color-gray"}`}
+              >
                 {investmentTotals.isValuationReady
                   ? `전일 대비 ${formatSignedPercent(investmentTotals.dailyProfitRate)}`
                   : "최근 종가 업데이트 후 표시"}
@@ -898,7 +1092,7 @@ export default function InvestPage() {
             <div className="invest-limits--heading row-group row-group--center row-group--between">
               <div>
                 <h3 className="title--sm">절세계좌 한도</h3>
-                <p className="caption--md color-gray">
+                <p className="caption--lg color-gray">
                   {limitYear}년 입력 한도 기준이며 실제 세제 혜택 한도와 다를 수 있습니다.
                 </p>
               </div>
@@ -907,51 +1101,69 @@ export default function InvestPage() {
               {accountLimitSummaries.map((limit) => (
                 <article key={limit.accountType} className="card invest-limit-card">
                   <div className="row-group row-group--center row-group--between">
-                    <h4 className="title--sm">{investmentAccountLabel[limit.accountType]}</h4>
+                    <h4 className="title--sm">
+                      {investmentAccountLabel[limit.accountType]}
+                    </h4>
                     <span className="badge badge--teal">{limitYear}년</span>
                   </div>
                   <div className="invest-limit-card--numbers">
                     <div>
                       <span className="caption--md color-gray">현재 투자원금</span>
-                      <strong className="title--md">{formatWon(limit.investedAmount)}</strong>
+                      <strong className="title--md">
+                        {formatWon(limit.investedAmount)}
+                      </strong>
                     </div>
                     <div className="tr">
                       <span className="caption--md color-gray">남은 한도</span>
-                      <strong className={`label--lg ${limit.remainingAmount < 0 ? "color-red" : ""}`}>
+                      <strong
+                        className={`label--lg ${limit.remainingAmount < 0 ? "color-red" : ""}`}
+                      >
                         {limit.yearlyLimit ? formatWon(limit.remainingAmount) : "-"}
                       </strong>
                     </div>
                   </div>
-                  <div className="invest-limit-card--progress" aria-label={`${investmentAccountLabel[limit.accountType]} 사용률`}>
+                  <div
+                    className="invest-limit-card--progress"
+                    aria-label={`${investmentAccountLabel[limit.accountType]} 사용률`}
+                  >
                     <div
                       className="invest-limit-card--progress-fill"
                       style={{ width: `${Math.min(Math.max(limit.usageRate, 0), 100)}%` }}
                     />
                   </div>
                   <p className="caption--md color-gray tr">
-                    {limit.yearlyLimit ? `사용률 ${limit.usageRate.toFixed(1)}%` : "한도를 입력해주세요."}
+                    {limit.yearlyLimit
+                      ? `사용률 ${limit.usageRate.toFixed(1)}%`
+                      : "한도를 입력해주세요."}
                   </p>
                   <div className="invest-limit-card--input row-group row-group--center row-group--gap-8">
                     <label className="main-overview--field">
-                      <span className="caption--md color-gray">연간 한도</span>
+                      <div className="row-group row-group--center row-group--gap-4">
+                        <span className="caption--md color-gray">연간 한도</span>
+                        <span className="caption--md">
+                          {accountLimitInputs[limit.accountType]
+                            ? `(${formatKoreanWon(parseFormattedNumber(accountLimitInputs[limit.accountType]))})`
+                            : ""}
+                        </span>
+                      </div>
+
                       <input
                         className="main-overview--control body--sm"
-                        type="number"
-                        min="0"
-                        step="10000"
+                        type="text"
+                        inputMode="numeric"
                         placeholder="한도 입력"
                         value={accountLimitInputs[limit.accountType]}
                         onChange={(event) =>
                           setAccountLimitInputs((prev) => ({
                             ...prev,
-                            [limit.accountType]: event.target.value,
+                            [limit.accountType]: formatIntegerInput(event.target.value),
                           }))
                         }
                       />
                     </label>
                     <button
                       type="button"
-                      className="button button--outline button--sm"
+                      className="button button--outline button--xmd"
                       onClick={() => handleAccountLimitSave(limit.accountType)}
                     >
                       저장
@@ -965,7 +1177,7 @@ export default function InvestPage() {
           <section className="invest-allocation column-group column-group--gap-8">
             <div>
               <h3 className="title--sm">포트폴리오 비중</h3>
-              <p className="caption--md color-gray">
+              <p className="caption--lg color-gray">
                 최근 거래일 종가 기준 평가금액으로 자산 구성을 보여줍니다.
               </p>
             </div>
@@ -987,10 +1199,14 @@ export default function InvestPage() {
                           <div className="invest-allocation-item--heading">
                             <div>
                               <strong className="label--md">{item.label}</strong>
-                              <span className="caption--md color-gray">{item.detail}</span>
+                              <span className="caption--md color-gray">
+                                {item.detail}
+                              </span>
                             </div>
                             <div className="tr">
-                              <strong className="label--md">{item.rate.toFixed(1)}%</strong>
+                              <strong className="label--md">
+                                {item.rate.toFixed(1)}%
+                              </strong>
                               <span className="caption--md color-gray">
                                 {formatWon(item.currentValue)}
                               </span>
@@ -1025,14 +1241,19 @@ export default function InvestPage() {
               <div className="main-overview--section-header row-group row-group--center row-group--between">
                 <div>
                   <h3 className="main-overview--title title--sm">보유 종목</h3>
-                  <p className="invest-section--description caption--md">
-                    금융위원회 데이터는 실시간이 아니며 최근 거래일 종가 기준입니다. 데이터는 일 1회 갱신되고, 기준일자로부터 영업일 하루 뒤 오후 1시 이후 업데이트됩니다.
+                  <p className="invest-section--description caption--lg">
+                    금융위원회 데이터는 실시간이 아니며 최근 거래일 종가 기준입니다.
+                    데이터는 일 1회 갱신되고, 기준일자로부터 영업일 하루 뒤 오후 1시 이후
+                    업데이트됩니다.
                   </p>
-                  <p className="invest-section--description caption--md">
-                    데이터 보유기관 연계 후 개방되는 정보라 실제 계좌 평가와 차이가 있을 수 있습니다. 금요일 데이터는 보통 다음 영업일에 제공됩니다.
+                  <p className="invest-section--description caption--lg">
+                    데이터 보유기관 연계 후 개방되는 정보라 실제 계좌 평가와 차이가 있을
+                    수 있습니다. 금요일 데이터는 보통 다음 영업일에 제공됩니다.
                   </p>
                   {stockQuoteMessage ? (
-                    <p className="invest-section--notice caption--md">{stockQuoteMessage}</p>
+                    <p className="invest-section--notice caption--lg">
+                      {stockQuoteMessage}
+                    </p>
                   ) : null}
                 </div>
                 <span className="badge badge--teal">
@@ -1046,7 +1267,12 @@ export default function InvestPage() {
                       <th>
                         <div className="row-group row-group--center row-group--gap-4 first-th">
                           종목명
-                          <button type="button" className="material-symbols-outlined sort-btn" aria-label="종목명 정렬" onClick={() => handleStockSort("name")}>
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="종목명 정렬"
+                            onClick={() => handleStockSort("name")}
+                          >
                             unfold_more
                           </button>
                         </div>
@@ -1055,7 +1281,12 @@ export default function InvestPage() {
                       <th>
                         <div className="row-group row-group--center row-group--gap-4">
                           평가손익
-                          <button type="button" className="material-symbols-outlined sort-btn" aria-label="총 수익 정렬" onClick={() => handleStockSort("totalProfit")}>
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="총 수익 정렬"
+                            onClick={() => handleStockSort("totalProfit")}
+                          >
                             unfold_more
                           </button>
                         </div>
@@ -1063,7 +1294,12 @@ export default function InvestPage() {
                       <th>
                         <div className="row-group row-group--center row-group--gap-4">
                           매입 / 평가
-                          <button type="button" className="material-symbols-outlined sort-btn" aria-label="총 금액 정렬" onClick={() => handleStockSort("totalCost")}>
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="총 금액 정렬"
+                            onClick={() => handleStockSort("totalCost")}
+                          >
                             unfold_more
                           </button>
                         </div>
@@ -1071,7 +1307,12 @@ export default function InvestPage() {
                       <th>
                         <div className="row-group row-group--center row-group--gap-4">
                           전일 대비
-                          <button type="button" className="material-symbols-outlined sort-btn" aria-label="전일 대비 정렬" onClick={() => handleStockSort("dailyProfit")}>
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="전일 대비 정렬"
+                            onClick={() => handleStockSort("dailyProfit")}
+                          >
                             unfold_more
                           </button>
                         </div>
@@ -1081,54 +1322,81 @@ export default function InvestPage() {
                   <tbody>
                     {investmentSummaries.length ? (
                       investmentSummaries.map((stock) => {
-                        const totalProfitClassName = stock.hasQuote ? getChangeClassName(stock.totalProfit) : "color-gray";
-                        const dailyProfitClassName = stock.hasQuote ? getChangeClassName(stock.dailyProfit) : "color-gray";
+                        const totalProfitClassName = stock.hasQuote
+                          ? getChangeClassName(stock.totalProfit)
+                          : "color-gray";
+                        const dailyProfitClassName = stock.hasQuote
+                          ? getChangeClassName(stock.dailyProfit)
+                          : "color-gray";
 
                         return (
                           <tr
                             key={stock.groupKey}
-                            className={selectedSummary?.groupKey === stock.groupKey ? "is-selected" : ""}
+                            className={
+                              selectedSummary?.groupKey === stock.groupKey
+                                ? "is-selected"
+                                : ""
+                            }
+                            onClick={() => setSelectedGroupKey(stock.groupKey)}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              setSelectedGroupKey(stock.groupKey);
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`${stock.name} 상세보기`}
+                            aria-pressed={selectedSummary?.groupKey === stock.groupKey}
                           >
                             <td className="tl">
-                              <button
-                                type="button"
-                                className="invest-holdings--select column-group column-group--gap-4"
-                                onClick={() => setSelectedGroupKey(stock.groupKey)}
-                                aria-label={`${stock.name} 상세보기`}
-                              >
+                              <div className="invest-holdings--select column-group column-group--gap-4">
                                 <p className="label--lg">{stock.name}</p>
                                 <span className="caption--md color-gray">
-                                  {stock.symbol} · {stock.market} · {stock.quantity.toLocaleString()}주
+                                  {stock.symbol} · {stock.market} ·{" "}
+                                  {stock.quantity.toLocaleString()}주
                                 </span>
                                 <span className="badge badge--blue caption--md">
                                   {investmentAccountLabel[stock.accountType]}
                                 </span>
-                              </button>
+                              </div>
                             </td>
                             <td className="tr">
-                              <p className="label--lg">{stock.hasQuote ? formatWon(stock.currentPrice) : "-"}</p>
-                              <span className="caption--md color-gray">평균 {formatWon(stock.averagePrice)}</span>
+                              <p className="label--lg">
+                                {stock.hasQuote ? formatWon(stock.currentPrice) : "-"}
+                              </p>
+                              <span className="caption--md color-gray">
+                                평균 {formatWon(stock.averagePrice)}
+                              </span>
                             </td>
                             <td className="tr">
                               <p className={`label--lg ${totalProfitClassName}`}>
-                                {stock.hasQuote ? formatSignedPercent(stock.totalProfitRate) : "-"}
+                                {stock.hasQuote
+                                  ? formatSignedPercent(stock.totalProfitRate)
+                                  : "-"}
                               </p>
                               <span className={`caption--md ${totalProfitClassName}`}>
-                                {stock.hasQuote ? formatSignedWon(stock.totalProfit) : "조회 전"}
+                                {stock.hasQuote
+                                  ? formatSignedWon(stock.totalProfit)
+                                  : "조회 전"}
                               </span>
                             </td>
                             <td className="tr">
                               <p className="label--lg">{formatWon(stock.totalCost)}</p>
                               <span className="caption--md color-gray">
-                                평가 {stock.hasQuote ? formatWon(stock.currentValue) : "-"}
+                                평가{" "}
+                                {stock.hasQuote ? formatWon(stock.currentValue) : "-"}
                               </span>
                             </td>
                             <td className="tr">
                               <p className={`label--lg ${dailyProfitClassName}`}>
-                                {stock.hasQuote ? formatSignedPercent(stock.dailyProfitRate) : "-"}
+                                {stock.hasQuote
+                                  ? formatSignedPercent(stock.dailyProfitRate)
+                                  : "-"}
                               </p>
                               <span className={`caption--md ${dailyProfitClassName}`}>
-                                {stock.hasQuote ? formatSignedWon(stock.dailyProfit) : "조회 전"}
+                                {stock.hasQuote
+                                  ? formatSignedWon(stock.dailyProfit)
+                                  : "조회 전"}
                               </span>
                             </td>
                           </tr>
@@ -1154,13 +1422,17 @@ export default function InvestPage() {
                         {investmentAccountLabel[selectedSummary.accountType]}
                       </p>
                     </div>
-                    <span className="badge badge--blue">매수 기록 {selectedPurchaseRecords.length}건</span>
+                    <span className="badge badge--blue">
+                      매수 기록 {selectedPurchaseRecords.length}건
+                    </span>
                   </div>
                   <div className="invest-detail--daily">
                     <div>
                       <span className="caption--md color-gray">최근 종가</span>
                       <strong className="title--md">
-                        {selectedSummary.hasQuote ? formatWon(selectedSummary.currentPrice) : "-"}
+                        {selectedSummary.hasQuote
+                          ? formatWon(selectedSummary.currentPrice)
+                          : "-"}
                       </strong>
                     </div>
                     <div className="tr">
@@ -1181,22 +1453,32 @@ export default function InvestPage() {
                   <div className="invest-detail--metrics">
                     <div>
                       <span className="caption--md color-gray">보유 수량</span>
-                      <strong className="label--lg">{selectedSummary.quantity.toLocaleString()}주</strong>
+                      <strong className="label--lg">
+                        {selectedSummary.quantity.toLocaleString()}주
+                      </strong>
                     </div>
                     <div>
                       <span className="caption--md color-gray">평균 매입가</span>
-                      <strong className="label--lg">{formatWon(selectedSummary.averagePrice)}</strong>
+                      <strong className="label--lg">
+                        {formatWon(selectedSummary.averagePrice)}
+                      </strong>
                     </div>
                     <div>
                       <span className="caption--md color-gray">평가금액</span>
                       <strong className="label--lg">
-                        {selectedSummary.hasQuote ? formatWon(selectedSummary.currentValue) : "-"}
+                        {selectedSummary.hasQuote
+                          ? formatWon(selectedSummary.currentValue)
+                          : "-"}
                       </strong>
                     </div>
                     <div>
                       <span className="caption--md color-gray">평가손익</span>
-                      <strong className={`label--lg ${selectedSummary.hasQuote ? getChangeClassName(selectedSummary.totalProfit) : ""}`}>
-                        {selectedSummary.hasQuote ? formatSignedWon(selectedSummary.totalProfit) : "-"}
+                      <strong
+                        className={`label--lg ${selectedSummary.hasQuote ? getChangeClassName(selectedSummary.totalProfit) : ""}`}
+                      >
+                        {selectedSummary.hasQuote
+                          ? formatSignedWon(selectedSummary.totalProfit)
+                          : "-"}
                       </strong>
                     </div>
                   </div>
@@ -1206,10 +1488,13 @@ export default function InvestPage() {
                         <div className="invest-detail--purchase-copy">
                           <strong className="label--md">{stock.purchaseDate}</strong>
                           <span className="caption--md color-gray">
-                            {stock.quantity.toLocaleString()}주 · {formatWon(stock.unitPrice)} ·{" "}
+                            {stock.quantity.toLocaleString()}주 ·{" "}
+                            {formatWon(stock.unitPrice)} ·{" "}
                             {formatWon(stock.quantity * stock.unitPrice)}
                           </span>
-                          {stock.memo ? <span className="caption--md color-gray">{stock.memo}</span> : null}
+                          {stock.memo ? (
+                            <span className="caption--md color-gray">{stock.memo}</span>
+                          ) : null}
                         </div>
                         <div className="row-group row-group--center row-group--gap-4">
                           <button
@@ -1243,7 +1528,9 @@ export default function InvestPage() {
                       {editingStockId ? "매수 기록 수정" : "종목 추가"}
                     </h3>
                     <p className="caption--md invest-section--description">
-                      {editingStockId ? "선택한 매수 기록을 변경합니다." : "매수 내역을 직접 기록합니다."}
+                      {editingStockId
+                        ? "선택한 매수 기록을 변경합니다."
+                        : "매수 내역을 직접 기록합니다."}
                     </p>
                   </div>
                   <span className="badge badge--teal">KRW</span>
@@ -1272,8 +1559,16 @@ export default function InvestPage() {
                             setStockQuery(event.target.value);
                             setSelectedStock(null);
                           }}
+                          onCompositionStart={() => setIsStockQueryComposing(true)}
+                          onCompositionEnd={(event) => {
+                            setIsStockQueryComposing(false);
+                            setStockQuery(event.currentTarget.value);
+                          }}
                         />
-                        <span className="material-symbols-outlined autocomplete__icon" aria-hidden="true">
+                        <span
+                          className="material-symbols-outlined autocomplete__icon"
+                          aria-hidden="true"
+                        >
                           arrow_drop_down
                         </span>
                       </div>
@@ -1294,7 +1589,9 @@ export default function InvestPage() {
                                   }}
                                 >
                                   <span className="label--md">{stock.name}</span>
-                                  <span className="caption--md color-gray">{stock.symbol} · {stock.market}</span>
+                                  <span className="caption--md color-gray">
+                                    {stock.symbol} · {stock.market}
+                                  </span>
                                 </button>
                               </li>
                             ))
@@ -1305,7 +1602,13 @@ export default function InvestPage() {
                   </label>
                   <label className="main-overview--field">
                     <span className="label--md">계좌 구분</span>
-                    <select className="main-overview--control body--sm" value={stockAccountType} onChange={(event) => setStockAccountType(event.target.value as InvestmentAccountType)}>
+                    <select
+                      className="main-overview--control body--sm"
+                      value={stockAccountType}
+                      onChange={(event) =>
+                        setStockAccountType(event.target.value as InvestmentAccountType)
+                      }
+                    >
                       <option value="GENERAL">일반계좌</option>
                       <option value="ISA">ISA</option>
                       <option value="PENSION">연금저축</option>
@@ -1313,21 +1616,50 @@ export default function InvestPage() {
                   </label>
                   <label className="main-overview--field">
                     <span className="label--md">구매일</span>
-                    <input className="main-overview--control body--sm" type="date" value={stockPurchaseDate} onChange={(event) => setStockPurchaseDate(event.target.value)} />
+                    <input
+                      className="main-overview--control body--sm"
+                      type="date"
+                      value={stockPurchaseDate}
+                      onChange={(event) => setStockPurchaseDate(event.target.value)}
+                    />
                   </label>
                   <div className="grid-col-2">
                     <label className="main-overview--field">
                       <span className="label--md">수량</span>
-                      <input className="main-overview--control body--sm" type="number" min="0" step="0.000001" placeholder="0" value={stockQuantity} onChange={(event) => setStockQuantity(event.target.value)} />
+                      <input
+                        className="main-overview--control body--sm"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={stockQuantity}
+                        onChange={(event) =>
+                          setStockQuantity(formatDecimalInput(event.target.value, 6))
+                        }
+                      />
                     </label>
                     <label className="main-overview--field">
                       <span className="label--md">평균 매입단가</span>
-                      <input className="main-overview--control body--sm" type="number" min="0" step="0.01" placeholder="1주 단가" value={stockUnitPrice} onChange={(event) => setStockUnitPrice(event.target.value)} />
+                      <input
+                        className="main-overview--control body--sm"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="1주 단가"
+                        value={stockUnitPrice}
+                        onChange={(event) =>
+                          setStockUnitPrice(formatDecimalInput(event.target.value, 2))
+                        }
+                      />
                     </label>
                   </div>
                   <label className="main-overview--field">
                     <span className="label--md">메모</span>
-                    <input className="main-overview--control body--sm" type="text" placeholder="선택 입력" value={stockMemo} onChange={(event) => setStockMemo(event.target.value)} />
+                    <input
+                      className="main-overview--control body--sm"
+                      type="text"
+                      placeholder="선택 입력"
+                      value={stockMemo}
+                      onChange={(event) => setStockMemo(event.target.value)}
+                    />
                   </label>
                   <button
                     type="button"
@@ -1335,7 +1667,11 @@ export default function InvestPage() {
                     onClick={handleStockSubmit}
                     disabled={isStockSubmitting}
                   >
-                    {isStockSubmitting ? "저장 중..." : editingStockId ? "수정 저장" : "종목 추가"}
+                    {isStockSubmitting
+                      ? "저장 중..."
+                      : editingStockId
+                        ? "수정 저장"
+                        : "종목 추가"}
                   </button>
                 </div>
               </aside>
