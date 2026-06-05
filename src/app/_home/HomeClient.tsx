@@ -115,6 +115,14 @@ const getInlineEntryType = (expense: Expense): InlineEntryType => {
   return "expense";
 };
 
+const getDetailTypeLabel = (expense: Expense) => {
+  const type = getInlineEntryType(expense);
+  if (type === "income") return "수입";
+  if (type === "savings") return "저축";
+  if (type === "investment") return "투자";
+  return "지출";
+};
+
 type RecurringPaymentRecord = {
   id: string;
   payment_date: string;
@@ -125,6 +133,12 @@ type RecurringPaymentRecord = {
 type DashboardExpense = Expense & {
   status?: PaymentStatus;
 };
+
+type DetailSortKey = "category" | "type" | "amount" | "memo" | "date";
+type DetailSort = {
+  key: DetailSortKey;
+  direction: "asc" | "desc";
+} | null;
 
 const getLatestPayment = <T extends RecurringPaymentRecord>(payments: T[]) =>
   [...payments].sort((left, right) => {
@@ -269,6 +283,7 @@ export default function HomeClient() {
   const [isFixedExpenseDeleting, setIsFixedExpenseDeleting] = useState(false);
   const [isFixedExpenseSkipping, setIsFixedExpenseSkipping] = useState(false);
   const [openFixedExpensePauseMenuId, setOpenFixedExpensePauseMenuId] = useState("");
+  const [detailSort, setDetailSort] = useState<DetailSort>(null);
 
   const selectedDateKey = formatDate(selectedDate);
   const currentYear = selectedDate.getFullYear();
@@ -714,14 +729,48 @@ export default function HomeClient() {
     [inlineEditListType, monthlyEditableExpenses],
   );
   const detailItems = useMemo(
-    () =>
-      [...displayMonthlyExpenses].sort((left, right) => {
+    () => {
+      const items = [...displayMonthlyExpenses];
+
+      return items.sort((left, right) => {
+        if (detailSort) {
+          const multiplier = detailSort.direction === "asc" ? 1 : -1;
+
+          if (detailSort.key === "amount") {
+            const amountDiff = (left.amount - right.amount) * multiplier;
+            if (amountDiff !== 0) return amountDiff;
+          } else {
+            const leftValue =
+              detailSort.key === "type"
+                ? getDetailTypeLabel(left)
+                : detailSort.key === "memo"
+                  ? getVisibleMemo(left.memo)
+                  : left[detailSort.key];
+            const rightValue =
+              detailSort.key === "type"
+                ? getDetailTypeLabel(right)
+                : detailSort.key === "memo"
+                  ? getVisibleMemo(right.memo)
+                  : right[detailSort.key];
+            const valueDiff = leftValue.localeCompare(rightValue, "ko") * multiplier;
+            if (valueDiff !== 0) return valueDiff;
+          }
+        }
+
         const dateDiff = new Date(right.date).getTime() - new Date(left.date).getTime();
         if (dateDiff !== 0) return dateDiff;
         return right.created_at.localeCompare(left.created_at);
-      }),
-    [displayMonthlyExpenses],
+      });
+    },
+    [detailSort, displayMonthlyExpenses],
   );
+  const handleDetailSort = (key: DetailSortKey) => {
+    setDetailSort((prev) => {
+      if (!prev || prev.key !== key) return { key, direction: "asc" };
+      if (prev.direction === "asc") return { key, direction: "desc" };
+      return null;
+    });
+  };
   const selectedInlineExpense =
     inlineEditItems.find((item) => item.id === inlineEditingId) ?? null;
   const dayMap = displayMonthlyExpenses.reduce<Record<string, number>>((acc, item) => {
@@ -2797,121 +2846,125 @@ export default function HomeClient() {
                             : "적금 추가"}
                       </button>
                     </div>
-                    <ul className="savings--list column-group column-group--gap-8">
-                      {visibleSavingsAccounts.length ? (
-                        visibleSavingsAccounts.map((account) => {
-                          const isMatured =
-                            !account.hasNoMaturity &&
-                            account.maturityDate >= selectedMonthStartKey &&
-                            account.maturityDate <= selectedMonthEndKey;
-                          const isPaused = isSavingsPausedForSelectedMonth(account);
+                    <div className="savings--list table--wrap table--wrap__invest">
+                      <table className="table table--invest savings--table">
+                        <thead>
+                          <tr>
+                            <th>분류</th>
+                            <th>이름</th>
+                            <th>납입액</th>
+                            <th>누적 납입액</th>
+                            <th>납입일</th>
+                            <th>만기일</th>
+                            <th>만기처리</th>
+                            <th>메뉴</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {visibleSavingsAccounts.length ? (
+                            visibleSavingsAccounts.map((account) => {
+                              const isMatured =
+                                !account.hasNoMaturity &&
+                                account.maturityDate >= selectedMonthStartKey &&
+                                account.maturityDate <= selectedMonthEndKey;
+                              const isPaused = isSavingsPausedForSelectedMonth(account);
 
-                          return (
-                            <li
-                              key={account.id}
-                              className="savings--items row-group row-group--center row-group--gap-16"
-                            >
-                              <span className="badge badge--blue">적금</span>
-                              <p className="savings--name label--md">{account.name}</p>
-                              <div className="row-group row-group--center row-group--gap-8">
-                                <div className="row-group row-group--center row-group--gap-4">
-                                  <span className="label--sm">납입액 :</span>
-                                  <p className="savings--num bodyBold--sm">
-                                    {formatCompactWon(account.monthlyPayment)}
-                                  </p>
-                                </div>
-                                <div className="row-group row-group--center row-group--gap-4">
-                                  <span className="label--sm">누적 납입액 :</span>
-                                  <p className="savings--num bodyBold--sm">
-                                    {formatCompactWon(account.currentAmount)}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="savings--dates row-group row-group--center row-group--gap-8">
-                                <span className="label--sm">납입일</span>
-                                <span className="label--sm">
-                                  매월 {account.paymentDay}일
-                                </span>
-                                <span className="label--sm">-</span>
-                                <span className="label--sm">만기일</span>
-                                <span className="label--sm">
-                                  {account.hasNoMaturity
-                                    ? "만기일 없음"
-                                    : formatDetailDate(account.maturityDate)}
-                                </span>
-                                {isPaused ? (
-                                  <span className="badge">일시정지</span>
-                                ) : null}
-                                <button
-                                  type="button"
-                                  className="button button--xs button--secondary"
-                                  onClick={() => handleSavingsMaturity(account)}
-                                  disabled={isSavingsDeleting || isMatured}
-                                >
-                                  {isMatured ? "만기됨" : "만기 처리"}
-                                </button>
-                                <span className="recurring-actions">
-                                  <button
-                                    type="button"
-                                    aria-label="적금 메뉴 열기"
-                                    aria-controls={`savings-actions-${account.id}`}
-                                    aria-expanded={
-                                      openSavingsPauseMenuId === account.id ? "true" : "false"
-                                    }
-                                    aria-haspopup="menu"
-                                    className="button button--icon-only button--sm button--subtle side-menu--more"
-                                    onClick={() =>
-                                      setOpenSavingsPauseMenuId((current) =>
-                                        current === account.id ? "" : account.id,
-                                      )
-                                    }
-                                    disabled={isSavingsSkipping}
-                                  >
-                                    <span
-                                      className="material-symbols-outlined"
-                                      aria-hidden="true"
-                                    >
-                                      more_vert
-                                    </span>
-                                  </button>
-                                  {openSavingsPauseMenuId === account.id ? (
-                                    <div
-                                      className="side-menu--dropdown column-group"
-                                      id={`savings-actions-${account.id}`}
-                                      role="menu"
-                                    >
-                                      <ul>
-                                        <li>
-                                          <button
-                                            type="button"
-                                            className="side-menu--dropdown-item"
-                                            role="menuitem"
-                                            onClick={() =>
-                                              handleSavingsPauseToggle(account)
-                                            }
-                                            disabled={isSavingsSkipping}
-                                          >
-                                            {isSavingsSkipping
-                                              ? "처리 중..."
-                                              : isPaused
-                                                ? "이번 달 일시정지 취소"
-                                                : "이번 달 일시정지"}
-                                          </button>
-                                        </li>
-                                      </ul>
+                              return (
+                                <tr key={account.id}>
+                                  <td>
+                                    <span className="badge badge--blue">적금</span>
+                                  </td>
+                                  <td>{account.name}</td>
+                                  <td>{formatCompactWon(account.monthlyPayment)}</td>
+                                  <td>{formatCompactWon(account.currentAmount)}</td>
+                                  <td>매월 {account.paymentDay}일</td>
+                                  <td>
+                                    {account.hasNoMaturity
+                                      ? "만기일 없음"
+                                      : formatDetailDate(account.maturityDate)}
+                                  </td>
+                                  <td>
+                                    <div className="row-group row-group--center row-group--gap-4">
+                                      <button
+                                        type="button"
+                                        className="button button--xs button--secondary"
+                                        onClick={() => handleSavingsMaturity(account)}
+                                        disabled={isSavingsDeleting || isMatured}
+                                      >
+                                        {isMatured ? "만기됨" : "만기 처리"}
+                                      </button>
+                                      {isPaused ? (
+                                        <span className="recurring-status badge">일시정지</span>
+                                      ) : null}
                                     </div>
-                                  ) : null}
-                                </span>
-                              </div>
-                            </li>
-                          );
-                        })
-                      ) : (
-                        <li className="savings--items savings--empty label--md">
-                          등록된 적금이 없습니다.
-                        </li>
-                      )}
-                    </ul>
+                                  </td>
+                                  <td className="recurring-actions-cell">
+                                    <span className="recurring-actions">
+                                      <button
+                                        type="button"
+                                        aria-label="적금 메뉴 열기"
+                                        aria-controls={`savings-actions-${account.id}`}
+                                        aria-expanded={
+                                          openSavingsPauseMenuId === account.id
+                                            ? "true"
+                                            : "false"
+                                        }
+                                        aria-haspopup="menu"
+                                        className="button button--icon-only button--sm button--subtle side-menu--more"
+                                        onClick={() =>
+                                          setOpenSavingsPauseMenuId((current) =>
+                                            current === account.id ? "" : account.id,
+                                          )
+                                        }
+                                        disabled={isSavingsSkipping}
+                                      >
+                                        <span
+                                          className="material-symbols-outlined"
+                                          aria-hidden="true"
+                                        >
+                                          more_vert
+                                        </span>
+                                      </button>
+                                      {openSavingsPauseMenuId === account.id ? (
+                                        <div
+                                          className="side-menu--dropdown column-group"
+                                          id={`savings-actions-${account.id}`}
+                                          role="menu"
+                                        >
+                                          <ul>
+                                            <li>
+                                              <button
+                                                type="button"
+                                                className="side-menu--dropdown-item"
+                                                role="menuitem"
+                                                onClick={() =>
+                                                  handleSavingsPauseToggle(account)
+                                                }
+                                                disabled={isSavingsSkipping}
+                                              >
+                                                {isSavingsSkipping
+                                                  ? "처리 중..."
+                                                  : isPaused
+                                                    ? "이번 달 일시정지 취소"
+                                                    : "이번 달 일시정지"}
+                                              </button>
+                                            </li>
+                                          </ul>
+                                        </div>
+                                      ) : null}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr>
+                              <td colSpan={8}>등록된 적금이 없습니다.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3221,11 +3274,71 @@ export default function HomeClient() {
                   </colgroup>
                   <thead>
                     <tr>
-                      <th>카테고리</th>
-                      <th>종류</th>
-                      <th>금액</th>
-                      <th>내용</th>
-                      <th>날짜</th>
+                      <th>
+                        <div className="row-group row-group--center row-group--gap-4">
+                          카테고리
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="카테고리 정렬"
+                            onClick={() => handleDetailSort("category")}
+                          >
+                            unfold_more
+                          </button>
+                        </div>
+                      </th>
+                      <th>
+                        <div className="row-group row-group--center row-group--gap-4">
+                          종류
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="종류 정렬"
+                            onClick={() => handleDetailSort("type")}
+                          >
+                            unfold_more
+                          </button>
+                        </div>
+                      </th>
+                      <th>
+                        <div className="row-group row-group--center row-group--gap-4">
+                          금액
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="금액 정렬"
+                            onClick={() => handleDetailSort("amount")}
+                          >
+                            unfold_more
+                          </button>
+                        </div>
+                      </th>
+                      <th>
+                        <div className="row-group row-group--center row-group--gap-4">
+                          내용
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="내용 정렬"
+                            onClick={() => handleDetailSort("memo")}
+                          >
+                            unfold_more
+                          </button>
+                        </div>
+                      </th>
+                      <th>
+                        <div className="row-group row-group--center row-group--gap-4">
+                          날짜
+                          <button
+                            type="button"
+                            className="material-symbols-outlined sort-btn"
+                            aria-label="날짜 정렬"
+                            onClick={() => handleDetailSort("date")}
+                          >
+                            unfold_more
+                          </button>
+                        </div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

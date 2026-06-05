@@ -385,28 +385,11 @@
       }
       .savings {
         &--list {
-          overflow-y: auto;
           max-height: 202px;
           margin-top: 16px;
         }
-        &--items {
-          position: relative;
-          flex-wrap: wrap;
-          padding: 4px 8px;
-          background: var(--surface-lowest);
-          border: 1px solid var(--outline);
-          border-radius: 8px;
-          .side-menu--dropdown {
-            position: absolute;
-            top: 0;
-            right: 33px;
-          }
-        }
-        &--dates {
-          margin-left: auto;
-          > span {
-            color: var(--on-surface);
-          }
+        &--table {
+          min-width: 820px;
         }
       }
     }
@@ -418,6 +401,20 @@
 
       .detail-table {
         min-width: 640px;
+
+        thead th {
+          > div {
+            justify-content: center;
+          }
+
+          .sort-btn {
+            width: 18px;
+            height: 18px;
+            font-size: 14px;
+            line-height: 18px;
+            cursor: pointer;
+          }
+        }
       }
     }
   }
@@ -428,16 +425,6 @@
         .overview-card {
           flex: 1 1 calc(50% - 8px);
           min-width: 320px;
-        }
-      }
-      .savings {
-        &--items {
-          flex-wrap: wrap;
-          gap: 4px !important;
-        }
-        &--dates {
-          flex-wrap: wrap;
-          margin-left: 2px !important;
         }
       }
     }
