@@ -15,7 +15,7 @@ type InvestmentStockRow = {
   market: string;
   quantity: number | string;
   unit_price: number | string;
-  purchase_date: string;
+  purchase_date: string | null;
   account_type: InvestmentAccountType;
   currency: "KRW";
   memo: string;
@@ -63,7 +63,7 @@ export const getInvestmentStocks = async () => {
     .from("investment_stocks")
     .select("*")
     .eq("user_id", userId)
-    .order("purchase_date", { ascending: false })
+    .order("purchase_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);

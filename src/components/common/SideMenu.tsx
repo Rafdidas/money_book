@@ -26,12 +26,12 @@ const navItems = [
     label: "월별 분석",
     isActive: (pathname: string) => pathname.startsWith("/app/analysis"),
   },
-  // {
-  //   href: "/app/invest",
-  //   icon: "finance_mode",
-  //   label: "투자 관리",
-  //   isActive: (pathname: string) => pathname.startsWith("/app/invest"),
-  // },
+  {
+    href: "/app/invest",
+    icon: "finance_mode",
+    label: "투자 관리",
+    isActive: (pathname: string) => pathname.startsWith("/app/invest"),
+  },
 ];
 
 export default function SideMenu({

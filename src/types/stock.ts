@@ -19,7 +19,7 @@ export type StockPurchaseMeta = {
   market: string;
   quantity: number;
   unitPrice: number;
-  purchaseDate: string;
+  purchaseDate: string | null;
 };
 
 export type InvestmentAccountType = "GENERAL" | "ISA" | "PENSION";

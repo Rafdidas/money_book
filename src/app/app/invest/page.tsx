@@ -119,6 +119,16 @@ const investmentAccountLabel: Record<InvestmentAccountType, string> = {
   ISA: "ISA",
   PENSION: "연금저축",
 };
+const limitAccountBadgeClassName: Record<LimitAccountType, string> = {
+  ISA: "badge--violet",
+  PENSION: "badge--green",
+};
+const allocationBadgeClassName: Record<string, string> = {
+  "종목별 비중": "badge--blue",
+  "계좌별 배분": "badge--violet",
+  "시장별 배분": "badge--green",
+  "통화별 배분": "badge--teal",
+};
 const limitAccountTypes: LimitAccountType[] = ["ISA", "PENSION"];
 const formatSignedPercent = (value: number) =>
   `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
@@ -174,7 +184,7 @@ const readStoredInvestmentStocks = (ownerKey: string): InvestmentStock[] => {
         typeof item.market !== "string" ||
         typeof item.quantity !== "number" ||
         typeof item.unitPrice !== "number" ||
-        typeof item.purchaseDate !== "string"
+        (item.purchaseDate !== null && typeof item.purchaseDate !== "string")
       ) {
         return [];
       }
@@ -318,12 +328,11 @@ export default function InvestPage() {
     isAuthResolved,
   } = useAppData();
   const { alert, confirm } = useAppAlert();
-  const [selectedDate, setSelectedDate] = useState(today);
   const [stockQuery, setStockQuery] = useState("");
   const [isStockQueryComposing, setIsStockQueryComposing] = useState(false);
   const [stockSearchItems, setStockSearchItems] = useState<StockSearchItem[]>([]);
   const [selectedStock, setSelectedStock] = useState<StockSearchItem | null>(null);
-  const [stockPurchaseDate, setStockPurchaseDate] = useState(formatDate(today));
+  const [stockPurchaseDate, setStockPurchaseDate] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
   const [stockUnitPrice, setStockUnitPrice] = useState("");
   const [stockAccountType, setStockAccountType] = useState<InvestmentAccountType>("GENERAL");
@@ -535,7 +544,14 @@ export default function InvestPage() {
       selectedSummary
         ? investmentStocks
             .filter((stock) => getInvestmentGroupKey(stock) === selectedSummary.groupKey)
-            .sort((left, right) => right.purchaseDate.localeCompare(left.purchaseDate))
+            .sort((left, right) => {
+              if (left.purchaseDate && right.purchaseDate) {
+                return right.purchaseDate.localeCompare(left.purchaseDate);
+              }
+              if (left.purchaseDate) return -1;
+              if (right.purchaseDate) return 1;
+              return right.createdAt.localeCompare(left.createdAt);
+            })
         : [],
     [investmentStocks, selectedSummary],
   );
@@ -546,7 +562,7 @@ export default function InvestPage() {
           .filter(
             (stock) =>
               stock.accountType === accountType &&
-              stock.purchaseDate.startsWith(`${limitYear}-`),
+              stock.purchaseDate?.startsWith(`${limitYear}-`),
           )
           .reduce((sum, stock) => sum + stock.quantity * stock.unitPrice, 0);
         const yearlyLimit = accountLimits[accountType];
@@ -591,13 +607,13 @@ export default function InvestPage() {
     setStockQuery("");
     setStockSearchItems([]);
     setSelectedStock(null);
-    setStockPurchaseDate(formatDate(selectedDate));
+    setStockPurchaseDate("");
     setStockQuantity("");
     setStockUnitPrice("");
     setStockAccountType("GENERAL");
     setStockMemo("");
     setEditingStockId("");
-  }, [selectedDate]);
+  }, []);
 
   const startStockCreate = () => {
     resetStockForm();
@@ -612,7 +628,7 @@ export default function InvestPage() {
     });
     setStockQuery(`${stock.name} (${stock.symbol})`);
     setStockSearchItems([]);
-    setStockPurchaseDate(stock.purchaseDate);
+    setStockPurchaseDate(stock.purchaseDate ?? "");
     setStockQuantity(stock.quantity.toLocaleString());
     setStockUnitPrice(stock.unitPrice.toLocaleString());
     setStockAccountType(stock.accountType);
@@ -697,14 +713,15 @@ export default function InvestPage() {
   const handleStockSubmit = async () => {
     const quantity = parseFormattedNumber(stockQuantity);
     const unitPrice = parseFormattedNumber(stockUnitPrice);
-    const purchaseDate = new Date(`${stockPurchaseDate}T00:00:00`);
-
     if (!selectedStock) {
       alert("종목을 선택해주세요.");
       return;
     }
-    if (!stockPurchaseDate || Number.isNaN(purchaseDate.getTime())) {
-      alert("구매일을 선택해주세요.");
+    if (
+      stockPurchaseDate &&
+      Number.isNaN(new Date(`${stockPurchaseDate}T00:00:00`).getTime())
+    ) {
+      alert("구매일을 올바르게 입력해주세요.");
       return;
     }
     if (!quantity || quantity <= 0) {
@@ -720,7 +737,7 @@ export default function InvestPage() {
       ...selectedStock,
       quantity,
       unitPrice,
-      purchaseDate: stockPurchaseDate,
+      purchaseDate: stockPurchaseDate || null,
       accountType: stockAccountType,
       currency: "KRW",
       memo: stockMemo.trim(),
@@ -759,7 +776,6 @@ export default function InvestPage() {
       setSelectedGroupKey(getInvestmentGroupKey(savedStock));
       await refreshStockQuotes([selectedStock.symbol]);
 
-      setSelectedDate(new Date(`${stockPurchaseDate}T00:00:00`));
       resetStockForm();
     } catch (error) {
       const message =
@@ -772,7 +788,7 @@ export default function InvestPage() {
 
   const handleStockDelete = async (stock: InvestmentStock) => {
     const confirmed = await confirm(
-      `${stock.name} ${stock.purchaseDate} 매수 기록을 삭제할까요?`,
+      `${stock.name} 보유 기록을 삭제할까요?`,
     );
     if (!confirmed) return;
 
@@ -791,7 +807,7 @@ export default function InvestPage() {
         resetStockForm();
       }
     } catch (error) {
-      alert(error instanceof Error ? error.message : "매수 기록 삭제에 실패했습니다.");
+      alert(error instanceof Error ? error.message : "보유 기록 삭제에 실패했습니다.");
     } finally {
       setDeletingStockId("");
     }
@@ -1104,7 +1120,9 @@ export default function InvestPage() {
                     <h4 className="title--sm">
                       {investmentAccountLabel[limit.accountType]}
                     </h4>
-                    <span className="badge badge--teal">{limitYear}년</span>
+                    <span className={`badge ${limitAccountBadgeClassName[limit.accountType]}`}>
+                      {limitYear}년
+                    </span>
                   </div>
                   <div className="invest-limit-card--numbers">
                     <div>
@@ -1187,7 +1205,9 @@ export default function InvestPage() {
                   <div className="row-group row-group--center row-group--between">
                     <h4 className="title--sm">{allocation.title}</h4>
                     {investmentTotals.isValuationReady ? (
-                      <span className="badge badge--teal">
+                      <span
+                        className={`badge ${allocationBadgeClassName[allocation.title] ?? "badge--teal"}`}
+                      >
                         {allocation.items.length.toLocaleString()}개
                       </span>
                     ) : null}
@@ -1256,7 +1276,7 @@ export default function InvestPage() {
                     </p>
                   ) : null}
                 </div>
-                <span className="badge badge--teal">
+                <span className="badge badge--violet">
                   {investmentSummaries.length.toLocaleString()}개 보유
                 </span>
               </div>
@@ -1423,7 +1443,7 @@ export default function InvestPage() {
                       </p>
                     </div>
                     <span className="badge badge--blue">
-                      매수 기록 {selectedPurchaseRecords.length}건
+                      보유 기록 {selectedPurchaseRecords.length}건
                     </span>
                   </div>
                   <div className="invest-detail--daily">
@@ -1486,7 +1506,9 @@ export default function InvestPage() {
                     {selectedPurchaseRecords.map((stock) => (
                       <article key={stock.id} className="invest-detail--purchase">
                         <div className="invest-detail--purchase-copy">
-                          <strong className="label--md">{stock.purchaseDate}</strong>
+                          <strong className="label--md">
+                            {stock.purchaseDate || "구매일 미입력"}
+                          </strong>
                           <span className="caption--md color-gray">
                             {stock.quantity.toLocaleString()}주 ·{" "}
                             {formatWon(stock.unitPrice)} ·{" "}
@@ -1525,15 +1547,15 @@ export default function InvestPage() {
                 <div className="main-overview--section-header row-group row-group--center row-group--between">
                   <div>
                     <h3 className="main-overview--title title--sm">
-                      {editingStockId ? "매수 기록 수정" : "종목 추가"}
+                      {editingStockId ? "보유 기록 수정" : "종목 추가"}
                     </h3>
                     <p className="caption--md invest-section--description">
                       {editingStockId
-                        ? "선택한 매수 기록을 변경합니다."
-                        : "매수 내역을 직접 기록합니다."}
+                        ? "선택한 보유 기록을 변경합니다."
+                        : "현재 보유 중인 종목을 기록합니다."}
                     </p>
                   </div>
-                  <span className="badge badge--teal">KRW</span>
+                  <span className="badge badge--green">KRW</span>
                 </div>
                 {editingStockId ? (
                   <button
@@ -1615,7 +1637,7 @@ export default function InvestPage() {
                     </select>
                   </label>
                   <label className="main-overview--field">
-                    <span className="label--md">구매일</span>
+                    <span className="label--md">구매일 (선택)</span>
                     <input
                       className="main-overview--control body--sm"
                       type="date"
