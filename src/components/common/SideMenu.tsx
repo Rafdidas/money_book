@@ -32,6 +32,12 @@ const navItems = [
     label: "투자 관리",
     isActive: (pathname: string) => pathname.startsWith("/app/invest"),
   },
+  {
+    href: "/app/inquiries",
+    icon: "support_agent",
+    label: "문의하기",
+    isActive: (pathname: string) => pathname.startsWith("/app/inquiries"),
+  },
 ];
 
 export default function SideMenu({
