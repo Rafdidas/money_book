@@ -2,7 +2,7 @@
 
 수입과 지출을 월 단위로 기록하고 한눈에 확인하는 개인 가계부 대시보드입니다. Supabase 인증을 사용해 사용자별 데이터를 분리하고, 로그인 없이도 데모 모드로 주요 기능을 체험할 수 있습니다.
 
-https://money-book-one.vercel.app/
+https://monibuk.com/
 
 ## 주요 기능
 
