@@ -195,7 +195,7 @@
   }
 
   &--primary {
-    --button-bg: var(--primary, #226cff);
+    --button-bg: var(--on-surface-ultra-high, #171815);
     --button-bg-hover: var(--primary-higher, #1d5bd6);
     --button-bg-pressed: var(--primary-highest, #1749ad);
     --button-bg-disabled: var(--primary-low, #aec9ff);
@@ -206,11 +206,11 @@
   }
 
   &--secondary {
-    --button-bg: var(--primary-lowest, #dae6ff);
+    --button-bg: var(--primary-ultra-low, #f1f6fe);
     --button-bg-hover: var(--primary-lower, #c6d9ff);
     --button-bg-pressed: var(--primary-low, #aec9ff);
     --button-bg-disabled: var(--primary-ultra-low, #eff5ff);
-    --button-text: var(--on-primary-high, #1d5bd6);
+    --button-text: var(--primary-higher, #3e75d4);
     --button-text-hover: var(--on-primary-high, #1d5bd6);
     --button-text-pressed: var(--on-primary-high, #1d5bd6);
     --button-text-disabled: var(--on-primary-lower, #aec9ff);

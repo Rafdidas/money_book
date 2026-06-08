@@ -5,10 +5,10 @@
   &--wrap {
     flex: 1;
     overflow: auto;
-    border-radius: 12px;
-    border: 1px solid var(--outline-lower);
+    border-radius: 14px;
+    border: 1px solid var(--outline);
     background-color: var(--surface-ultra-low);
-    box-shadow: 0 1px 10px 1px rgba(0, 0, 0, 0.03);
+    box-shadow: none;
 
     &__invest {
       margin-top: 8px;
@@ -26,7 +26,7 @@
       top: 0;
       z-index: 20;
       padding: 5px 10px;
-      background-color: var(--surface-low);
+      background-color: var(--surface-lowest);
       font-size: 15px;
       font-weight: 500;
       white-space: nowrap;
@@ -35,7 +35,7 @@
   tbody {
     td {
       padding: 5px 10px;
-      background-color: var(--transparent);
+      background-color: var(--surface-ultra-low);
       font-size: 14px;
       text-align: center;
       white-space: nowrap;

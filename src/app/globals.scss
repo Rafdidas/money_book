@@ -37,6 +37,10 @@ body.overflow {
   overscroll-behavior: none;
 }
 
+body {
+  background: var(--surface);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -117,6 +121,7 @@ img {
 
 .app-main {
   flex: 1;
+  min-width: 0;
 }
 
 // ------------------------------  icon -------------------------------------------
@@ -154,11 +159,11 @@ img {
 
 .card {
   position: relative;
-  padding: 16px;
-  border: 1px solid var(--outline-lower);
-  border-radius: 12px;
+  padding: 18px;
+  border: 1px solid var(--outline);
+  border-radius: 14px;
   background: var(--surface-ultra-low);
-  box-shadow: 0 1px 10px 1px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
 
   .empty {
     position: absolute;

@@ -1,4 +1,8 @@
 .home-page .main.invest-page {
+  .main-header {
+    border-bottom: 1px solid var(--outline);
+  }
+
   .color-gray {
     color: var(--on-surface);
   }
@@ -42,7 +46,9 @@
     }
 
     &--primary {
-      background: var(--surface-lowest);
+      background:
+        radial-gradient(circle at 100% 0%, var(--primary-lowest), transparent 58%),
+        var(--surface-ultra-low);
     }
 
     &--major {
@@ -105,13 +111,13 @@
       width: 100%;
       height: 7px;
       overflow: hidden;
-      border-radius: 999px;
+      border-radius: 3px;
       background: var(--surface-low);
     }
 
     &--progress-fill {
       height: 100%;
-      border-radius: inherit;
+      border-radius: 3px;
       background: var(--primary-high);
       transition: width 180ms ease;
     }
@@ -138,6 +144,8 @@
     flex-direction: column;
     gap: 16px;
     min-height: 176px;
+    background:
+      linear-gradient(145deg, var(--surface-ultra-low) 72%, var(--primary-ultra-low));
 
     &--items {
       overflow: auto;
@@ -178,7 +186,7 @@
     &--progress {
       height: 6px;
       overflow: hidden;
-      border-radius: 999px;
+      border-radius: 3px;
       background: var(--surface-low);
     }
 
