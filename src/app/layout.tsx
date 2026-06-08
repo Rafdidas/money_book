@@ -13,10 +13,26 @@ import Providers from "./providers";
 import "./globals.scss";
 import localFont from "next/font/local";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import appleTouchIcon from "@/assets/img/logo/apple-touch-icon.png";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
   applicationName: siteName,
+  manifest: "/manifest.webmanifest",
+  icons: {
+    apple: [
+      {
+        url: appleTouchIcon.src,
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    title: siteName,
+    statusBarStyle: "default",
+  },
   title: {
     default: siteTitle,
     template: `%s | ${siteName}`,
