@@ -174,7 +174,7 @@
 
       img {
         width: auto;
-        height: 25px;
+        height: 30px;
       }
     }
 
@@ -312,7 +312,7 @@
   .mobile-bottom-nav {
     position: fixed;
     right: 10px;
-    bottom: calc(10px + env(safe-area-inset-bottom));
+    bottom: calc(15px + env(safe-area-inset-bottom));
     left: 10px;
     z-index: 80;
     display: grid;
