@@ -1,11 +1,5 @@
 import type { Expense } from "@/types/expense";
 
-export type OverviewLine = {
-  values: number[];
-  color: "green" | "red" | "teal" | "blue";
-  label: string;
-};
-
 export type ExpenseFormData = Pick<Expense, "amount" | "category" | "memo" | "date" | "type">;
 export type InlineFormMode = "create" | "edit";
 export type InlineEntryType = Expense["type"] | "savings" | "investment";

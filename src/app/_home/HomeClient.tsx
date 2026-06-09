@@ -55,7 +55,6 @@ import type {
 import { formatDate } from "@/utils/date";
 import { formatIntegerInput, parseFormattedNumber } from "@/utils/numberInput";
 import CategoryPieChart from "./charts/CategoryPieChart";
-import OverviewLineChart from "./charts/OverviewLineChart";
 import {
   categoryChartColors,
   categoryOptions,
@@ -88,7 +87,6 @@ import {
   formatHeaderDate,
   formatWon,
   getCalendarDays,
-  getDailySeries,
   getFallbackSavingsMeta,
   getMemoWithPreservedMeta,
   getNextMonthPaymentChangeMessage,
@@ -679,10 +677,6 @@ export default function HomeClient() {
     : 0;
   const monthlyTotal =
     monthlyIncomeTotal - monthlyExpenseTotal - monthlySavingsTotal - monthlyInvestmentTotal;
-  const cashflowSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth);
-  const incomeSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "income");
-  const expenseSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "expense");
-  const savingsSeries = getDailySeries(dashboardExpenses, currentYear, currentMonth, "savings");
   const selectedCalendarItems = useMemo(
     () => displayMonthlyExpenses.filter((item) => item.date === selectedDateKey),
     [displayMonthlyExpenses, selectedDateKey],
@@ -2228,9 +2222,6 @@ export default function HomeClient() {
                   </p>
                 </div>
 
-                <OverviewLineChart
-                  lines={[{ values: cashflowSeries, color: "teal", label: "현금흐름" }]}
-                />
               </div>
               {/* 수입 */}
               <div className="card overview-card column-group column-group--center column-group--gap-8">
@@ -2243,9 +2234,6 @@ export default function HomeClient() {
                 <p className="main-overview--last label--md">
                   총 {monthlyIncomeCount}건 · 평균 {formatWon(monthlyIncomeAverage)}
                 </p>
-                <OverviewLineChart
-                  lines={[{ values: incomeSeries, color: "blue", label: "수입" }]}
-                />
               </div>
               {/* 지출 */}
               <div className="card overview-card column-group column-group--center column-group--gap-8">
@@ -2258,9 +2246,6 @@ export default function HomeClient() {
                 <p className="main-overview--last label--md">
                   총 {monthlyExpenseCount}건 · 평균 {formatWon(monthlyExpenseAverage)}
                 </p>
-                <OverviewLineChart
-                  lines={[{ values: expenseSeries, color: "red", label: "지출" }]}
-                />
               </div>
               {/* 저축 */}
               <div className="card overview-card column-group column-group--center column-group--gap-8">
@@ -2283,9 +2268,6 @@ export default function HomeClient() {
                      · 총 {monthlySavingsCount + monthlyInvestmentCount}건
                   </p>
                 </div>
-                <OverviewLineChart
-                  lines={[{ values: savingsSeries, color: "blue", label: "저축" }]}
-                />
               </div>
             </div>
             <h3 className="main-common-title title--md">등록 / 수정</h3>

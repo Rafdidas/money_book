@@ -12,8 +12,9 @@
     width: 100%;
     padding: 0 12px;
     min-height: 52px;
-    background: var(--surface-ultra-low);
-    border-bottom: 1px solid var(--outline-low);
+    background: color-mix(in srgb, var(--surface-ultra-low) 92%, transparent);
+    border-bottom: 1px solid var(--outline);
+    backdrop-filter: blur(16px);
   }
   &__brand {
     > img {
@@ -38,4 +39,26 @@
 
   }
 
+  @media (max-width: 640px) {
+    &--intro {
+      .app-header--inner {
+        padding-inline: 12px;
+      }
+
+      .app-header__brand > img {
+        height: 34px;
+      }
+
+      .hd-btn {
+        .button {
+          height: 34px;
+          padding-inline: 12px;
+        }
+
+        .button--outline-primary {
+          display: none;
+        }
+      }
+    }
+  }
 }

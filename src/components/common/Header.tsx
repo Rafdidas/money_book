@@ -22,6 +22,10 @@ export default function Header() {
     return null;
   }
 
+  if (pathname.startsWith("/app")) {
+    return null;
+  }
+
   if (pathname === "/" || pathname === "/intro") {
     return (
       <header className="app-header app-header--intro">
@@ -57,13 +61,5 @@ export default function Header() {
     );
   }
 
-  return (
-    <header className="app-header">
-      <div className="app-header--inner">
-        <Link href="/app" className="app-header__brand title--lg">
-          <Image src={logo} width={140} height={30} alt="머니북가계부 로고" priority />
-        </Link>
-      </div>
-    </header>
-  );
+  return null;
 }

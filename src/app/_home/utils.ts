@@ -60,36 +60,6 @@ export const getCalendarDays = (selectedDate: Date) => {
 export const getDaysInMonth = (year: number, month: number) =>
   new Date(year, month + 1, 0).getDate();
 
-export const getDailySeries = (
-  items: Expense[],
-  year: number,
-  month: number,
-  type?: Expense["type"] | "savings" | "investment",
-) => {
-  const dailyTotals = Array.from({ length: getDaysInMonth(year, month) }, () => 0);
-
-  items.forEach((item) => {
-    if (type === "savings" && !isSavingsItem(item)) return;
-    if (type === "investment" && !isInvestmentItem(item)) return;
-    if (type && type !== "savings" && type !== "investment" && item.type !== type) return;
-    if (type === "expense" && (isSavingsItem(item) || isInvestmentItem(item))) return;
-    const date = new Date(item.date);
-    if (date.getFullYear() !== year || date.getMonth() !== month) return;
-    const amount = type
-      ? item.amount
-      : item.type === "income"
-        ? item.amount
-        : -item.amount;
-    dailyTotals[date.getDate() - 1] += amount;
-  });
-
-  let runningTotal = 0;
-  return dailyTotals.map((amount) => {
-    runningTotal += amount;
-    return runningTotal;
-  });
-};
-
 export const encodeSavingsMemo = (meta: SavingsMeta) =>
   `${meta.name} ${savingsMetaPrefix}${encodeURIComponent(JSON.stringify(meta))}]]`;
 

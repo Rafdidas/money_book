@@ -1,3 +1,8 @@
+body:has(.intro-page),
+.wrapper:has(.intro-page) {
+  background: var(--surface-ultra-low);
+}
+
 .intro-page {
   padding-bottom: 62px;
 
@@ -82,18 +87,49 @@
       align-items: center;
       gap: 24px;
       &--items {
+        position: relative;
+        overflow: hidden;
         flex: 1;
         display: flex;
         align-items: center;
         gap: 16px;
-        background-color: var(--surface-lower);
-        padding: 16px;
-        border-radius: 12px;
+        min-height: 132px;
+        padding: 20px;
+        border: 1px solid var(--outline-lowest);
+        border-radius: 16px;
+        background:
+          radial-gradient(circle at 0 100%, var(--primary-ultra-low), transparent 52%),
+          var(--surface-ultra-low);
+        box-shadow: 0 14px 34px rgba(25, 27, 24, 0.05);
+        transition: transform 160ms ease, box-shadow 160ms ease;
+
+        &:nth-child(2n) {
+          background:
+            radial-gradient(circle at 0 100%, var(--green-lower), transparent 52%),
+            var(--surface-ultra-low);
+        }
+
+        &:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 18px 44px rgba(25, 27, 24, 0.09);
+        }
+
         .card-item {
           &--img {
+            display: flex;
+            flex: 0 0 66px;
+            align-items: center;
+            justify-content: center;
+            width: 66px;
+            height: 66px;
+            border: 1px solid var(--outline);
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--surface-ultra-low) 82%, transparent);
+            box-shadow: inset 0 1px 0 var(--surface-ultra-low);
+
             span {
-              color: var(--primary);
-              font-size: 64px;
+              color: var(--primary-higher);
+              font-size: 38px;
             }
           }
           &--text {
@@ -130,8 +166,9 @@
     }
     .function-list {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: space-between;
+      gap: 16px;
 
       &--items {
         position: relative;
@@ -140,17 +177,29 @@
         flex-direction: column;
         align-items: center;
         gap: 20px;
-        padding: 12px;
+        min-height: 230px;
+        padding: 28px 20px;
+        border: 1px solid var(--outline-lowest);
+        border-radius: 16px;
+        background:
+          radial-gradient(circle at 50% 0%, var(--primary-ultra-low), transparent 50%),
+          var(--surface-ultra-low);
+        box-shadow: 0 14px 34px rgba(25, 27, 24, 0.045);
+        transition: transform 160ms ease, box-shadow 160ms ease;
 
         &::after {
-          position: absolute;
-          top: 50%;
-          right: 0;
-          width: 2px;
-          height: calc(100% - 48px);
-          transform: translateY(-50%);
-          background-color: var(--outline-lowest);
-          content: '';
+          display: none;
+        }
+
+        &:nth-child(2n) {
+          background:
+            radial-gradient(circle at 50% 0%, var(--green-lower), transparent 50%),
+            var(--surface-ultra-low);
+        }
+
+        &:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 18px 44px rgba(25, 27, 24, 0.085);
         }
         &:last-of-type {
           &::after {
@@ -170,11 +219,13 @@
             align-items: center;
             width: 80px;
             height: 80px;
-            background-color: var(--primary-ultra-low);
-            border-radius: 100%;
+            border: 1px solid var(--outline);
+            border-radius: 16px;
+            background-color: color-mix(in srgb, var(--surface-ultra-low) 82%, transparent);
+            box-shadow: inset 0 1px 0 var(--surface-ultra-low);
             span {
-              color: var(--primary);
-              font-size: 50px;
+              color: var(--primary-higher);
+              font-size: 42px;
             }
           }
 
@@ -377,6 +428,8 @@
 
       .function-list {
         .function-list--items {
+          min-height: 0;
+
           .function-item {
             &--img {
               width: 84px;
@@ -414,6 +467,10 @@
 @media (max-width: 640px) {
   .intro-page {
     padding-bottom: 112px;
+
+    br {
+      display: block;
+    }
 
     .intro-visual {
       &--inner {

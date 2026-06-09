@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import logo from "@/assets/img/monibuk-logo.svg";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import { disableDemoMode } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
@@ -47,36 +49,23 @@ export default function SideMenu({
 }: SideMenuProps) {
   const pathname = usePathname();
   const { alert, confirm } = useAppAlert();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
+  const isMobileMenuOpen = mobileMenuPath === pathname;
 
   useEffect(() => {
-    const handlePointerDown = (event: globalThis.MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
+    if (!isMobileMenuOpen) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsMenuOpen(false);
+        setMobileMenuPath(null);
       }
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileMenuOpen]);
 
-  const handleMenuClose = () => {
-    setIsMenuOpen(false);
-  };
-  const handleMenuToggle = () => {
-    setIsMenuOpen((prev) => !prev);
-  };
   const handleLogout = async () => {
     if (isLoggingOut) return;
 
@@ -93,7 +82,6 @@ export default function SideMenu({
       return;
     }
 
-    handleMenuClose();
     setIsLoggingOut(true);
 
     if (isDemoMode) {
@@ -114,64 +102,123 @@ export default function SideMenu({
   };
 
   return (
-    <aside className="side-menu">
-      <div className="side-menu--inner column-group">
-        <div
-          ref={menuRef}
-          className="side-menu--avatar row-group row-group--center row-group--between"
-        >
-          <div className="row-group row-group--center row-group--gap-8">
-            <span className="material-symbols-outlined" aria-hidden="true">
-              account_circle
-            </span>
-            <div className="column-group">
-              <span className="bodyBold--sm">{displayName}</span>
-              {displayEmail ? <span className="label--sm">{displayEmail}</span> : null}
+    <>
+      <aside className="side-menu">
+        <div className="side-menu--inner column-group">
+          <Link href="/app" className="side-menu--brand" aria-label="머니북 대시보드">
+            <Image src={logo} width={140} height={30} alt="머니북가계부 로고" priority />
+          </Link>
+          <div className="side-menu--avatar row-group row-group--center">
+            <div className="row-group row-group--center row-group--gap-8">
+              <span className="material-symbols-outlined" aria-hidden="true">
+                account_circle
+              </span>
+              <div className="column-group">
+                <span className="bodyBold--sm">{displayName}</span>
+                {displayEmail ? <span className="label--sm">{displayEmail}</span> : null}
+              </div>
             </div>
           </div>
-          <button
-            type="button"
-            aria-label="Open menu"
-            aria-controls="side-menu-actions"
-            aria-expanded={isMenuOpen ? "true" : "false"}
-            aria-haspopup="menu"
-            className="button button--icon-only button--md button--subtle side-menu--more"
-            onClick={handleMenuToggle}
-          >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              more_vert
-            </span>
-          </button>
-          {isMenuOpen ? (
-            <div
-              className="side-menu--dropdown column-group"
-              id="side-menu-actions"
-              role="menu"
-            >
-              <ul>
-                <li>
-                  <button
-                    type="button"
-                    className="side-menu--dropdown-item"
-                    role="menuitem"
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
+          <p className="side-menu--eyebrow label--xs">WORKSPACE</p>
+          <div className="column-group side-menu--wrap">
+            <ul className="side-menu--list app-header__nav column-group column-group--gap-4">
+              {navItems.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${item.isActive(pathname) ? "is-active" : ""}`}
                   >
-                    {isLoggingOut
-                      ? isDemoMode
-                        ? "종료 중..."
-                        : "로그아웃 중..."
-                      : isDemoMode
-                        ? "데모 종료"
-                        : "로그아웃"}
-                  </button>
+                    <span className="material-symbols-outlined icon" aria-hidden="true">
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </Link>
                 </li>
-              </ul>
-            </div>
-          ) : null}
+              ))}
+            </ul>
+            <ul className="side-menu--list app-header__nav column-group column-group--gap-4 log-out--wrap">
+              <li>
+                <button
+                  type="button"
+                  className="side-menu--item side-menu--logout row-group row-group--center row-group--gap-4 label--lg"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  <span className="material-symbols-outlined icon" aria-hidden="true">
+                    logout
+                  </span>
+                  {isLoggingOut
+                    ? isDemoMode
+                      ? "종료 중..."
+                      : "로그아웃 중..."
+                    : isDemoMode
+                      ? "데모 종료"
+                      : "로그아웃"}
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div className="column-group side-menu--wrap">
-          <ul className="side-menu--list app-header__nav column-group column-group--gap-4">
+      </aside>
+
+      <header className="mobile-app-header">
+        <Link href="/app" className="mobile-app-header--brand" aria-label="머니북 대시보드">
+          <Image src={logo} width={116} height={25} alt="머니북가계부 로고" priority />
+        </Link>
+        <button
+          type="button"
+          className="mobile-app-header--menu"
+          aria-label="메뉴 열기"
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-navigation-drawer"
+          onClick={() => setMobileMenuPath(pathname)}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">
+            menu
+          </span>
+        </button>
+      </header>
+
+      <div className={`mobile-drawer ${isMobileMenuOpen ? "is-open" : ""}`}>
+        <button
+          type="button"
+          className="mobile-drawer--backdrop"
+          aria-label="메뉴 닫기"
+          onClick={() => setMobileMenuPath(null)}
+        />
+        <aside
+          id="mobile-navigation-drawer"
+          className="mobile-drawer--panel column-group"
+          aria-label="모바일 메뉴"
+          aria-hidden={!isMobileMenuOpen}
+        >
+          <div className="mobile-drawer--header row-group row-group--center row-group--between">
+            <Image src={logo} width={132} height={28} alt="머니북가계부 로고" />
+            <button
+              type="button"
+              className="mobile-drawer--close"
+              aria-label="메뉴 닫기"
+              onClick={() => setMobileMenuPath(null)}
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                close
+              </span>
+            </button>
+          </div>
+          <div className="side-menu--avatar row-group row-group--center">
+            <div className="row-group row-group--center row-group--gap-8">
+              <span className="material-symbols-outlined" aria-hidden="true">
+                account_circle
+              </span>
+              <div className="column-group">
+                <span className="bodyBold--sm">{displayName}</span>
+                {displayEmail ? <span className="label--sm">{displayEmail}</span> : null}
+              </div>
+            </div>
+          </div>
+          <p className="side-menu--eyebrow label--xs">WORKSPACE</p>
+          <nav className="mobile-drawer--nav">
+            <ul className="side-menu--list column-group column-group--gap-4">
             {navItems.map((item) => (
               <li key={item.href}>
                 <Link
@@ -185,26 +232,47 @@ export default function SideMenu({
                 </Link>
               </li>
             ))}
-          </ul>
-          <ul className="side-menu--list app-header__nav column-group column-group--gap-4 log-out--wrap">
-            <li
-              className="side-menu--item row-group row-group--center row-group--gap-4 label--lg"
-              onClick={handleLogout}
-            >
-              <span className="material-symbols-outlined icon" aria-hidden="true">
-                logout
-              </span>
-              {isLoggingOut
-                ? isDemoMode
-                  ? "종료 중..."
-                  : "로그아웃 중..."
-                : isDemoMode
-                  ? "데모 종료"
-                  : "로그아웃"}
+            </ul>
+          </nav>
+          <ul className="side-menu--list log-out--wrap">
+            <li>
+              <button
+                type="button"
+                className="side-menu--item side-menu--logout row-group row-group--center row-group--gap-4 label--lg"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+              >
+                <span className="material-symbols-outlined icon" aria-hidden="true">
+                  logout
+                </span>
+                {isLoggingOut
+                  ? isDemoMode
+                    ? "종료 중..."
+                    : "로그아웃 중..."
+                  : isDemoMode
+                    ? "데모 종료"
+                    : "로그아웃"}
+              </button>
             </li>
           </ul>
-        </div>
+        </aside>
       </div>
-    </aside>
+
+      <nav className="mobile-bottom-nav" aria-label="주요 메뉴">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`mobile-bottom-nav--item ${item.isActive(pathname) ? "is-active" : ""}`}
+            aria-current={item.isActive(pathname) ? "page" : undefined}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {item.icon}
+            </span>
+            <span>{item.label}</span>
+          </Link>
+        ))}
+      </nav>
+    </>
   );
 }
