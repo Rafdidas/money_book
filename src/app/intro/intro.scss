@@ -1,3 +1,8 @@
+body:has(.intro-page),
+.wrapper:has(.intro-page) {
+  background: var(--surface-ultra-low);
+}
+
 .intro-page {
   padding-bottom: 62px;
 
@@ -90,7 +95,7 @@
         gap: 16px;
         min-height: 132px;
         padding: 20px;
-        border: 1px solid var(--outline);
+        border: 1px solid var(--outline-lowest);
         border-radius: 16px;
         background:
           radial-gradient(circle at 0 100%, var(--primary-ultra-low), transparent 52%),
@@ -174,7 +179,7 @@
         gap: 20px;
         min-height: 230px;
         padding: 28px 20px;
-        border: 1px solid var(--outline);
+        border: 1px solid var(--outline-lowest);
         border-radius: 16px;
         background:
           radial-gradient(circle at 50% 0%, var(--primary-ultra-low), transparent 50%),

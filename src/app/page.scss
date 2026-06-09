@@ -452,7 +452,7 @@
     flex-direction: column;
 
     .main {
-      padding: 0 12px 96px;
+      padding: 0 12px calc(104px + env(safe-area-inset-bottom));
 
       .main-header {
         min-height: 68px;
@@ -545,7 +545,7 @@
 
   @media (max-width: 420px) {
     .main {
-      padding: 0 10px 28px;
+      padding: 0 10px 100px;
 
       .main-overview-analysis-card {
         overflow-x: auto;
