@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import logo from "@/assets/img/monibuk-logo.svg";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import { disableDemoMode } from "@/lib/demo";
@@ -51,6 +51,8 @@ export default function SideMenu({
   const { alert, confirm } = useAppAlert();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
+  const [isBottomNavCompact, setIsBottomNavCompact] = useState(false);
+  const lastScrollY = useRef(0);
   const isMobileMenuOpen = mobileMenuPath === pathname;
 
   useEffect(() => {
@@ -65,6 +67,39 @@ export default function SideMenu({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 760px)");
+    let ticking = false;
+
+    const updateBottomNav = () => {
+      const currentScrollY = Math.max(window.scrollY, 0);
+      const scrollDelta = currentScrollY - lastScrollY.current;
+
+      if (currentScrollY < 24) {
+        setIsBottomNavCompact(false);
+      } else if (scrollDelta > 8) {
+        setIsBottomNavCompact(true);
+      } else if (scrollDelta < -8) {
+        setIsBottomNavCompact(false);
+      }
+
+      lastScrollY.current = currentScrollY;
+      ticking = false;
+    };
+
+    const handleScroll = () => {
+      if (!mediaQuery.matches || ticking) return;
+
+      ticking = true;
+      window.requestAnimationFrame(updateBottomNav);
+    };
+
+    lastScrollY.current = Math.max(window.scrollY, 0);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -258,7 +293,10 @@ export default function SideMenu({
         </aside>
       </div>
 
-      <nav className="mobile-bottom-nav" aria-label="주요 메뉴">
+      <nav
+        className={`mobile-bottom-nav ${isBottomNavCompact ? "is-compact" : ""}`}
+        aria-label="주요 메뉴"
+      >
         {navItems.map((item) => (
           <Link
             key={item.href}
