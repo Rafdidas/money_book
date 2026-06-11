@@ -2633,7 +2633,11 @@ export default function HomeClient() {
                           </div>
                           <div
                             className="content-rate--percentage"
+                            role="progressbar"
                             aria-label={`${item.category} ${item.percentage.toFixed(1)}%`}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Number(item.percentage.toFixed(1))}
                           />
                         </li>
                       ))

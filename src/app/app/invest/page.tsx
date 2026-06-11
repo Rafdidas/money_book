@@ -1142,7 +1142,13 @@ export default function InvestPage() {
                   </div>
                   <div
                     className="invest-limit-card--progress"
+                    role="progressbar"
                     aria-label={`${investmentAccountLabel[limit.accountType]} 사용률`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Number(
+                      Math.min(Math.max(limit.usageRate, 0), 100).toFixed(1),
+                    )}
                   >
                     <div
                       className="invest-limit-card--progress-fill"
@@ -1234,7 +1240,11 @@ export default function InvestPage() {
                           </div>
                           <div
                             className="invest-allocation-item--progress"
+                            role="progressbar"
                             aria-label={`${item.label} 비중 ${item.rate.toFixed(1)}%`}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Number(Math.min(Math.max(item.rate, 0), 100).toFixed(1))}
                           >
                             <div
                               className="invest-allocation-item--progress-fill"
@@ -1365,7 +1375,6 @@ export default function InvestPage() {
                             }}
                             role="button"
                             tabIndex={0}
-                            aria-label={`${stock.name} 상세보기`}
                             aria-pressed={selectedSummary?.groupKey === stock.groupKey}
                           >
                             <td className="tl">

@@ -144,7 +144,7 @@
 
         &.is-muted {
           > span.day-unit {
-            color: var(--on-surface-low);
+            color: var(--on-surface);
           }
           
         }
@@ -159,7 +159,7 @@
             border-radius: 10px;
             background-color: var(--primary);
 
-            color: var(--on-surface-ultra-low);
+            color: var(--on-primary-ultra-high);
             font-weight: 700;
           }
         }
@@ -179,7 +179,7 @@
         }
         &.is-today.is-selected {
           > span.day-unit {
-            color: var(--on-surface-ultra-low);
+            color: var(--on-primary-ultra-high);
           }
         }
       }
