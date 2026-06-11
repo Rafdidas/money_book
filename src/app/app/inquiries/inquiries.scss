@@ -105,9 +105,10 @@
       gap: 12px;
       text-align: center;
 
-      .material-symbols-outlined {
+      .app-icon {
+        width: 32px;
+        height: 32px;
         color: var(--on-surface);
-        font-size: 32px;
       }
     }
   }
@@ -138,9 +139,10 @@
     padding-block: 64px;
     text-align: center;
 
-    .material-symbols-outlined {
+    .app-icon {
+      width: 36px;
+      height: 36px;
       color: var(--primary-high);
-      font-size: 36px;
     }
   }
 

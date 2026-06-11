@@ -10,6 +10,7 @@ import {
 import Calendar from "react-calendar";
 import type { Value } from "react-calendar/dist/shared/types.js";
 import Modal from "@/components/common/Modal";
+import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
 import { useAppData } from "@/app/providers";
@@ -2193,9 +2194,7 @@ export default function HomeClient() {
             aria-haspopup="dialog"
             onClick={openCalendarModal}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              calendar_month
-            </span>
+            <AppIcon name="calendar_month" />
             {formatHeaderDate(selectedDate)}
           </button>
         </section>
@@ -2286,9 +2285,7 @@ export default function HomeClient() {
                         aria-label="이전 달"
                         onClick={() => handleOverviewMonthChange(-1)}
                       >
-                        <span className="material-symbols-outlined" aria-hidden="true">
-                          chevron_left
-                        </span>
+                        <AppIcon name="chevron_left" />
                       </button>
                       <span className="label--lg">
                         {currentYear}.{String(currentMonth + 1).padStart(2, "0")}
@@ -2299,9 +2296,7 @@ export default function HomeClient() {
                         aria-label="다음 달"
                         onClick={() => handleOverviewMonthChange(1)}
                       >
-                        <span className="material-symbols-outlined" aria-hidden="true">
-                          chevron_right
-                        </span>
+                        <AppIcon name="chevron_right" />
                       </button>
                     </div>
                   </div>
@@ -2904,12 +2899,7 @@ export default function HomeClient() {
                                         }
                                         disabled={isSavingsSkipping}
                                       >
-                                        <span
-                                          className="material-symbols-outlined"
-                                          aria-hidden="true"
-                                        >
-                                          more_vert
-                                        </span>
+                                        <AppIcon name="more_vert" />
                                       </button>
                                       {openSavingsPauseMenuId === account.id ? (
                                         <div
@@ -3194,12 +3184,7 @@ export default function HomeClient() {
                                       }
                                       disabled={isFixedExpenseSkipping}
                                     >
-                                      <span
-                                        className="material-symbols-outlined"
-                                        aria-hidden="true"
-                                      >
-                                        more_vert
-                                      </span>
+                                      <AppIcon name="more_vert" />
                                     </button>
                                     {openFixedExpensePauseMenuId === account.id ? (
                                       <div
@@ -3265,11 +3250,11 @@ export default function HomeClient() {
                           카테고리
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="카테고리 정렬"
                             onClick={() => handleDetailSort("category")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -3278,11 +3263,11 @@ export default function HomeClient() {
                           종류
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="종류 정렬"
                             onClick={() => handleDetailSort("type")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -3291,11 +3276,11 @@ export default function HomeClient() {
                           금액
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="금액 정렬"
                             onClick={() => handleDetailSort("amount")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -3304,11 +3289,11 @@ export default function HomeClient() {
                           내용
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="내용 정렬"
                             onClick={() => handleDetailSort("memo")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -3317,11 +3302,11 @@ export default function HomeClient() {
                           날짜
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="날짜 정렬"
                             onClick={() => handleDetailSort("date")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -3399,9 +3384,7 @@ export default function HomeClient() {
                 aria-label="Close calendar"
                 onClick={closeCalendarModal}
               >
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  close
-                </span>
+                <AppIcon name="close" />
               </button>
             </div>
             <Calendar

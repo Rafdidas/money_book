@@ -37,9 +37,8 @@
     border-radius: 10px;
     background: var(--surface-ultra-low);
 
-    .material-symbols-outlined {
+    .app-icon {
       color: var(--primary-higher);
-      font-size: 24px;
     }
 
     .label--sm {
@@ -104,6 +103,13 @@
       font-size: 19px;
     }
 
+    > .app-icon {
+      width: 19px;
+      height: 19px;
+      flex: 0 0 19px;
+      color: var(--on-surface-higher);
+    }
+
     &:hover {
       background: var(--surface-ultra-low);
     }
@@ -115,6 +121,10 @@
       box-shadow: 0 3px 12px rgba(25, 27, 24, 0.04);
 
       > span {
+        color: var(--primary-higher);
+      }
+
+      > .app-icon {
         color: var(--primary-higher);
       }
     }
@@ -197,8 +207,9 @@
       border-radius: 14px;
       background: color-mix(in srgb, var(--surface-ultra-low) 84%, transparent);
 
-      .material-symbols-outlined {
-        font-size: 23px;
+      .app-icon {
+        width: 23px;
+        height: 23px;
       }
     }
   }
@@ -257,8 +268,9 @@
       border-radius: 13px;
       background: var(--surface-lower);
 
-      .material-symbols-outlined {
-        font-size: 22px;
+      .app-icon {
+        width: 22px;
+        height: 22px;
       }
     }
 
@@ -387,14 +399,10 @@
       border-radius: 16px;
       color: var(--on-surface-high);
 
-      .material-symbols-outlined {
+      .app-icon {
+        width: 22px;
+        height: 22px;
         color: inherit;
-        font-size: 22px;
-        font-variation-settings:
-          "FILL" 0,
-          "wght" 350,
-          "GRAD" 0,
-          "opsz" 24;
       }
 
       > span:last-child {
@@ -411,13 +419,6 @@
         background: color-mix(in srgb, var(--primary-ultra-low) 78%, transparent);
         color: var(--primary-highest);
 
-        .material-symbols-outlined {
-          font-variation-settings:
-            "FILL" 1,
-            "wght" 450,
-            "GRAD" 0,
-            "opsz" 24;
-        }
       }
     }
   }

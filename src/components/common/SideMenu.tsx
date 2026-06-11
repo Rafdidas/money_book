@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import logo from "@/assets/img/monibuk-logo.svg";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
+import AppIcon, { type AppIconName } from "@/components/common/AppIcon";
 import { disableDemoMode } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
 
@@ -40,7 +41,12 @@ const navItems = [
     label: "문의하기",
     isActive: (pathname: string) => pathname.startsWith("/app/inquiries"),
   },
-];
+] satisfies Array<{
+  href: string;
+  icon: AppIconName;
+  label: string;
+  isActive: (pathname: string) => boolean;
+}>;
 
 export default function SideMenu({
   displayName,
@@ -145,9 +151,7 @@ export default function SideMenu({
           </Link>
           <div className="side-menu--avatar row-group row-group--center">
             <div className="row-group row-group--center row-group--gap-8">
-              <span className="material-symbols-outlined" aria-hidden="true">
-                account_circle
-              </span>
+              <AppIcon name="account_circle" />
               <div className="column-group">
                 <span className="bodyBold--sm">{displayName}</span>
                 {displayEmail ? <span className="label--sm">{displayEmail}</span> : null}
@@ -163,9 +167,7 @@ export default function SideMenu({
                     href={item.href}
                     className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${item.isActive(pathname) ? "is-active" : ""}`}
                   >
-                    <span className="material-symbols-outlined icon" aria-hidden="true">
-                      {item.icon}
-                    </span>
+                    <AppIcon name={item.icon} />
                     {item.label}
                   </Link>
                 </li>
@@ -179,9 +181,7 @@ export default function SideMenu({
                   onClick={handleLogout}
                   disabled={isLoggingOut}
                 >
-                  <span className="material-symbols-outlined icon" aria-hidden="true">
-                    logout
-                  </span>
+                  <AppIcon name="logout" />
                   {isLoggingOut
                     ? isDemoMode
                       ? "종료 중..."
@@ -197,7 +197,11 @@ export default function SideMenu({
       </aside>
 
       <header className="mobile-app-header">
-        <Link href="/app" className="mobile-app-header--brand" aria-label="머니북 대시보드">
+        <Link
+          href="/app"
+          className="mobile-app-header--brand"
+          aria-label="머니북 대시보드"
+        >
           <Image src={logo} width={116} height={25} alt="머니북가계부 로고" priority />
         </Link>
         <button
@@ -208,9 +212,7 @@ export default function SideMenu({
           aria-controls="mobile-navigation-drawer"
           onClick={() => setMobileMenuPath(pathname)}
         >
-          <span className="material-symbols-outlined" aria-hidden="true">
-            menu
-          </span>
+          <AppIcon name="menu" />
         </button>
       </header>
 
@@ -235,16 +237,12 @@ export default function SideMenu({
               aria-label="메뉴 닫기"
               onClick={() => setMobileMenuPath(null)}
             >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                close
-              </span>
+              <AppIcon name="close" />
             </button>
           </div>
           <div className="side-menu--avatar row-group row-group--center">
             <div className="row-group row-group--center row-group--gap-8">
-              <span className="material-symbols-outlined" aria-hidden="true">
-                account_circle
-              </span>
+              <AppIcon name="account_circle" />
               <div className="column-group">
                 <span className="bodyBold--sm">{displayName}</span>
                 {displayEmail ? <span className="label--sm">{displayEmail}</span> : null}
@@ -254,19 +252,17 @@ export default function SideMenu({
           <p className="side-menu--eyebrow label--xs">WORKSPACE</p>
           <nav className="mobile-drawer--nav">
             <ul className="side-menu--list column-group column-group--gap-4">
-            {navItems.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${item.isActive(pathname) ? "is-active" : ""}`}
-                >
-                  <span className="material-symbols-outlined icon" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+              {navItems.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${item.isActive(pathname) ? "is-active" : ""}`}
+                  >
+                    <AppIcon name={item.icon} />
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
           <ul className="side-menu--list log-out--wrap">
@@ -277,9 +273,7 @@ export default function SideMenu({
                 onClick={handleLogout}
                 disabled={isLoggingOut}
               >
-                <span className="material-symbols-outlined icon" aria-hidden="true">
-                  logout
-                </span>
+                <AppIcon name="logout" />
                 {isLoggingOut
                   ? isDemoMode
                     ? "종료 중..."
@@ -304,9 +298,7 @@ export default function SideMenu({
             className={`mobile-bottom-nav--item ${item.isActive(pathname) ? "is-active" : ""}`}
             aria-current={item.isActive(pathname) ? "page" : undefined}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              {item.icon}
-            </span>
+            <AppIcon name={item.icon} />
             <span>{item.label}</span>
           </Link>
         ))}

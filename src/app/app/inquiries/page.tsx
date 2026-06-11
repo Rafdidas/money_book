@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import { useAppData } from "@/app/providers";
@@ -188,9 +189,7 @@ export default function InquiriesPage() {
 
         {isDemoMode ? (
           <section className="card inquiries-demo">
-            <span className="material-symbols-outlined" aria-hidden="true">
-              support_agent
-            </span>
+            <AppIcon name="support_agent" />
             <h3 className="title--sm">문의하기는 로그인 후 이용할 수 있습니다.</h3>
             <p className="body--sm color-gray">
               데모 모드에서는 실제 문의를 등록하거나 답변을 확인하지 않습니다.
@@ -360,9 +359,7 @@ export default function InquiriesPage() {
                 </>
               ) : (
                 <div className="inquiry-detail--empty">
-                  <span className="material-symbols-outlined" aria-hidden="true">
-                    forum
-                  </span>
+                  <AppIcon name="forum" />
                   <p className="body--sm color-gray">문의를 선택하면 상세 내용을 확인할 수 있습니다.</p>
                 </div>
               )}

@@ -96,8 +96,9 @@
           height: 28px;
         }
 
-        .material-symbols-outlined {
-          font-size: 20px;
+        .app-icon {
+          width: 20px;
+          height: 20px;
         }
       }
       // 달력
@@ -426,11 +427,17 @@
           }
 
           .sort-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             width: 18px;
             height: 18px;
-            font-size: 14px;
-            line-height: 18px;
             cursor: pointer;
+
+            .app-icon {
+              width: 14px;
+              height: 14px;
+            }
           }
         }
       }

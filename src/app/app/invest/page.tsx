@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import { useAppData } from "@/app/providers";
@@ -1019,9 +1020,7 @@ export default function InvestPage() {
               onClick={() => refreshStockQuotes()}
               disabled={isStockRefreshing || !stockSymbols.length || isDemoMode}
             >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                refresh
-              </span>
+              <AppIcon name="refresh" />
               {isStockRefreshing ? "업데이트 중" : "최근 종가 업데이트"}
             </button>
             <button
@@ -1299,11 +1298,11 @@ export default function InvestPage() {
                           종목명
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="종목명 정렬"
                             onClick={() => handleStockSort("name")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -1313,11 +1312,11 @@ export default function InvestPage() {
                           평가손익
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="총 수익 정렬"
                             onClick={() => handleStockSort("totalProfit")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -1326,11 +1325,11 @@ export default function InvestPage() {
                           매입 / 평가
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="총 금액 정렬"
                             onClick={() => handleStockSort("totalCost")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -1339,11 +1338,11 @@ export default function InvestPage() {
                           전일 대비
                           <button
                             type="button"
-                            className="material-symbols-outlined sort-btn"
+                            className="sort-btn"
                             aria-label="전일 대비 정렬"
                             onClick={() => handleStockSort("dailyProfit")}
                           >
-                            unfold_more
+                            <AppIcon name="unfold_more" />
                           </button>
                         </div>
                       </th>
@@ -1596,12 +1595,7 @@ export default function InvestPage() {
                             setStockQuery(event.currentTarget.value);
                           }}
                         />
-                        <span
-                          className="material-symbols-outlined autocomplete__icon"
-                          aria-hidden="true"
-                        >
-                          arrow_drop_down
-                        </span>
+                        <AppIcon name="arrow_drop_down" className="autocomplete__icon" />
                       </div>
                       {stockSearchItems.length || isStockSearching ? (
                         <ul className="autocomplete__list">

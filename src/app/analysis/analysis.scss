@@ -18,8 +18,9 @@
       height: 28px;
     }
 
-    .material-symbols-outlined {
-      font-size: 20px;
+    .app-icon {
+      width: 20px;
+      height: 20px;
     }
 
     &--label {
@@ -152,6 +153,7 @@
   }
 
   .analysis-chart-wrap {
+    min-height: 302px;
     overflow-x: auto;
     padding: 4px 0 6px;
 
@@ -327,6 +329,10 @@
         flex-direction: column;
         gap: 8px;
       }
+    }
+
+    .analysis-chart-wrap {
+      min-height: 288px;
     }
 
     .analysis-month-selector,

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import CategoryDoughnutChart from "@/components/chart/CategoryDoughnutChart";
 import MonthlyFlowChart from "@/components/chart/MonthlyFlowChart";
+import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
 import { useAppData } from "@/app/providers";
@@ -205,9 +206,7 @@ export default function AnalysisPage() {
               aria-label="이전 해"
               onClick={() => setSelectedYear((prev) => prev - 1)}
             >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                chevron_left
-              </span>
+              <AppIcon name="chevron_left" />
             </button>
             <strong className="analysis-year-control--label title--sm">
               {selectedYear}
@@ -218,9 +217,7 @@ export default function AnalysisPage() {
               aria-label="다음 해"
               onClick={() => setSelectedYear((prev) => prev + 1)}
             >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                chevron_right
-              </span>
+              <AppIcon name="chevron_right" />
             </button>
           </div>
         </section>
