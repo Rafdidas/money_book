@@ -107,7 +107,7 @@
       width: 19px;
       height: 19px;
       flex: 0 0 19px;
-      color: var(--on-surface-higher);
+      fill: var(--on-surface-higher);
     }
 
     &:hover {
@@ -125,7 +125,7 @@
       }
 
       > .app-icon {
-        color: var(--primary-higher);
+        fill: var(--primary-higher);
       }
     }
   }
