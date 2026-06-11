@@ -19,6 +19,7 @@ type AppDataContextValue = {
   displayEmail: string;
   isDemoMode: boolean;
   isAuthResolved: boolean;
+  hasAppSession: boolean;
 };
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -35,10 +36,50 @@ export default function Providers({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isAppRoute = pathname === "/app" || pathname.startsWith("/app/");
+  const isPublicRoute = pathname === "/" || pathname === "/intro";
   const [displayName, setDisplayName] = useState("게스트");
   const [displayEmail, setDisplayEmail] = useState("");
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [isAuthResolved, setIsAuthResolved] = useState(false);
+  const [hasPublicAppSession, setHasPublicAppSession] = useState(false);
+
+  useEffect(() => {
+    if (!isPublicRoute) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const resolvePublicSession = async () => {
+      if (isDemoModeEnabled()) {
+        if (!isCancelled) {
+          setHasPublicAppSession(true);
+        }
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!isCancelled) {
+        setHasPublicAppSession(Boolean(session?.user));
+      }
+    };
+
+    resolvePublicSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasPublicAppSession(Boolean(session?.user) || isDemoModeEnabled());
+    });
+
+    return () => {
+      isCancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [isPublicRoute]);
 
   useEffect(() => {
     if (!isAppRoute) {
@@ -99,6 +140,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       displayEmail,
       isDemoMode,
       isAuthResolved: !isAppRoute || isAuthResolved,
+      hasAppSession: isAppRoute ? isDemoMode || isAuthResolved : hasPublicAppSession,
     }),
     [
       displayEmail,
@@ -106,6 +148,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       isAuthResolved,
       isDemoMode,
       isAppRoute,
+      hasPublicAppSession,
     ],
   );
 

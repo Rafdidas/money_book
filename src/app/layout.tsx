@@ -11,7 +11,6 @@ import {
 } from "@/lib/site";
 import Providers from "./providers";
 import "./globals.scss";
-import localFont from "next/font/local";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import appleTouchIcon from "@/assets/img/logo/apple-touch-icon.png";
 
@@ -84,13 +83,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
-// export const viewport: Viewport = {
-//   width: "device-width",
-//   initialScale: 1,
-// };
 
 const jsonLd = [
   {
@@ -147,19 +140,13 @@ const jsonLd = [
   },
 ];
 
-const paperlogy = localFont({
-  src: "../assets/fonts/Paperlogy-7Bold.ttf",
-  variable: "--font-paperlogy",
-  display: "swap",
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={paperlogy.variable}>
+    <html lang="ko">
       <head>
         <script
           type="application/ld+json"
@@ -168,6 +155,8 @@ export default function RootLayout({
           }}
         />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"

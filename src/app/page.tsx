@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import IntroPage from "@/app/_intro/IntroPage";
+import ResourcePreloads from "@/components/common/ResourcePreloads";
 import {
   getSiteUrl,
   siteDescription,
@@ -8,9 +9,9 @@ import {
   siteTitle,
 } from "@/lib/site";
 
-const pageTitle = "머니북가계부 | 무료 온라인 개인 가계부";
+const pageTitle = "머니북가계부 | 수입·지출·저축·투자를 관리하는 무료 온라인 가계부";
 const pageDescription =
-  "머니북가계부는 수입, 지출, 고정지출, 저축, 투자 기록을 한 곳에서 관리하고 월별 분석 차트로 소비 흐름을 확인하는 무료 온라인 가계부 서비스입니다.";
+  "머니북가계부는 수입, 지출, 고정지출, 저축, 투자 기록을 한 곳에서 관리하고 월별 대시보드와 분석 차트로 소비 흐름과 자산 현황을 확인할 수 있는 무료 온라인 개인 가계부 서비스입니다.";
 
 export const metadata: Metadata = {
   title: pageTitle,
@@ -144,6 +145,7 @@ const pageJsonLd = [
 export default function Home() {
   return (
     <>
+      <ResourcePreloads />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

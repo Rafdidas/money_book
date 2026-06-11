@@ -39,7 +39,7 @@ body:has(.intro-page),
           padding: 2px 12px;
           background-color: var(--primary-lowest);
           border-radius: 12px;
-          color: var(--primary);
+          color: var(--primary-highest);
           font-size: 16px;
           font-weight: 500;
         }
@@ -330,7 +330,7 @@ body:has(.intro-page),
       height: 62px;
       padding: 0 max(20px, calc((100vw - 1400px) / 2));
       > p {
-        color: var(--on-surface-ultra-low);
+        color: var(--on-primary-ultra-high);
         font-size: 20px;
         font-weight: 500;
       }

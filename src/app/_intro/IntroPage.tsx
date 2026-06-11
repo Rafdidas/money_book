@@ -1,30 +1,15 @@
-"use client";
 import "../intro/intro.scss";
 
-import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 import visual from "@/assets/img/visual_img.png";
 import free from "@/assets/img/free.png";
 import phone from "@/assets/img/phone3.png";
-import { usePublicAppSession } from "@/hooks/usePublicAppSession";
-import { enableDemoMode } from "@/lib/demo";
-
-
+import PublicCta from "@/components/common/PublicCta";
 
 export default function IntroPage() {
-  const router = useRouter();
-  const { hasAppSession, isSessionResolved } = usePublicAppSession();
-
-  const handleDemoLogin = () => {
-    enableDemoMode();
-    router.replace("/app");
-    router.refresh();
-  };
-
   return (
-    <main className="intro-page">
+    <div className="intro-page">
       <section className="intro-visual">
         <div className="intro-visual--inner">
           <div className="intro-visual--text">
@@ -40,28 +25,19 @@ export default function IntroPage() {
               분석을 통해 더 나은 소비 습관을 만들어 보세요.
             </span>
             <div className="visual-text--btnGroup">
-              {isSessionResolved && hasAppSession ? (
-                <Link href="/app" className="button button--lg button--primary">
-                  가계부로 이동
-                </Link>
-              ) : (
-                <>
-                  <Link href="/auth/login" className="button button--lg button--primary ">
-                    무료로 시작하기
-                  </Link>
-                  <button
-                    type="button"
-                    className="button button--lg button--outline-primary"
-                    onClick={handleDemoLogin}
-                  >
-                    데모 버전 체험하기
-                  </button>
-                </>
-              )}
+              <PublicCta variant="hero" />
             </div>
           </div>
           <div className="intro-visual--img">
-            <Image src={visual} width={1672} height={941} alt="머니북가계부" priority />
+            <Image
+              src={visual}
+              width={1672}
+              height={941}
+              sizes="(max-width: 900px) calc(100vw - 40px), 55vw"
+              loading="eager"
+              fetchPriority="high"
+              alt="머니북가계부 대시보드 화면"
+            />
           </div>
         </div>
       </section>
@@ -224,7 +200,13 @@ export default function IntroPage() {
               </p>
             </div>
             <div className="bottom-content--img">
-              <Image src={free} width={859} height={588} alt="무료이용 가능" priority />
+              <Image
+                src={free}
+                width={859}
+                height={588}
+                sizes="(max-width: 640px) calc(100vw - 80px), 220px"
+                alt="무료 이용 가능"
+              />
             </div>
           </div>
           <div className="bottom-content">
@@ -243,8 +225,8 @@ export default function IntroPage() {
                 src={phone}
                 width={1536}
                 height={1024}
+                sizes="(max-width: 640px) calc(100vw - 80px), 300px"
                 alt="플랫폼 상관없이 이용"
-                priority
               />
             </div>
           </div>
@@ -253,20 +235,9 @@ export default function IntroPage() {
       <section className="intro-banner">
         <div className="intro-banner--inner">
           <p>지금 바로 머니북 가계부를 시작해 보세요!</p>
-          {isSessionResolved && hasAppSession ? (
-            <Link href="/app" className="button button--md button--outline-primary">
-              가계부로 이동
-            </Link>
-          ) : (
-            <Link
-              href="/auth/login"
-              className="button button--md button--outline-primary"
-            >
-              무료로 시작하기
-            </Link>
-          )}
+          <PublicCta variant="banner" />
         </div>
       </section>
-    </main>
+    </div>
   );
 }
