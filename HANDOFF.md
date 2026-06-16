@@ -231,6 +231,15 @@ with a simpler monthly cash-flow summary.
   - Browser console still shows the pre-existing Next image aspect-ratio
     warning for the logo asset. It is unrelated to this empty-state change.
 
+## 2026-06-16 AGENTS Localization Update
+
+- Updated `AGENTS.md` with Korean translations alongside the existing English
+  project rules.
+- Added token-saving rules for scoped file reads, concise progress updates, and
+  summarized verification output.
+- Verified:
+  - `git diff --check` reports no whitespace errors
+
 ## Notes For Future Work Sessions
 
 - Update this file after each meaningful work step.
