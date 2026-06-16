@@ -256,6 +256,20 @@ with a simpler monthly cash-flow summary.
   - review/approve the spec, then write the implementation plan and execute it
     step by step.
 
+## 2026-06-16 Dashboard/Analysis Renewal Plan
+
+- Wrote the implementation plan:
+  - `docs/superpowers/plans/2026-06-16-dashboard-analysis-renewal.md`
+- Plan sequence:
+  - shared won formatter
+  - dashboard summary calculation extraction
+  - dashboard summary and schedule cards
+  - monthly analysis yearly cumulative summary
+  - monthly state labels
+  - lint/build/browser verification
+- Next step:
+  - choose execution mode and implement task by task.
+
 ## Notes For Future Work Sessions
 
 - Update this file after each meaningful work step.
