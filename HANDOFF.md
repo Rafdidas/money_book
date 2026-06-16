@@ -298,6 +298,36 @@ with a simpler monthly cash-flow summary.
   - Mobile overflow detection still sees the offscreen side menu/drawer, which
     appears to be existing layout behavior and not caused by the renewed cards.
 
+## 2026-06-16 Dashboard/Analysis Design Polish & Bug Fixes
+
+- Applied consistent grid style to renewed cards:
+  - `예정 반영 후 예상 잔액` grid: stacked label/value cells with 1px dividers
+    via `gap: 1px + background: outline` trick, `surface-lowest` cell background
+  - `이번 달 남은 예정` list: bordered container, row dividers, status-based row
+    backgrounds (overdue = red-lower, paid/skipped = reduced opacity)
+  - Monthly analysis yearly summary grid: same grid style applied
+  - Mobile: grid items switch to horizontal label↔value layout in 1-column view
+- Fixed memo metadata leak in `DashboardScheduleCard`:
+  - `[[recurring-paused]]` and `[[savings:...]]` markers were rendered as item
+    labels; fixed by applying `getVisibleMemo` in `dashboardSummary.ts`
+- Fixed fixed-expense actual/scheduled classification bug:
+  - Root cause: the actual-vs-scheduled renewal applied `status === "paid"` check
+    to both `savings_payment` and `fixed_expense_payment` entries, but
+    `fixed_expense_payment` entries have no payment-completion flow and are always
+    `status: "scheduled"` in the DB
+  - Result: all past fixed expense payments were treated as "scheduled", causing
+    "완료되지 않은 예정 XXX원 별도" to appear on every past month analysis card
+    and excluding fixed expenses from dashboard "현재 남은 돈" entirely
+  - Fix in `analysis/page.tsx`: replaced `isRecurringPaymentEntry` (savings +
+    fixed) with `isSavingsPaymentEntry` (savings only); fixed expense payments
+    use date-based actual/scheduled classification
+  - Fix in `HomeClient.tsx`: `storedFixedExpenseItems` status mapped as
+    `payment_date <= todayKey ? "paid" : "scheduled"` instead of raw DB status
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+- Merged `codex/dashboard-analysis-renewal` into `main`; branch deleted
+
 ## Notes For Future Work Sessions
 
 - Update this file after each meaningful work step.
