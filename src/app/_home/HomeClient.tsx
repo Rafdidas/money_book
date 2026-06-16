@@ -56,6 +56,7 @@ import type {
 import { formatDate } from "@/utils/date";
 import { formatIntegerInput, parseFormattedNumber } from "@/utils/numberInput";
 import CategoryPieChart from "./charts/CategoryPieChart";
+import { getDashboardMonthlySummary } from "./dashboardSummary";
 import {
   categoryChartColors,
   categoryOptions,
@@ -652,32 +653,28 @@ export default function HomeClient() {
       ),
     [monthlyExpenses, storedPaymentIds],
   );
-  const monthlyExpenseItems = monthlyExpenses.filter(
-    (item) => item.type === "expense" && !isSavingsItem(item) && !isInvestmentItem(item),
-  );
   const monthlySavingsItems = monthlyExpenses.filter(isSavingsItem);
   const monthlyInvestmentItems = monthlyExpenses.filter(isInvestmentItem);
-  const monthlyExpenseTotal = monthlyExpenseItems
-    .reduce((sum, item) => sum + item.amount, 0);
-  const monthlySavingsTotal = monthlySavingsItems
-    .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyInvestmentTotal = monthlyInvestmentItems
-    .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyIncomeTotal = monthlyExpenses
-    .filter((item) => item.type === "income")
-    .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyIncomeCount = monthlyExpenses.filter((item) => item.type === "income").length;
-  const monthlyExpenseCount = monthlyExpenseItems.length;
+  const dashboardMonthlySummary = useMemo(
+    () =>
+      getDashboardMonthlySummary(
+        displayDashboardExpenses,
+        currentYear,
+        currentMonth,
+      ),
+    [currentMonth, currentYear, displayDashboardExpenses],
+  );
+  const monthlyExpenseTotal = dashboardMonthlySummary.actualExpense;
+  const monthlySavingsTotal = dashboardMonthlySummary.actualSavings;
+  const monthlyInvestmentTotal = dashboardMonthlySummary.actualInvestment;
+  const monthlyIncomeTotal = dashboardMonthlySummary.actualIncome;
+  const monthlyIncomeCount = dashboardMonthlySummary.incomeCount;
+  const monthlyExpenseCount = dashboardMonthlySummary.expenseCount;
   const monthlySavingsCount = monthlySavingsItems.length;
   const monthlyInvestmentCount = monthlyInvestmentItems.length;
-  const monthlyIncomeAverage = monthlyIncomeCount
-    ? monthlyIncomeTotal / monthlyIncomeCount
-    : 0;
-  const monthlyExpenseAverage = monthlyExpenseCount
-    ? monthlyExpenseTotal / monthlyExpenseCount
-    : 0;
-  const monthlyTotal =
-    monthlyIncomeTotal - monthlyExpenseTotal - monthlySavingsTotal - monthlyInvestmentTotal;
+  const monthlyIncomeAverage = dashboardMonthlySummary.incomeAverage;
+  const monthlyExpenseAverage = dashboardMonthlySummary.expenseAverage;
+  const monthlyTotal = dashboardMonthlySummary.actualRemaining;
   const selectedCalendarItems = useMemo(
     () => displayMonthlyExpenses.filter((item) => item.date === selectedDateKey),
     [displayMonthlyExpenses, selectedDateKey],
