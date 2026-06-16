@@ -66,11 +66,24 @@
   }
 
   .analysis-month-panel,
+  .analysis-yearly-summary,
   .analysis-flow-summary-panel,
   .analysis-chart-panel,
   .analysis-year-panel,
   .analysis-category-panel {
     min-width: 0;
+  }
+
+  .analysis-yearly-summary--grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+
+    > div {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
   }
 
   .analysis-month-selector {
@@ -455,6 +468,7 @@
       grid-template-columns: repeat(6, minmax(0, 1fr));
     }
 
+    .analysis-yearly-summary--grid,
     .analysis-year-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -493,6 +507,7 @@
     }
 
     .analysis-month-panel,
+    .analysis-yearly-summary,
     .analysis-flow-summary-panel,
     .analysis-chart-panel,
     .analysis-year-panel,
@@ -541,6 +556,7 @@
     }
 
     .analysis-month-selector,
+    .analysis-yearly-summary--grid,
     .analysis-year-grid,
     .analysis-month-card--body {
       grid-template-columns: 1fr;

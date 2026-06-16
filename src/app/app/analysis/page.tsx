@@ -12,11 +12,11 @@ import {
   type MoneyBookEntry,
 } from "@/lib/api/moneyBookEntries";
 import { readDemoExpenses } from "@/lib/demo";
+import { formatSignedWon, formatWon } from "@/utils/money";
 
 const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
-const formatCurrency = (value: number) => `₩ ${value.toLocaleString()}`;
-const formatSignedCurrency = (value: number) =>
-  `${value < 0 ? "-" : ""}₩ ${Math.abs(value).toLocaleString()}`;
+const formatCurrency = formatWon;
+const formatSignedCurrency = formatSignedWon;
 const formatRate = (value: number) => `${value.toFixed(1)}%`;
 const isSavingsCategory = (category: string) =>
   category.includes("적금") || category.includes("저축");
@@ -188,6 +188,20 @@ export default function AnalysisPage() {
       }),
     [currentMonth, currentYear, selectedYear, todayKey, yearlyEntries],
   );
+  const yearlyActualSummary = useMemo(
+    () =>
+      monthlyBreakdown.reduce(
+        (summary, item) => ({
+          income: summary.income + item.incomeTotal,
+          expense: summary.expense + item.expenseTotal,
+          assetMove:
+            summary.assetMove + item.savingsTotal + item.investmentTotal,
+          net: summary.net + item.net,
+        }),
+        { income: 0, expense: 0, assetMove: 0, net: 0 },
+      ),
+    [monthlyBreakdown],
+  );
   const chartBreakdown = useMemo(
     () =>
       monthlyBreakdown.map((item) =>
@@ -323,6 +337,44 @@ export default function AnalysisPage() {
         </section>
 
         <section className="analysis-content column-group column-group--gap-16">
+          <section className="card analysis-yearly-summary column-group column-group--gap-16">
+            <div className="main-overview--section-header row-group row-group--center row-group--between">
+              <div>
+                <h3 className="main-overview--title title--sm">
+                  {selectedYear}년 누적 현황
+                </h3>
+                <p className="analysis-section--meta label--md">
+                  실제 기록 기준 누적
+                </p>
+              </div>
+            </div>
+            <div className="analysis-yearly-summary--grid">
+              <div>
+                <span className="label--md">누적 수입</span>
+                <strong className="title--sm">
+                  {formatWon(yearlyActualSummary.income)}
+                </strong>
+              </div>
+              <div>
+                <span className="label--md">누적 지출</span>
+                <strong className="title--sm">
+                  {formatWon(yearlyActualSummary.expense)}
+                </strong>
+              </div>
+              <div>
+                <span className="label--md">누적 저축/투자</span>
+                <strong className="title--sm">
+                  {formatWon(yearlyActualSummary.assetMove)}
+                </strong>
+              </div>
+              <div>
+                <span className="label--md">누적 순흐름</span>
+                <strong className="title--sm">
+                  {formatSignedWon(yearlyActualSummary.net)}
+                </strong>
+              </div>
+            </div>
+          </section>
           <div className="main-overview column-group column-group--gap-16">
             <h3 className="main-common-title title--md">월별 개요</h3>
             <div className="main-overview-analysis-card row-group row-group--stretch row-group--gap-16">
