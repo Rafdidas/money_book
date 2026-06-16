@@ -77,6 +77,13 @@
       &--last {
         color: var(--on-surface);
       }
+
+      .dashboard-expected-balance--grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
       &--calendar-card,
       &--form-card {
         min-width: 0;
@@ -442,6 +449,45 @@
         }
       }
     }
+
+    .dashboard-schedule-card {
+      min-height: 0;
+    }
+
+    .dashboard-schedule-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .dashboard-schedule-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .dashboard-schedule-row--content {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+
+      > * {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+    }
+
+    .dashboard-schedule-empty {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--on-surface);
+
+      .app-icon {
+        width: 20px;
+        height: 20px;
+      }
+    }
   }
 
   @media (max-width: 1180px) {
@@ -482,6 +528,10 @@
             min-width: 0;
             scroll-snap-align: start;
           }
+        }
+
+        .dashboard-expected-balance--grid {
+          grid-template-columns: 1fr;
         }
 
         &--form-grid {

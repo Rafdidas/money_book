@@ -56,6 +56,7 @@ import type {
 import { formatDate } from "@/utils/date";
 import { formatIntegerInput, parseFormattedNumber } from "@/utils/numberInput";
 import CategoryPieChart from "./charts/CategoryPieChart";
+import DashboardScheduleCard from "./DashboardScheduleCard";
 import DashboardSummaryCards from "./DashboardSummaryCards";
 import {
   getDashboardMonthlySummary,
@@ -2208,6 +2209,7 @@ export default function HomeClient() {
             monthlySummary={dashboardMonthlySummary}
             scheduleSummary={dashboardScheduleSummary}
           />
+          <DashboardScheduleCard items={dashboardScheduleSummary.items} />
           <div className="main-overview column-group column-group--gap-16">
             <h3 className="main-common-title title--md">등록 / 수정</h3>
             <div className="row-group row-group--stretch row-group--gap-16">
