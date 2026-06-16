@@ -362,9 +362,7 @@ export default function AnalysisPage() {
                 <h3 className="main-overview--title title--sm">
                   {selectedYear}년 누적 현황
                 </h3>
-                <p className="analysis-section--meta label--md">
-                  실제 기록 기준 누적
-                </p>
+                <p className="analysis-section--meta label--md">실제 기록 기준 누적</p>
               </div>
             </div>
             <div className="analysis-yearly-summary--grid">
@@ -508,7 +506,9 @@ export default function AnalysisPage() {
               </div>
               <div className="analysis-flow-summary-item analysis-flow-summary-item--balance">
                 <span className="label--md">남은 돈</span>
-                <strong className="title--md">{formatSignedCurrency(monthlyBalance)}</strong>
+                <strong className="title--md">
+                  {formatSignedCurrency(monthlyBalance)}
+                </strong>
               </div>
             </div>
             <div className="analysis-flow-ratio">
@@ -544,7 +544,7 @@ export default function AnalysisPage() {
               </p>
               {monthlyScheduledOutflow > 0 ? (
                 <p className="analysis-flow-scheduled-note label--md">
-                  예정 유출 {formatCurrency(monthlyScheduledOutflow)}은 실제 남은
+                  완료되지 않은 예정 {formatCurrency(monthlyScheduledOutflow)}은 실제 남은
                   돈에 아직 반영하지 않았어요.
                 </p>
               ) : null}
@@ -555,7 +555,7 @@ export default function AnalysisPage() {
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <div>
                 <h4 className="main-overview--title title--sm">월별 분석 그래프</h4>
-              <p className="analysis-section--meta label--md">
+                <p className="analysis-section--meta label--md">
                   현재 월까지 실제 발생한 수입과 지출을 비교합니다.
                 </p>
               </div>
@@ -596,8 +596,8 @@ export default function AnalysisPage() {
                 <div className="analysis-category-empty--content">
                   <strong className="title--sm">아직 지출 카테고리가 없어요</strong>
                   <p className="label--md">
-                    {monthNames[selectedMonth]}에 지출을 기록하면 카테고리 비율과
-                    가장 큰 지출 항목을 바로 보여드릴게요.
+                    {monthNames[selectedMonth]}에 지출을 기록하면 카테고리 비율과 가장 큰
+                    지출 항목을 바로 보여드릴게요.
                   </p>
                 </div>
               </div>
@@ -712,7 +712,7 @@ export default function AnalysisPage() {
                     {!item.isFutureMonth &&
                     item.scheduledExpenseTotal + scheduledAssetMoveTotal > 0 ? (
                       <p className="analysis-month-card--scheduled-note label--md">
-                        예정 유출{" "}
+                        완료되지 않은 예정{" "}
                         {formatCurrency(
                           item.scheduledExpenseTotal + scheduledAssetMoveTotal,
                         )}{" "}

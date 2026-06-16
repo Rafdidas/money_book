@@ -144,9 +144,13 @@
     }
 
     &.is-active {
-      border-color: var(--on-surface-ultra-high);
-      background: var(--on-surface-ultra-high);
+      border-color: var(--primary-higher);
+      background: var(--primary);
       color: var(--on-surface-ultra-low);
+
+      > span {
+        color: var(--on-surface-ultra-low);
+      }
     }
   }
 
