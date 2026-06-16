@@ -212,6 +212,25 @@ with a simpler monthly cash-flow summary.
     confirms 12 month cards render, future cards are scheduled, and the chart
     meta says it compares actual values through the current month.
 
+## 2026-06-16 Category Empty State Update
+
+- Reworked the 월별 분석 category empty state.
+- When the selected month has no expense categories, the section now renders one
+  intentional empty-state panel instead of separate empty messages in the chart
+  and list columns.
+- Added responsive styling for desktop and mobile widths.
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+  - Browser check on `http://localhost:3001/app/analysis`
+  - Desktop 7월 empty category state renders as a single panel and removes the
+    chart/list layout
+  - Mobile 390px empty category state stacks vertically and text fits inside
+    the panel
+- Known note:
+  - Browser console still shows the pre-existing Next image aspect-ratio
+    warning for the logo asset. It is unrelated to this empty-state change.
+
 ## Notes For Future Work Sessions
 
 - Update this file after each meaningful work step.

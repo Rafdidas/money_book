@@ -514,23 +514,26 @@ export default function AnalysisPage() {
                 </p>
               </div>
             </div>
-            <div className="analysis-category-layout">
-              <div className="analysis-category-chart">
-                {categoryChartData.length === 0 ? (
-                  <p className="analysis-empty label--md">
-                    선택한 달에 지출 데이터가 없습니다.
+            {categoryChartData.length === 0 ? (
+              <div className="analysis-category-empty">
+                <span className="analysis-category-empty--icon">
+                  <AppIcon name="analytics" />
+                </span>
+                <div className="analysis-category-empty--content">
+                  <strong className="title--sm">아직 지출 카테고리가 없어요</strong>
+                  <p className="label--md">
+                    {monthNames[selectedMonth]}에 지출을 기록하면 카테고리 비율과
+                    가장 큰 지출 항목을 바로 보여드릴게요.
                   </p>
-                ) : (
-                  <CategoryDoughnutChart data={categoryChartData} />
-                )}
+                </div>
               </div>
-              <div className="analysis-category-list column-group column-group--gap-16">
-                {categorySummary.length === 0 ? (
-                  <p className="analysis-empty label--md">
-                    선택한 달에 지출 데이터가 없습니다.
-                  </p>
-                ) : (
-                  categorySummary.map(([label, amount]) => {
+            ) : (
+              <div className="analysis-category-layout">
+                <div className="analysis-category-chart">
+                  <CategoryDoughnutChart data={categoryChartData} />
+                </div>
+                <div className="analysis-category-list column-group column-group--gap-16">
+                  {categorySummary.map(([label, amount]) => {
                     const ratio =
                       monthlyExpense === 0 ? 0 : (amount / monthlyExpense) * 100;
                     return (
@@ -549,10 +552,10 @@ export default function AnalysisPage() {
                         </div>
                       </div>
                     );
-                  })
-                )}
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </section>
 
           <section className="card analysis-year-panel column-group column-group--gap-16">

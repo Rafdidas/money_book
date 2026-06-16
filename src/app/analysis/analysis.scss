@@ -371,6 +371,54 @@
     min-width: 0;
   }
 
+  .analysis-category-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 188px;
+    padding: 24px;
+    border: 1px solid var(--outline-lower);
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 100% 0%, var(--primary-ultra-low), transparent 52%),
+      var(--surface-lowest);
+    text-align: left;
+
+    &--icon {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      background: var(--surface-low);
+      color: var(--primary-high);
+    }
+
+    .app-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    &--content {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 420px;
+      min-width: 0;
+
+      strong {
+        color: var(--on-surface-ultra-high);
+      }
+
+      p {
+        color: var(--on-surface);
+      }
+    }
+  }
+
   .analysis-category-row {
     min-width: 0;
 
@@ -534,6 +582,13 @@
       min-height: 220px;
       padding: 12px;
     }
+
+    .analysis-category-empty {
+      align-items: flex-start;
+      justify-content: flex-start;
+      min-height: 156px;
+      padding: 18px;
+    }
   }
 
   @media (max-width: 420px) {
@@ -548,6 +603,11 @@
       .chartjs-shell {
         min-width: 620px;
       }
+    }
+
+    .analysis-category-empty {
+      flex-direction: column;
+      gap: 12px;
     }
   }
 }
