@@ -56,6 +56,12 @@ import type {
 import { formatDate } from "@/utils/date";
 import { formatIntegerInput, parseFormattedNumber } from "@/utils/numberInput";
 import CategoryPieChart from "./charts/CategoryPieChart";
+import DashboardScheduleCard from "./DashboardScheduleCard";
+import DashboardSummaryCards from "./DashboardSummaryCards";
+import {
+  getDashboardMonthlySummary,
+  getDashboardScheduleSummary,
+} from "./dashboardSummary";
 import {
   categoryChartColors,
   categoryOptions,
@@ -285,6 +291,7 @@ export default function HomeClient() {
   const [detailSort, setDetailSort] = useState<DetailSort>(null);
 
   const selectedDateKey = formatDate(selectedDate);
+  const todayKey = formatDate(today);
   const currentYear = selectedDate.getFullYear();
   const currentMonth = selectedDate.getMonth();
   const selectedMonthStartKey = formatDate(new Date(currentYear, currentMonth, 1));
@@ -566,11 +573,11 @@ export default function HomeClient() {
           category: rule?.category || rule?.name || "고정지출",
           memo: rule?.name ?? "고정지출",
           date: payment.payment_date,
-          status: payment.status,
+          status: payment.payment_date <= todayKey ? "paid" : "scheduled",
           created_at: payment.created_at,
         };
       }),
-    [activeStoredFixedExpensePayments, storedFixedExpenseRuleMap],
+    [activeStoredFixedExpensePayments, storedFixedExpenseRuleMap, todayKey],
   );
   const pausedStoredFixedExpenseItems = useMemo<DashboardExpense[]>(
     () =>
@@ -652,32 +659,32 @@ export default function HomeClient() {
       ),
     [monthlyExpenses, storedPaymentIds],
   );
-  const monthlyExpenseItems = monthlyExpenses.filter(
-    (item) => item.type === "expense" && !isSavingsItem(item) && !isInvestmentItem(item),
+  const dashboardMonthlySummary = useMemo(
+    () =>
+      getDashboardMonthlySummary(
+        displayDashboardExpenses,
+        currentYear,
+        currentMonth,
+    ),
+    [currentMonth, currentYear, displayDashboardExpenses],
   );
-  const monthlySavingsItems = monthlyExpenses.filter(isSavingsItem);
-  const monthlyInvestmentItems = monthlyExpenses.filter(isInvestmentItem);
-  const monthlyExpenseTotal = monthlyExpenseItems
-    .reduce((sum, item) => sum + item.amount, 0);
-  const monthlySavingsTotal = monthlySavingsItems
-    .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyInvestmentTotal = monthlyInvestmentItems
-    .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyIncomeTotal = monthlyExpenses
-    .filter((item) => item.type === "income")
-    .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyIncomeCount = monthlyExpenses.filter((item) => item.type === "income").length;
-  const monthlyExpenseCount = monthlyExpenseItems.length;
-  const monthlySavingsCount = monthlySavingsItems.length;
-  const monthlyInvestmentCount = monthlyInvestmentItems.length;
-  const monthlyIncomeAverage = monthlyIncomeCount
-    ? monthlyIncomeTotal / monthlyIncomeCount
-    : 0;
-  const monthlyExpenseAverage = monthlyExpenseCount
-    ? monthlyExpenseTotal / monthlyExpenseCount
-    : 0;
-  const monthlyTotal =
-    monthlyIncomeTotal - monthlyExpenseTotal - monthlySavingsTotal - monthlyInvestmentTotal;
+  const dashboardScheduleSummary = useMemo(
+    () =>
+      getDashboardScheduleSummary(
+        displayDashboardExpenses,
+        currentYear,
+        currentMonth,
+        today,
+        dashboardMonthlySummary.actualRemaining,
+      ),
+    [
+      currentMonth,
+      currentYear,
+      dashboardMonthlySummary.actualRemaining,
+      displayDashboardExpenses,
+      today,
+    ],
+  );
   const selectedCalendarItems = useMemo(
     () => displayMonthlyExpenses.filter((item) => item.date === selectedDateKey),
     [displayMonthlyExpenses, selectedDateKey],
@@ -2199,76 +2206,12 @@ export default function HomeClient() {
           </button>
         </section>
         <section className="column-group column-group--gap-16">
+          <DashboardSummaryCards
+            monthlySummary={dashboardMonthlySummary}
+            scheduleSummary={dashboardScheduleSummary}
+          />
+          <DashboardScheduleCard items={dashboardScheduleSummary.items} />
           <div className="main-overview column-group column-group--gap-16">
-            <h3 className="main-common-title title--md">개요</h3>
-            <div className="main-overview-card row-group row-group--stretch row-group--gap-16">
-              {/* 이번 달 현금흐름 */}
-              <div className="card overview-card column-group column-group--center column-group--gap-8">
-                <h4 className="main-overview--title title--sm">이번 달 현금흐름</h4>
-                <div className="row-group row-group--center row-group--between">
-                  <p className="main-overview--num title--lg">
-                    {formatWon(monthlyTotal)}
-                  </p>
-                </div>
-                <div className="column-group column-group--gap-4">
-                  <p className="main-overview--last label--md">
-                    수입 {formatWon(monthlyIncomeTotal)} · 지출{" "}
-                    {formatWon(monthlyExpenseTotal)}
-                  </p>
-                  <p className="main-overview--last label--md">
-                    저축 {formatWon(monthlySavingsTotal)} · 투자원금{" "}
-                    {formatWon(monthlyInvestmentTotal)}
-                  </p>
-                </div>
-
-              </div>
-              {/* 수입 */}
-              <div className="card overview-card column-group column-group--center column-group--gap-8">
-                <h4 className="main-overview--title title--sm">이번 달 수입</h4>
-                <div className="row-group row-group--center row-group--between">
-                  <p className="main-overview--num title--lg">
-                    {formatWon(monthlyIncomeTotal)}
-                  </p>
-                </div>
-                <p className="main-overview--last label--md">
-                  총 {monthlyIncomeCount}건 · 평균 {formatWon(monthlyIncomeAverage)}
-                </p>
-              </div>
-              {/* 지출 */}
-              <div className="card overview-card column-group column-group--center column-group--gap-8">
-                <h4 className="main-overview--title title--sm">이번 달 지출</h4>
-                <div className="row-group row-group--center row-group--between">
-                  <p className="main-overview--num title--lg">
-                    {formatWon(monthlyExpenseTotal)}
-                  </p>
-                </div>
-                <p className="main-overview--last label--md">
-                  총 {monthlyExpenseCount}건 · 평균 {formatWon(monthlyExpenseAverage)}
-                </p>
-              </div>
-              {/* 저축 */}
-              <div className="card overview-card column-group column-group--center column-group--gap-8">
-                <h4 className="main-overview--title title--sm">
-                  이번 달 저축 및 투자원금
-                </h4>
-                <div className="row-group row-group--center row-group--gap-12">
-                  <p className="main-overview--num title--lg">
-                    {formatWon(monthlySavingsTotal + monthlyInvestmentTotal)}
-                  </p>
-                </div>
-                <div className="row-group row-group--center row-group--gap-4">
-                  <p className="main-overview--last label--md">
-                    저축: {formatWon(monthlySavingsTotal)}
-                  </p>
-                  <p className="main-overview--last label--md">
-                     · 투자원금: {formatWon(monthlyInvestmentTotal)}
-                  </p>
-                  <p className="main-overview--last label--md">
-                     · 총 {monthlySavingsCount + monthlyInvestmentCount}건
-                  </p>
-                </div>
-              </div>
-            </div>
             <h3 className="main-common-title title--md">등록 / 수정</h3>
             <div className="row-group row-group--stretch row-group--gap-16">
               {/* 달력 */}

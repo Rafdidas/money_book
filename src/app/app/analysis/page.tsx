@@ -12,19 +12,26 @@ import {
   type MoneyBookEntry,
 } from "@/lib/api/moneyBookEntries";
 import { readDemoExpenses } from "@/lib/demo";
+import { formatSignedWon, formatWon } from "@/utils/money";
 
 const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
-const formatCurrency = (value: number) => `₩ ${value.toLocaleString()}`;
-const formatSignedCurrency = (value: number) =>
-  `${value < 0 ? "-" : ""}₩ ${Math.abs(value).toLocaleString()}`;
+const formatCurrency = formatWon;
+const formatSignedCurrency = formatSignedWon;
 const formatRate = (value: number) => `${value.toFixed(1)}%`;
+type MonthState = "empty" | "complete" | "current" | "scheduled";
+const getMonthStateLabel = (state: MonthState) => {
+  if (state === "current") return "진행 중";
+  if (state === "scheduled") return "예정";
+  if (state === "empty") return "기록 없음";
+  return "완료";
+};
 const isSavingsCategory = (category: string) =>
   category.includes("적금") || category.includes("저축");
 const isInvestmentCategory = (category: string) => category.includes("주식");
 const isSavingsItem = (item: { type: string }) => item.type === "saving";
 const isInvestmentItem = (item: { type: string }) => item.type === "investment";
-const isRecurringPaymentEntry = (item: MoneyBookEntry) =>
-  item.source === "savings_payment" || item.source === "fixed_expense_payment";
+const isSavingsPaymentEntry = (item: MoneyBookEntry) =>
+  item.source === "savings_payment";
 const getDateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const mapDemoExpenseToEntry = (item: {
@@ -122,19 +129,21 @@ export default function AnalysisPage() {
         const isFutureMonth =
           selectedYear > currentYear ||
           (selectedYear === currentYear && index > currentMonth);
+        const isCurrentMonth =
+          selectedYear === currentYear && index === currentMonth;
         const actualItems = items.filter((item) => {
           if (item.date > todayKey) {
             return false;
           }
 
-          if (isRecurringPaymentEntry(item)) {
+          if (isSavingsPaymentEntry(item)) {
             return item.status === "paid";
           }
 
           return true;
         });
         const scheduledItems = items.filter((item) => {
-          if (isRecurringPaymentEntry(item)) {
+          if (isSavingsPaymentEntry(item)) {
             return item.status === "scheduled";
           }
 
@@ -164,10 +173,18 @@ export default function AnalysisPage() {
         const scheduledIncomeTotal = scheduledItems
           .filter((item) => item.type === "income")
           .reduce((sum, item) => sum + item.amount, 0);
+        const monthState: MonthState = isCurrentMonth
+          ? "current"
+          : isFutureMonth
+            ? "scheduled"
+            : actualItems.length === 0
+              ? "empty"
+              : "complete";
         return {
           label,
           month: index,
           isFutureMonth,
+          monthState,
           expenseTotal,
           savingsTotal,
           investmentTotal,
@@ -188,6 +205,20 @@ export default function AnalysisPage() {
       }),
     [currentMonth, currentYear, selectedYear, todayKey, yearlyEntries],
   );
+  const yearlyActualSummary = useMemo(
+    () =>
+      monthlyBreakdown.reduce(
+        (summary, item) => ({
+          income: summary.income + item.incomeTotal,
+          expense: summary.expense + item.expenseTotal,
+          assetMove:
+            summary.assetMove + item.savingsTotal + item.investmentTotal,
+          net: summary.net + item.net,
+        }),
+        { income: 0, expense: 0, assetMove: 0, net: 0 },
+      ),
+    [monthlyBreakdown],
+  );
   const chartBreakdown = useMemo(
     () =>
       monthlyBreakdown.map((item) =>
@@ -201,6 +232,8 @@ export default function AnalysisPage() {
       ),
     [monthlyBreakdown],
   );
+  const selectedMonthState =
+    monthlyBreakdown[selectedMonth]?.monthState ?? "empty";
   const selectedMonthItems = useMemo(
     () =>
       yearlyEntries.filter((item) => new Date(item.date).getMonth() === selectedMonth),
@@ -213,7 +246,7 @@ export default function AnalysisPage() {
           return false;
         }
 
-        if (isRecurringPaymentEntry(item)) {
+        if (isSavingsPaymentEntry(item)) {
           return item.status === "paid";
         }
 
@@ -224,7 +257,7 @@ export default function AnalysisPage() {
   const selectedScheduledMonthItems = useMemo(
     () =>
       selectedMonthItems.filter((item) => {
-        if (isRecurringPaymentEntry(item)) {
+        if (isSavingsPaymentEntry(item)) {
           return item.status === "scheduled";
         }
 
@@ -323,6 +356,42 @@ export default function AnalysisPage() {
         </section>
 
         <section className="analysis-content column-group column-group--gap-16">
+          <section className="card analysis-yearly-summary column-group column-group--gap-16">
+            <div className="main-overview--section-header row-group row-group--center row-group--between">
+              <div>
+                <h3 className="main-overview--title title--sm">
+                  {selectedYear}년 누적 현황
+                </h3>
+                <p className="analysis-section--meta label--md">실제 기록 기준 누적</p>
+              </div>
+            </div>
+            <div className="analysis-yearly-summary--grid">
+              <div className="analysis-yearly-summary--item">
+                <span className="label--sm">누적 수입</span>
+                <strong className="title--sm">
+                  {formatWon(yearlyActualSummary.income)}
+                </strong>
+              </div>
+              <div className="analysis-yearly-summary--item">
+                <span className="label--sm">누적 지출</span>
+                <strong className="title--sm">
+                  {formatWon(yearlyActualSummary.expense)}
+                </strong>
+              </div>
+              <div className="analysis-yearly-summary--item">
+                <span className="label--sm">누적 저축/투자</span>
+                <strong className="title--sm">
+                  {formatWon(yearlyActualSummary.assetMove)}
+                </strong>
+              </div>
+              <div className="analysis-yearly-summary--item">
+                <span className="label--sm">누적 순흐름</span>
+                <strong className="title--sm">
+                  {formatSignedWon(yearlyActualSummary.net)}
+                </strong>
+              </div>
+            </div>
+          </section>
           <div className="main-overview column-group column-group--gap-16">
             <h3 className="main-common-title title--md">월별 개요</h3>
             <div className="main-overview-analysis-card row-group row-group--stretch row-group--gap-16">
@@ -378,7 +447,9 @@ export default function AnalysisPage() {
           <section className="card analysis-month-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <h4 className="main-overview--title title--sm">월 선택</h4>
-              <span className="badge badge--teal">{monthNames[selectedMonth]}</span>
+              <span className="badge badge--teal">
+                {monthNames[selectedMonth]} · {getMonthStateLabel(selectedMonthState)}
+              </span>
             </div>
             <label className="analysis-month-select-field">
               {/* <span className="label--md">월</span> */}
@@ -389,7 +460,7 @@ export default function AnalysisPage() {
               >
                 {monthNames.map((label, index) => (
                   <option key={label} value={index}>
-                    {label}
+                    {label} · {getMonthStateLabel(monthlyBreakdown[index].monthState)}
                   </option>
                 ))}
               </select>
@@ -402,7 +473,8 @@ export default function AnalysisPage() {
                   className={`analysis-month-chip bodyBold--sm ${selectedMonth === index ? "is-active" : ""}`}
                   onClick={() => setSelectedMonth(index)}
                 >
-                  {label}
+                  <span>{label}</span>
+                  <small>{getMonthStateLabel(monthlyBreakdown[index].monthState)}</small>
                 </button>
               ))}
             </div>
@@ -434,7 +506,9 @@ export default function AnalysisPage() {
               </div>
               <div className="analysis-flow-summary-item analysis-flow-summary-item--balance">
                 <span className="label--md">남은 돈</span>
-                <strong className="title--md">{formatSignedCurrency(monthlyBalance)}</strong>
+                <strong className="title--md">
+                  {formatSignedCurrency(monthlyBalance)}
+                </strong>
               </div>
             </div>
             <div className="analysis-flow-ratio">
@@ -470,7 +544,7 @@ export default function AnalysisPage() {
               </p>
               {monthlyScheduledOutflow > 0 ? (
                 <p className="analysis-flow-scheduled-note label--md">
-                  예정 유출 {formatCurrency(monthlyScheduledOutflow)}은 실제 남은
+                  완료되지 않은 예정 {formatCurrency(monthlyScheduledOutflow)}은 실제 남은
                   돈에 아직 반영하지 않았어요.
                 </p>
               ) : null}
@@ -481,7 +555,7 @@ export default function AnalysisPage() {
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <div>
                 <h4 className="main-overview--title title--sm">월별 분석 그래프</h4>
-              <p className="analysis-section--meta label--md">
+                <p className="analysis-section--meta label--md">
                   현재 월까지 실제 발생한 수입과 지출을 비교합니다.
                 </p>
               </div>
@@ -522,8 +596,8 @@ export default function AnalysisPage() {
                 <div className="analysis-category-empty--content">
                   <strong className="title--sm">아직 지출 카테고리가 없어요</strong>
                   <p className="label--md">
-                    {monthNames[selectedMonth]}에 지출을 기록하면 카테고리 비율과
-                    가장 큰 지출 항목을 바로 보여드릴게요.
+                    {monthNames[selectedMonth]}에 지출을 기록하면 카테고리 비율과 가장 큰
+                    지출 항목을 바로 보여드릴게요.
                   </p>
                 </div>
               </div>
@@ -590,19 +664,23 @@ export default function AnalysisPage() {
                     <div className="analysis-month-card--header row-group row-group--center row-group--between">
                       <strong className="bodyBold--md">{item.label}</strong>
                       <span className="badge badge--teal">
-                        {item.isFutureMonth
-                          ? `예정 ${item.scheduledCount}건`
-                          : `${item.count}건`}
+                        {getMonthStateLabel(item.monthState)}
                       </span>
                     </div>
                     <div className="analysis-month-card--highlight">
                       <span className="analysis-card--meta label--md">
-                        {item.isFutureMonth ? "예상 흐름" : "남은 돈"}
+                        {item.monthState === "empty"
+                          ? "기록 없음"
+                          : item.isFutureMonth
+                            ? "예상 흐름"
+                            : "남은 돈"}
                       </span>
                       <strong
                         className={`${displayNet >= 0 ? "" : "analysis-card--expense"} title--sm`}
                       >
-                        {formatSignedCurrency(displayNet)}
+                        {item.monthState === "empty"
+                          ? "아직 기록 없음"
+                          : formatSignedCurrency(displayNet)}
                       </strong>
                     </div>
                     <div className="analysis-month-card--body">
@@ -634,7 +712,7 @@ export default function AnalysisPage() {
                     {!item.isFutureMonth &&
                     item.scheduledExpenseTotal + scheduledAssetMoveTotal > 0 ? (
                       <p className="analysis-month-card--scheduled-note label--md">
-                        예정 유출{" "}
+                        완료되지 않은 예정{" "}
                         {formatCurrency(
                           item.scheduledExpenseTotal + scheduledAssetMoveTotal,
                         )}{" "}
