@@ -240,6 +240,22 @@ with a simpler monthly cash-flow summary.
 - Verified:
   - `git diff --check` reports no whitespace errors
 
+## 2026-06-16 Dashboard/Analysis Renewal Spec
+
+- User approved starting with a local design document before implementation.
+- Wrote the scoped renewal design:
+  - `docs/superpowers/specs/2026-06-16-dashboard-analysis-renewal-design.md`
+- Scope:
+  - common currency/status terminology
+  - dashboard current remaining and scheduled expected balance
+  - dashboard remaining scheduled/outdated card
+  - monthly analysis yearly cumulative summary
+  - stronger month states
+- Explicitly excluded investment management changes for this pass.
+- Next step:
+  - review/approve the spec, then write the implementation plan and execute it
+    step by step.
+
 ## Notes For Future Work Sessions
 
 - Update this file after each meaningful work step.
