@@ -18,6 +18,13 @@ const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
 const formatCurrency = formatWon;
 const formatSignedCurrency = formatSignedWon;
 const formatRate = (value: number) => `${value.toFixed(1)}%`;
+type MonthState = "empty" | "complete" | "current" | "scheduled";
+const getMonthStateLabel = (state: MonthState) => {
+  if (state === "current") return "진행 중";
+  if (state === "scheduled") return "예정";
+  if (state === "empty") return "기록 없음";
+  return "완료";
+};
 const isSavingsCategory = (category: string) =>
   category.includes("적금") || category.includes("저축");
 const isInvestmentCategory = (category: string) => category.includes("주식");
@@ -122,6 +129,8 @@ export default function AnalysisPage() {
         const isFutureMonth =
           selectedYear > currentYear ||
           (selectedYear === currentYear && index > currentMonth);
+        const isCurrentMonth =
+          selectedYear === currentYear && index === currentMonth;
         const actualItems = items.filter((item) => {
           if (item.date > todayKey) {
             return false;
@@ -164,10 +173,18 @@ export default function AnalysisPage() {
         const scheduledIncomeTotal = scheduledItems
           .filter((item) => item.type === "income")
           .reduce((sum, item) => sum + item.amount, 0);
+        const monthState: MonthState = isCurrentMonth
+          ? "current"
+          : isFutureMonth
+            ? "scheduled"
+            : actualItems.length === 0
+              ? "empty"
+              : "complete";
         return {
           label,
           month: index,
           isFutureMonth,
+          monthState,
           expenseTotal,
           savingsTotal,
           investmentTotal,
@@ -215,6 +232,8 @@ export default function AnalysisPage() {
       ),
     [monthlyBreakdown],
   );
+  const selectedMonthState =
+    monthlyBreakdown[selectedMonth]?.monthState ?? "empty";
   const selectedMonthItems = useMemo(
     () =>
       yearlyEntries.filter((item) => new Date(item.date).getMonth() === selectedMonth),
@@ -430,7 +449,9 @@ export default function AnalysisPage() {
           <section className="card analysis-month-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <h4 className="main-overview--title title--sm">월 선택</h4>
-              <span className="badge badge--teal">{monthNames[selectedMonth]}</span>
+              <span className="badge badge--teal">
+                {monthNames[selectedMonth]} · {getMonthStateLabel(selectedMonthState)}
+              </span>
             </div>
             <label className="analysis-month-select-field">
               {/* <span className="label--md">월</span> */}
@@ -441,7 +462,7 @@ export default function AnalysisPage() {
               >
                 {monthNames.map((label, index) => (
                   <option key={label} value={index}>
-                    {label}
+                    {label} · {getMonthStateLabel(monthlyBreakdown[index].monthState)}
                   </option>
                 ))}
               </select>
@@ -454,7 +475,8 @@ export default function AnalysisPage() {
                   className={`analysis-month-chip bodyBold--sm ${selectedMonth === index ? "is-active" : ""}`}
                   onClick={() => setSelectedMonth(index)}
                 >
-                  {label}
+                  <span>{label}</span>
+                  <small>{getMonthStateLabel(monthlyBreakdown[index].monthState)}</small>
                 </button>
               ))}
             </div>
@@ -642,19 +664,23 @@ export default function AnalysisPage() {
                     <div className="analysis-month-card--header row-group row-group--center row-group--between">
                       <strong className="bodyBold--md">{item.label}</strong>
                       <span className="badge badge--teal">
-                        {item.isFutureMonth
-                          ? `예정 ${item.scheduledCount}건`
-                          : `${item.count}건`}
+                        {getMonthStateLabel(item.monthState)}
                       </span>
                     </div>
                     <div className="analysis-month-card--highlight">
                       <span className="analysis-card--meta label--md">
-                        {item.isFutureMonth ? "예상 흐름" : "남은 돈"}
+                        {item.monthState === "empty"
+                          ? "기록 없음"
+                          : item.isFutureMonth
+                            ? "예상 흐름"
+                            : "남은 돈"}
                       </span>
                       <strong
                         className={`${displayNet >= 0 ? "" : "analysis-card--expense"} title--sm`}
                       >
-                        {formatSignedCurrency(displayNet)}
+                        {item.monthState === "empty"
+                          ? "아직 기록 없음"
+                          : formatSignedCurrency(displayNet)}
                       </strong>
                     </div>
                     <div className="analysis-month-card--body">
