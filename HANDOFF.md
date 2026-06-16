@@ -270,6 +270,34 @@ with a simpler monthly cash-flow summary.
 - Next step:
   - choose execution mode and implement task by task.
 
+## 2026-06-16 Dashboard/Analysis Renewal Implementation
+
+- Created feature branch:
+  - `codex/dashboard-analysis-renewal`
+- Implemented common won formatting for renewed dashboard/analysis areas.
+- Extracted dashboard monthly summary and schedule calculations:
+  - `src/app/_home/dashboardSummary.ts`
+- Added dashboard summary components:
+  - `src/app/_home/DashboardSummaryCards.tsx`
+  - `src/app/_home/DashboardScheduleCard.tsx`
+- Dashboard now shows:
+  - `현재 남은 돈`
+  - `예정 반영 후 예상 잔액`
+  - `이번 달 남은 예정`
+- Monthly analysis now shows:
+  - yearly actual cumulative summary
+  - month state labels for `기록 없음`, `완료`, `진행 중`, `예정`
+- Investment management was intentionally left unchanged.
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+  - browser check on `http://localhost:3001/app`
+  - browser check on `http://localhost:3001/app/analysis`
+  - desktop and 390px mobile widths for the renewed dashboard/analysis areas
+- Known note:
+  - Mobile overflow detection still sees the offscreen side menu/drawer, which
+    appears to be existing layout behavior and not caused by the renewed cards.
+
 ## Notes For Future Work Sessions
 
 - Update this file after each meaningful work step.
