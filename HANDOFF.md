@@ -34,16 +34,24 @@ interpretation rather than quick status checking.
   - `@lottiefiles/dotlottie-react`
 - Wrote the feature design spec:
   - `docs/superpowers/specs/2026-06-16-monthly-sankey-flow-design.md`
+- Wrote the implementation plan:
+  - `docs/superpowers/plans/2026-06-16-monthly-sankey-flow.md`
 
 ## Next Work
 
-1. Review and approve the design spec.
-2. Create an implementation plan with Superpowers `writing-plans`.
-3. Implement `MonthlySankeyFlowChart.tsx`.
-4. Insert the chart into the monthly analysis page.
-5. Add SCSS for desktop and mobile chart layouts.
-6. Run lint and build.
-7. Verify demo mode on desktop and mobile widths.
+1. Execute the implementation plan task by task.
+2. Read relevant Next.js docs before code changes, per `AGENTS.md`.
+3. Implement the pure Sankey data builder.
+4. Implement `MonthlySankeyFlowChart.tsx`.
+5. Insert the chart into the monthly analysis page.
+6. Add SCSS for desktop and mobile chart layouts.
+7. Run lint and build.
+8. Verify demo mode on desktop and mobile widths.
+
+## 2026-06-16 Update
+
+- Added the implementation plan for monthly Sankey flow.
+- Next step is choosing an execution mode and then implementing task by task.
 
 ## Notes For Future Work Sessions
 
