@@ -2,9 +2,9 @@
 
 ## Current Goal
 
-Add a real-data SVG Sankey-style cash flow chart to the monthly analysis page.
-The chart belongs in 월별 분석, not the dashboard, because it supports
-interpretation rather than quick status checking.
+Refine the monthly analysis page into a clearer "summary -> comparison ->
+detail" flow. The current direction removes the Sankey chart and replaces it
+with a simpler monthly cash-flow summary.
 
 ## Decisions Made
 
@@ -52,6 +52,165 @@ interpretation rather than quick status checking.
 
 - Added the implementation plan for monthly Sankey flow.
 - Next step is choosing an execution mode and then implementing task by task.
+
+## 2026-06-16 Implementation Update
+
+- User chose to continue in the main working tree instead of a worktree.
+- Updated `AGENTS.md` with Money Book-specific project rules.
+- Added pure Sankey data transformation:
+  - `src/components/chart/monthlySankeyFlow.ts`
+- Added real-data SVG chart component:
+  - `src/components/chart/MonthlySankeyFlowChart.tsx`
+- Added the new chart card to 월별 분석:
+  - `src/app/app/analysis/page.tsx`
+- Added desktop and mobile compact styles:
+  - `src/app/analysis/analysis.scss`
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+  - Browser check on `http://localhost:3001/app/analysis`
+  - Desktop uses the full Sankey chart
+  - Mobile uses the compact Sankey chart
+  - Month select changes the Sankey data
+- Known note:
+  - Browser console still shows the pre-existing Next image aspect-ratio warning
+    for the logo asset. It is unrelated to the Sankey work.
+- Local dev server was started on port `3001` for review.
+
+## 2026-06-16 Size Tuning Update
+
+- Kept the mobile compact Sankey because the user was satisfied with it.
+- Reduced the chart's visual weight:
+  - smaller desktop and mobile SVG heights
+  - thinner node bars
+  - lower maximum ribbon width
+  - smaller summary chips and chart labels
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+
+## 2026-06-16 Node Shape Update
+
+- Adjusted Sankey nodes to read closer to the reference:
+  - thinner node bars
+  - longer node height range
+  - kept the overall chart/card size from the previous size tuning
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+
+## 2026-06-16 Ribbon Shape Update
+
+- Changed Sankey links from thick stroked curves to filled ribbon paths.
+- Stacked link attachment points along each node so ribbons connect to the
+  vertical bars more like the reference image.
+- Removed ribbon stroke outlines while keeping node bars crisp.
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+  - browser render check confirms ribbon paths are closed filled areas and
+    link stroke is `none`
+
+## 2026-06-16 Overflow Fix
+
+- Fixed oversized node bars overflowing outside the chart area.
+- Root cause: per-node min/max heights could exceed the available SVG height
+  when a column had many nodes.
+- Changed node layout to fit each column's total node height inside the SVG
+  before placing nodes.
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+  - browser render check confirms desktop node bars are inside the SVG bounds
+
+## 2026-06-16 Reference Scale Update
+
+- Reduced the gap between the current chart and the reference infographic.
+- Root cause: desktop SVG scaled up to the full card width, making labels, nodes,
+  and ribbons much larger than the copied reference.
+- Changed desktop SVG to render as a centered fixed-width infographic with
+  `max-width: 920px`.
+- Reduced desktop label and amount text sizes.
+- Reduced maximum ribbon width slightly.
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+  - browser render check confirms the SVG renders at `920px` inside a wider card
+    and node bars remain inside bounds
+
+## 2026-06-16 Scope Correction
+
+- User clarified that the concern was the node bars, not the overall chart
+  scale, labels, or ribbon size.
+- Reverted the broad reference-scale changes:
+  - desktop SVG no longer has a fixed `920px` cap
+  - desktop/mobile label sizes restored
+  - ribbon maximum width restored
+  - label offsets restored
+- Kept node-focused fixes:
+  - thin vertical node bars
+  - column-fit layout so nodes do not overflow
+  - filled ribbon paths that attach to nodes
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+
+## 2026-06-16 Analysis IA Update
+
+- Applied the attached critique's 1st-pass information architecture changes.
+- Removed the Sankey chart from 월별 분석.
+- Deleted the untracked Sankey implementation files:
+  - `src/components/chart/MonthlySankeyFlowChart.tsx`
+  - `src/components/chart/monthlySankeyFlow.ts`
+- Added a simpler selected-month cash-flow summary:
+  - income
+  - expense
+  - savings/investment
+  - remaining money
+  - stacked ratio bar for expense / savings-investment / remaining
+- Reworked top overview cards:
+  - selected-month remaining money
+  - selected-month expense
+  - savings/investment
+  - top expense category
+- Moved category analysis above the 12-month summary grid.
+- Simplified 12-month cards around "remaining money" plus income, expense, and
+  savings/investment.
+- Verified:
+  - `npm run lint` passes without warnings
+  - `npm run build` passes
+  - browser render check confirms no `.monthly-sankey` element remains and the
+    new flow summary and ratio bar render
+- Known note:
+  - The existing logo image aspect-ratio warning still appears in browser logs
+    and is unrelated to this monthly analysis change.
+
+## 2026-06-16 Actual vs Scheduled Monthly Analysis Update
+
+- Applied the attached design for separating actual money from scheduled future
+  cash flow.
+- Changed monthly analysis calculations so recurring `scheduled` fixed expenses
+  and savings payments no longer reduce actual remaining money.
+- Actual monthly totals now use:
+  - entries dated through today
+  - recurring payment entries only when `status === "paid"`
+- Future month cards now use scheduled copy:
+  - `예정 N건`
+  - `예상 흐름`
+  - `예정 수입`
+  - `예정 지출`
+  - `예정 저축/투자`
+- Future month cards get a lower-contrast scheduled style.
+- Current/past month cards keep actual `남은 돈`, with scheduled outflow shown
+  separately when present.
+- Monthly bar chart now hides future month values by zeroing future bars, so it
+  reads as actual data through the current month.
+- Verified:
+  - `npm run lint` passes
+  - `npm run build` passes
+  - Browser check through demo mode on `http://localhost:3001/app/analysis`
+    confirms 12 month cards render, future cards are scheduled, and the chart
+    meta says it compares actual values through the current month.
 
 ## Notes For Future Work Sessions
 

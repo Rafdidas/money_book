@@ -17,11 +17,16 @@ const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
 const formatCurrency = (value: number) => `₩ ${value.toLocaleString()}`;
 const formatSignedCurrency = (value: number) =>
   `${value < 0 ? "-" : ""}₩ ${Math.abs(value).toLocaleString()}`;
+const formatRate = (value: number) => `${value.toFixed(1)}%`;
 const isSavingsCategory = (category: string) =>
   category.includes("적금") || category.includes("저축");
 const isInvestmentCategory = (category: string) => category.includes("주식");
 const isSavingsItem = (item: { type: string }) => item.type === "saving";
 const isInvestmentItem = (item: { type: string }) => item.type === "investment";
+const isRecurringPaymentEntry = (item: MoneyBookEntry) =>
+  item.source === "savings_payment" || item.source === "fixed_expense_payment";
+const getDateKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const mapDemoExpenseToEntry = (item: {
   id: string;
   amount: number;
@@ -47,6 +52,9 @@ const mapDemoExpenseToEntry = (item: {
 
 export default function AnalysisPage() {
   const today = new Date();
+  const todayKey = getDateKey(today);
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
   const {
     displayName,
     displayEmail,
@@ -111,55 +119,155 @@ export default function AnalysisPage() {
         const items = yearlyEntries.filter(
           (item) => new Date(item.date).getMonth() === index,
         );
-        const expenseTotal = items
+        const isFutureMonth =
+          selectedYear > currentYear ||
+          (selectedYear === currentYear && index > currentMonth);
+        const actualItems = items.filter((item) => {
+          if (item.date > todayKey) {
+            return false;
+          }
+
+          if (isRecurringPaymentEntry(item)) {
+            return item.status === "paid";
+          }
+
+          return true;
+        });
+        const scheduledItems = items.filter((item) => {
+          if (isRecurringPaymentEntry(item)) {
+            return item.status === "scheduled";
+          }
+
+          return item.date > todayKey;
+        });
+        const expenseTotal = actualItems
           .filter((item) => item.type === "expense")
           .reduce((sum, item) => sum + item.amount, 0);
-        const savingsTotal = items
+        const savingsTotal = actualItems
           .filter(isSavingsItem)
           .reduce((sum, item) => sum + item.amount, 0);
-        const investmentTotal = items
+        const investmentTotal = actualItems
           .filter(isInvestmentItem)
           .reduce((sum, item) => sum + item.amount, 0);
-        const incomeTotal = items
+        const incomeTotal = actualItems
+          .filter((item) => item.type === "income")
+          .reduce((sum, item) => sum + item.amount, 0);
+        const scheduledExpenseTotal = scheduledItems
+          .filter((item) => item.type === "expense")
+          .reduce((sum, item) => sum + item.amount, 0);
+        const scheduledSavingsTotal = scheduledItems
+          .filter(isSavingsItem)
+          .reduce((sum, item) => sum + item.amount, 0);
+        const scheduledInvestmentTotal = scheduledItems
+          .filter(isInvestmentItem)
+          .reduce((sum, item) => sum + item.amount, 0);
+        const scheduledIncomeTotal = scheduledItems
           .filter((item) => item.type === "income")
           .reduce((sum, item) => sum + item.amount, 0);
         return {
           label,
           month: index,
+          isFutureMonth,
           expenseTotal,
           savingsTotal,
           investmentTotal,
           incomeTotal,
           net: incomeTotal - expenseTotal - savingsTotal - investmentTotal,
-          count: items.length,
+          count: actualItems.length,
+          scheduledExpenseTotal,
+          scheduledSavingsTotal,
+          scheduledInvestmentTotal,
+          scheduledIncomeTotal,
+          scheduledNet:
+            scheduledIncomeTotal -
+            scheduledExpenseTotal -
+            scheduledSavingsTotal -
+            scheduledInvestmentTotal,
+          scheduledCount: scheduledItems.length,
         };
       }),
-    [yearlyEntries],
+    [currentMonth, currentYear, selectedYear, todayKey, yearlyEntries],
+  );
+  const chartBreakdown = useMemo(
+    () =>
+      monthlyBreakdown.map((item) =>
+        item.isFutureMonth
+          ? {
+              ...item,
+              expenseTotal: 0,
+              incomeTotal: 0,
+            }
+          : item,
+      ),
+    [monthlyBreakdown],
   );
   const selectedMonthItems = useMemo(
     () =>
       yearlyEntries.filter((item) => new Date(item.date).getMonth() === selectedMonth),
     [selectedMonth, yearlyEntries],
   );
-  const monthlyExpense = selectedMonthItems
+  const selectedActualMonthItems = useMemo(
+    () =>
+      selectedMonthItems.filter((item) => {
+        if (item.date > todayKey) {
+          return false;
+        }
+
+        if (isRecurringPaymentEntry(item)) {
+          return item.status === "paid";
+        }
+
+        return true;
+      }),
+    [selectedMonthItems, todayKey],
+  );
+  const selectedScheduledMonthItems = useMemo(
+    () =>
+      selectedMonthItems.filter((item) => {
+        if (isRecurringPaymentEntry(item)) {
+          return item.status === "scheduled";
+        }
+
+        return item.date > todayKey;
+      }),
+    [selectedMonthItems, todayKey],
+  );
+  const monthlyExpense = selectedActualMonthItems
     .filter((item) => item.type === "expense")
     .reduce((sum, item) => sum + item.amount, 0);
-  const monthlySavings = selectedMonthItems
+  const monthlySavings = selectedActualMonthItems
     .filter(isSavingsItem)
     .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyInvestment = selectedMonthItems
+  const monthlyInvestment = selectedActualMonthItems
     .filter(isInvestmentItem)
     .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyIncome = selectedMonthItems
+  const monthlyIncome = selectedActualMonthItems
     .filter((item) => item.type === "income")
     .reduce((sum, item) => sum + item.amount, 0);
-  const monthlyExpenseCount = selectedMonthItems.filter(
+  const monthlyScheduledExpense = selectedScheduledMonthItems
+    .filter((item) => item.type === "expense")
+    .reduce((sum, item) => sum + item.amount, 0);
+  const monthlyScheduledSavings = selectedScheduledMonthItems
+    .filter(isSavingsItem)
+    .reduce((sum, item) => sum + item.amount, 0);
+  const monthlyScheduledInvestment = selectedScheduledMonthItems
+    .filter(isInvestmentItem)
+    .reduce((sum, item) => sum + item.amount, 0);
+  const monthlyScheduledOutflow =
+    monthlyScheduledExpense + monthlyScheduledSavings + monthlyScheduledInvestment;
+  const monthlyAssetMove = monthlySavings + monthlyInvestment;
+  const monthlyOutflow = monthlyExpense + monthlyAssetMove;
+  const monthlyBalance = monthlyIncome - monthlyOutflow;
+  const previousMonthBreakdown =
+    monthlyBreakdown[(selectedMonth + monthNames.length - 1) % monthNames.length];
+  const previousMonthlyExpense =
+    selectedMonth === 0 ? 0 : previousMonthBreakdown?.expenseTotal ?? 0;
+  const expenseDiff = monthlyExpense - previousMonthlyExpense;
+  const monthlyExpenseCount = selectedActualMonthItems.filter(
     (item) => item.type === "expense",
   ).length;
-  const monthlySavingsCount = selectedMonthItems.filter(isSavingsItem).length;
-  const monthlyInvestmentCount = selectedMonthItems.filter(isInvestmentItem).length;
   const categorySummary = Object.entries(
-    selectedMonthItems
+    selectedActualMonthItems
       .filter((item) => item.type === "expense")
       .reduce<Record<string, number>>((acc, item) => {
         acc[item.category] = (acc[item.category] || 0) + item.amount;
@@ -167,22 +275,14 @@ export default function AnalysisPage() {
       }, {}),
   ).sort(([, left], [, right]) => right - left);
   const topCategory = categorySummary[0];
-  const yearlyExpenseTotal = yearlyEntries
-    .filter((item) => item.type === "expense")
-    .reduce((sum, item) => sum + item.amount, 0);
-  const yearlySavingsTotal = yearlyEntries
-    .filter(isSavingsItem)
-    .reduce((sum, item) => sum + item.amount, 0);
-  const yearlyInvestmentTotal = yearlyEntries
-    .filter(isInvestmentItem)
-    .reduce((sum, item) => sum + item.amount, 0);
-  const yearlyIncomeTotal = yearlyEntries
-    .filter((item) => item.type === "income")
-    .reduce((sum, item) => sum + item.amount, 0);
-  const yearlyBalance =
-    yearlyIncomeTotal - yearlyExpenseTotal - yearlySavingsTotal - yearlyInvestmentTotal;
-  const yearlyRecordCount = yearlyEntries.length;
   const categoryChartData = categorySummary.map(([label, value]) => ({ label, value }));
+  const expenseRate = monthlyIncome === 0 ? 0 : (monthlyExpense / monthlyIncome) * 100;
+  const assetMoveRate =
+    monthlyIncome === 0 ? 0 : (monthlyAssetMove / monthlyIncome) * 100;
+  const balanceRate =
+    monthlyIncome === 0 ? 0 : (Math.max(monthlyBalance, 0) / monthlyIncome) * 100;
+  const topCategoryRate =
+    topCategory && monthlyExpense > 0 ? (topCategory[1] / monthlyExpense) * 100 : 0;
 
   return (
     <div className="home-page analysis-page">
@@ -228,15 +328,14 @@ export default function AnalysisPage() {
             <div className="main-overview-analysis-card row-group row-group--stretch row-group--gap-16">
               <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
                 <h4 className="analysis-card--title title--sm">
-                  {monthNames[selectedMonth]} 현금흐름
+                  {monthNames[selectedMonth]} 남은 돈
                 </h4>
                 <strong className="analysis-card--value title--lg">
-                  {formatSignedCurrency(monthlyIncome - monthlyExpense - monthlySavings - monthlyInvestment)}
+                  {formatSignedCurrency(monthlyBalance)}
                 </strong>
                 <p className="analysis-card--meta label--md">
-                  수입 {formatCurrency(monthlyIncome)} · 지출{" "}
-                  {formatCurrency(monthlyExpense)} · 저축 {formatCurrency(monthlySavings)}
-                  {" "}· 투자원금 {formatCurrency(monthlyInvestment)}
+                  수입 {formatCurrency(monthlyIncome)} - 유출{" "}
+                  {formatCurrency(monthlyOutflow)}
                 </p>
               </article>
               <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
@@ -247,14 +346,23 @@ export default function AnalysisPage() {
                   {formatCurrency(monthlyExpense)}
                 </strong>
                 <p className="analysis-card--meta label--md">
-                  지출 {monthlyExpenseCount.toLocaleString()}건 · 저축{" "}
-                  {monthlySavingsCount.toLocaleString()}건 {formatCurrency(monthlySavings)}
-                  {" "}· 투자 {monthlyInvestmentCount.toLocaleString()}건{" "}
+                  {selectedMonth === 0
+                    ? `지출 ${monthlyExpenseCount.toLocaleString()}건`
+                    : `전월 대비 ${formatSignedCurrency(expenseDiff)}`}
+                </p>
+              </article>
+              <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
+                <h4 className="analysis-card--title title--sm">저축/투자</h4>
+                <strong className="analysis-card--value title--lg">
+                  {formatCurrency(monthlyAssetMove)}
+                </strong>
+                <p className="analysis-card--meta label--md">
+                  저축 {formatCurrency(monthlySavings)} · 투자{" "}
                   {formatCurrency(monthlyInvestment)}
                 </p>
               </article>
               <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
-                <h4 className="analysis-card--title title--sm">최다 지출 카테고리</h4>
+                <h4 className="analysis-card--title title--sm">최대 지출</h4>
                 <strong className="analysis-card--value title--lg">
                   {topCategory ? topCategory[0] : "데이터 없음"}
                 </strong>
@@ -262,22 +370,6 @@ export default function AnalysisPage() {
                   {topCategory
                     ? formatCurrency(topCategory[1])
                     : "기록된 지출이 없습니다."}
-                </p>
-              </article>
-              <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
-                <h4 className="analysis-card--title title--sm">
-                  {selectedYear}년 현금흐름
-                </h4>
-                <strong
-                  className={`analysis-card--value title--lg ${yearlyBalance < 0 ? "analysis-card--expense" : ""}`}
-                >
-                  {formatSignedCurrency(yearlyBalance)}
-                </strong>
-                <p className="analysis-card--meta label--md">
-                  총 {yearlyRecordCount.toLocaleString()}건 · 수입{" "}
-                  {formatCurrency(yearlyIncomeTotal)} · 저축{" "}
-                  {formatCurrency(yearlySavingsTotal)} · 투자원금{" "}
-                  {formatCurrency(yearlyInvestmentTotal)}
                 </p>
               </article>
             </div>
@@ -316,12 +408,81 @@ export default function AnalysisPage() {
             </div>
           </section>
 
+          <section className="card analysis-flow-summary-panel column-group column-group--gap-16">
+            <div className="main-overview--section-header row-group row-group--center row-group--between">
+              <div>
+                <h4 className="main-overview--title title--sm">
+                  {monthNames[selectedMonth]} 돈의 흐름
+                </h4>
+                <p className="analysis-section--meta label--md">
+                  수입에서 지출과 저축/투자로 이동한 뒤 남은 금액입니다.
+                </p>
+              </div>
+            </div>
+            <div className="analysis-flow-summary-grid">
+              <div className="analysis-flow-summary-item analysis-flow-summary-item--income">
+                <span className="label--md">수입</span>
+                <strong className="title--md">{formatCurrency(monthlyIncome)}</strong>
+              </div>
+              <div className="analysis-flow-summary-item analysis-flow-summary-item--expense">
+                <span className="label--md">지출</span>
+                <strong className="title--md">-{formatCurrency(monthlyExpense)}</strong>
+              </div>
+              <div className="analysis-flow-summary-item analysis-flow-summary-item--asset">
+                <span className="label--md">저축/투자</span>
+                <strong className="title--md">-{formatCurrency(monthlyAssetMove)}</strong>
+              </div>
+              <div className="analysis-flow-summary-item analysis-flow-summary-item--balance">
+                <span className="label--md">남은 돈</span>
+                <strong className="title--md">{formatSignedCurrency(monthlyBalance)}</strong>
+              </div>
+            </div>
+            <div className="analysis-flow-ratio">
+              <div className="analysis-flow-ratio--header row-group row-group--center row-group--between">
+                <span className="bodyBold--sm">
+                  수입 {formatCurrency(monthlyIncome)} 기준
+                </span>
+                <span className="label--md">
+                  지출률 {formatRate(expenseRate)} · 저축/투자율{" "}
+                  {formatRate(assetMoveRate)} · 잔여율 {formatRate(balanceRate)}
+                </span>
+              </div>
+              <div
+                className="analysis-flow-ratio-bar"
+                aria-label={`${monthNames[selectedMonth]} 돈의 흐름 비율`}
+              >
+                <span
+                  className="analysis-flow-ratio-segment analysis-flow-ratio-segment--expense"
+                  style={{ width: `${Math.min(expenseRate, 100)}%` }}
+                />
+                <span
+                  className="analysis-flow-ratio-segment analysis-flow-ratio-segment--asset"
+                  style={{ width: `${Math.min(assetMoveRate, 100)}%` }}
+                />
+                <span
+                  className="analysis-flow-ratio-segment analysis-flow-ratio-segment--balance"
+                  style={{ width: `${Math.min(balanceRate, 100)}%` }}
+                />
+              </div>
+              <p className="analysis-flow-comment label--md">
+                이번 달 수입의 {formatRate(expenseRate)}를 지출했고,{" "}
+                {formatRate(assetMoveRate)}를 저축/투자했어요.
+              </p>
+              {monthlyScheduledOutflow > 0 ? (
+                <p className="analysis-flow-scheduled-note label--md">
+                  예정 유출 {formatCurrency(monthlyScheduledOutflow)}은 실제 남은
+                  돈에 아직 반영하지 않았어요.
+                </p>
+              ) : null}
+            </div>
+          </section>
+
           <section className="card analysis-chart-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <div>
                 <h4 className="main-overview--title title--sm">월별 분석 그래프</h4>
-                <p className="analysis-section--meta label--md">
-                  1월부터 12월까지 수입과 지출을 비교합니다.
+              <p className="analysis-section--meta label--md">
+                  현재 월까지 실제 발생한 수입과 지출을 비교합니다.
                 </p>
               </div>
               <div className="analysis-chart-legend row-group row-group--center">
@@ -336,65 +497,7 @@ export default function AnalysisPage() {
               </div>
             </div>
             <div className="analysis-chart-wrap">
-              <MonthlyFlowChart data={monthlyBreakdown} currentMonth={selectedMonth} />
-            </div>
-          </section>
-
-          <section className="card analysis-year-panel column-group column-group--gap-16">
-            <div className="main-overview--section-header row-group row-group--center row-group--between">
-              <h4 className="main-overview--title title--sm">1월부터 12월까지</h4>
-              <span className="label--md analysis-section--meta">
-                월별 수입, 지출, 저축, 투자원금, 현금흐름
-              </span>
-            </div>
-            <div className="analysis-year-grid">
-              {monthlyBreakdown.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  className={`analysis-month-card ${selectedMonth === item.month ? "is-active" : ""}`}
-                  onClick={() => setSelectedMonth(item.month)}
-                >
-                  <div className="analysis-month-card--header row-group row-group--center row-group--between">
-                    <strong className="bodyBold--md">{item.label}</strong>
-                    <span className="badge badge--teal">{item.count}건</span>
-                  </div>
-                  <div className="analysis-month-card--body">
-                    <div>
-                      <span className="analysis-card--meta label--md">지출</span>
-                      <strong className="analysis-card--expense bodyBold--md">
-                        {formatCurrency(item.expenseTotal)}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="analysis-card--meta label--md">저축</span>
-                      <strong className="bodyBold--md">
-                        {formatCurrency(item.savingsTotal)}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="analysis-card--meta label--md">투자원금</span>
-                      <strong className="bodyBold--md">
-                        {formatCurrency(item.investmentTotal)}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="analysis-card--meta label--md">수입</span>
-                      <strong className="bodyBold--md">
-                        {formatCurrency(item.incomeTotal)}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="analysis-card--meta label--md">현금흐름</span>
-                      <strong
-                        className={`${item.net >= 0 ? "" : "analysis-card--expense"} bodyBold--md`}
-                      >
-                        {formatSignedCurrency(item.net)}
-                      </strong>
-                    </div>
-                  </div>
-                </button>
-              ))}
+              <MonthlyFlowChart data={chartBreakdown} currentMonth={selectedMonth} />
             </div>
           </section>
 
@@ -402,10 +505,12 @@ export default function AnalysisPage() {
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <div>
                 <h4 className="main-overview--title title--sm">
-                  {monthNames[selectedMonth]} 카테고리 분석
+                  {monthNames[selectedMonth]} 지출 카테고리
                 </h4>
                 <p className="analysis-section--meta label--md">
-                  선택한 달의 지출 카테고리를 금액 순으로 정렬했습니다.
+                  {topCategory
+                    ? `총 지출 ${formatCurrency(monthlyExpense)} 중 ${topCategory[0]}이 ${formatRate(topCategoryRate)}를 차지했어요.`
+                    : "선택한 달의 지출 데이터가 없습니다."}
                 </p>
               </div>
             </div>
@@ -447,6 +552,95 @@ export default function AnalysisPage() {
                   })
                 )}
               </div>
+            </div>
+          </section>
+
+          <section className="card analysis-year-panel column-group column-group--gap-16">
+            <div className="main-overview--section-header row-group row-group--center row-group--between">
+              <h4 className="main-overview--title title--sm">1월부터 12월까지</h4>
+              <span className="label--md analysis-section--meta">
+                월별 남은 돈, 수입, 지출, 저축/투자
+              </span>
+            </div>
+            <div className="analysis-year-grid">
+              {monthlyBreakdown.map((item) => {
+                const assetMoveTotal = item.savingsTotal + item.investmentTotal;
+                const scheduledAssetMoveTotal =
+                  item.scheduledSavingsTotal + item.scheduledInvestmentTotal;
+                const displayIncome = item.isFutureMonth
+                  ? item.scheduledIncomeTotal
+                  : item.incomeTotal;
+                const displayExpense = item.isFutureMonth
+                  ? item.scheduledExpenseTotal
+                  : item.expenseTotal;
+                const displayAssetMove = item.isFutureMonth
+                  ? scheduledAssetMoveTotal
+                  : assetMoveTotal;
+                const displayNet = item.isFutureMonth ? item.scheduledNet : item.net;
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    className={`analysis-month-card ${item.isFutureMonth ? "is-scheduled" : ""} ${selectedMonth === item.month ? "is-active" : ""}`}
+                    onClick={() => setSelectedMonth(item.month)}
+                  >
+                    <div className="analysis-month-card--header row-group row-group--center row-group--between">
+                      <strong className="bodyBold--md">{item.label}</strong>
+                      <span className="badge badge--teal">
+                        {item.isFutureMonth
+                          ? `예정 ${item.scheduledCount}건`
+                          : `${item.count}건`}
+                      </span>
+                    </div>
+                    <div className="analysis-month-card--highlight">
+                      <span className="analysis-card--meta label--md">
+                        {item.isFutureMonth ? "예상 흐름" : "남은 돈"}
+                      </span>
+                      <strong
+                        className={`${displayNet >= 0 ? "" : "analysis-card--expense"} title--sm`}
+                      >
+                        {formatSignedCurrency(displayNet)}
+                      </strong>
+                    </div>
+                    <div className="analysis-month-card--body">
+                      <div>
+                        <span className="analysis-card--meta label--md">
+                          {item.isFutureMonth ? "예정 수입" : "수입"}
+                        </span>
+                        <strong className="bodyBold--md">
+                          {formatCurrency(displayIncome)}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="analysis-card--meta label--md">
+                          {item.isFutureMonth ? "예정 지출" : "지출"}
+                        </span>
+                        <strong className="analysis-card--expense bodyBold--md">
+                          {formatCurrency(displayExpense)}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="analysis-card--meta label--md">
+                          {item.isFutureMonth ? "예정 저축/투자" : "저축/투자"}
+                        </span>
+                        <strong className="bodyBold--md">
+                          {formatCurrency(displayAssetMove)}
+                        </strong>
+                      </div>
+                    </div>
+                    {!item.isFutureMonth &&
+                    item.scheduledExpenseTotal + scheduledAssetMoveTotal > 0 ? (
+                      <p className="analysis-month-card--scheduled-note label--md">
+                        예정 유출{" "}
+                        {formatCurrency(
+                          item.scheduledExpenseTotal + scheduledAssetMoveTotal,
+                        )}{" "}
+                        별도
+                      </p>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           </section>
         </section>

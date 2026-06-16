@@ -66,6 +66,7 @@
   }
 
   .analysis-month-panel,
+  .analysis-flow-summary-panel,
   .analysis-chart-panel,
   .analysis-year-panel,
   .analysis-category-panel {
@@ -162,6 +163,101 @@
     }
   }
 
+  .analysis-flow-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .analysis-flow-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    min-height: 88px;
+    padding: 14px;
+    border: 1px solid var(--outline-lower);
+    border-radius: 8px;
+    background: var(--surface-lowest);
+
+    span {
+      color: var(--on-surface);
+    }
+
+    strong {
+      color: var(--on-surface-ultra-high);
+    }
+
+    &--expense strong {
+      color: var(--red-highest);
+    }
+
+    &--asset strong {
+      color: var(--blue);
+    }
+
+    &--balance {
+      background:
+        radial-gradient(circle at 100% 0%, var(--green-lower), transparent 58%),
+        var(--surface-lowest);
+    }
+  }
+
+  .analysis-flow-ratio {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--outline-lower);
+    border-radius: 8px;
+    background: var(--surface-lowest);
+  }
+
+  .analysis-flow-ratio--header {
+    gap: 12px;
+
+    span:last-child {
+      color: var(--on-surface);
+      text-align: right;
+    }
+  }
+
+  .analysis-flow-ratio-bar {
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+    height: 14px;
+    border-radius: 4px;
+    background: var(--surface-low);
+  }
+
+  .analysis-flow-ratio-segment {
+    display: block;
+    min-width: 0;
+    height: 100%;
+
+    &--expense {
+      background: var(--red-high);
+    }
+
+    &--asset {
+      background: var(--blue-mid);
+    }
+
+    &--balance {
+      background: var(--green-mid);
+    }
+  }
+
+  .analysis-flow-comment {
+    color: var(--on-surface);
+  }
+
+  .analysis-flow-scheduled-note {
+    padding-top: 2px;
+    color: var(--on-surface);
+  }
+
   .analysis-year-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -194,8 +290,36 @@
       box-shadow: none;
     }
 
+    &.is-scheduled {
+      border-style: dashed;
+      background: color-mix(in srgb, var(--surface-lowest) 78%, var(--surface-low));
+
+      .analysis-card--meta {
+        color: var(--on-surface);
+      }
+    }
+
+    &.is-scheduled.is-active {
+      border-style: solid;
+      background:
+        radial-gradient(circle at 100% 0%, var(--primary-ultra-low), transparent 54%),
+        var(--surface-lowest);
+    }
+
     &--header {
       min-height: 28px;
+    }
+
+    &--highlight {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--outline-lower);
+
+      strong {
+        color: var(--on-surface-ultra-high);
+      }
     }
 
     &--body {
@@ -211,6 +335,11 @@
       span {
         display: block;
       }
+    }
+
+    &--scheduled-note {
+      margin-top: -4px;
+      color: var(--on-surface);
     }
   }
 
@@ -266,7 +395,7 @@
   .analysis-category-fill {
     height: 100%;
     border-radius: inherit;
-    background: var(--primary-mid);
+    background: var(--red-high);
   }
 
   .analysis-empty {
@@ -316,10 +445,38 @@
     }
 
     .analysis-month-panel,
+    .analysis-flow-summary-panel,
     .analysis-chart-panel,
     .analysis-year-panel,
     .analysis-category-panel {
       padding: 14px;
+    }
+
+    .analysis-flow-summary-panel {
+      .main-overview--section-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+
+    .analysis-flow-summary-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .analysis-flow-summary-item {
+      min-height: 82px;
+      padding: 12px;
+    }
+
+    .analysis-flow-ratio--header {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 4px;
+
+      span:last-child {
+        text-align: left;
+      }
     }
 
     .analysis-chart-panel,
