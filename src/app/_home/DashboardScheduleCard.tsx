@@ -44,7 +44,10 @@ export default function DashboardScheduleCard({
       {visibleItems.length ? (
         <div className="dashboard-schedule-list">
           {visibleItems.map((item) => (
-            <div key={item.id} className="dashboard-schedule-row">
+            <div
+              key={item.id}
+              className={`dashboard-schedule-row dashboard-schedule-row--${item.status}`}
+            >
               <span className={`badge ${statusClassName[item.status]}`}>
                 {statusLabel[item.status]}
               </span>
@@ -54,7 +57,11 @@ export default function DashboardScheduleCard({
                   {formatWon(item.amount)} ·{" "}
                   {item.status === "overdue"
                     ? `${item.daysOverdue}일 지남`
-                    : `${formatScheduleDate(item.date)} 예정`}
+                    : item.status === "paid"
+                      ? `${formatScheduleDate(item.date)} 완료`
+                      : item.status === "skipped"
+                        ? `${formatScheduleDate(item.date)} 건너뜀`
+                        : `${formatScheduleDate(item.date)} 예정`}
                 </span>
               </div>
             </div>

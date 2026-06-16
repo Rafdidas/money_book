@@ -69,14 +69,14 @@ export default function DashboardSummaryCards({
           </div>
         </article>
       </div>
-      <article className="card overview-card dashboard-expected-balance column-group column-group--gap-12">
+      <article className="card overview-card dashboard-expected-balance column-group column-group--gap-16">
         <div className="main-overview--section-header row-group row-group--center row-group--between">
-          <div>
+          <div className="column-group column-group--gap-4">
             <h4 className="main-overview--title title--sm">
               예정 반영 후 예상 잔액
             </h4>
             <p className="main-overview--last label--md">
-              아직 남은 예정 지출과 저축/투자를 반영한 금액입니다.
+              남은 예정 지출·저축/투자를 반영한 금액
             </p>
           </div>
           <strong className="main-overview--num title--lg">
@@ -84,16 +84,24 @@ export default function DashboardSummaryCards({
           </strong>
         </div>
         <div className="dashboard-expected-balance--grid">
-          <span className="label--md">
-            현재 남은 돈 {formatWon(monthlySummary.actualRemaining)}
-          </span>
-          <span className="label--md">
-            남은 예정 지출 {formatWon(scheduleSummary.scheduledExpense)}
-          </span>
-          <span className="label--md">
-            남은 예정 저축/투자{" "}
-            {formatWon(scheduleSummary.scheduledSavingsInvestment)}
-          </span>
+          <div className="dashboard-expected-balance--item">
+            <span className="label--sm">현재 남은 돈</span>
+            <strong className="bodyBold--sm">
+              {formatWon(monthlySummary.actualRemaining)}
+            </strong>
+          </div>
+          <div className="dashboard-expected-balance--item">
+            <span className="label--sm">남은 예정 지출</span>
+            <strong className="bodyBold--sm">
+              {formatWon(scheduleSummary.scheduledExpense)}
+            </strong>
+          </div>
+          <div className="dashboard-expected-balance--item">
+            <span className="label--sm">남은 예정 저축/투자</span>
+            <strong className="bodyBold--sm">
+              {formatWon(scheduleSummary.scheduledSavingsInvestment)}
+            </strong>
+          </div>
         </div>
       </article>
     </div>

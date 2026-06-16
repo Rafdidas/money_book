@@ -1,5 +1,6 @@
 import type { Expense } from "@/types/expense";
 import type { PaymentStatus } from "@/types/recurring";
+import { getVisibleMemo } from "./utils";
 
 export type DashboardEntry = Expense & {
   status?: PaymentStatus;
@@ -142,7 +143,7 @@ export const getDashboardScheduleSummary = (
           isDashboardSavingsItem(item) || isDashboardInvestmentItem(item)
             ? "saving"
             : "fixedExpense",
-        label: item.memo || item.category,
+        label: getVisibleMemo(item.memo) || item.category,
         amount: item.amount,
         date: item.date,
         status,

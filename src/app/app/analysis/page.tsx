@@ -30,8 +30,8 @@ const isSavingsCategory = (category: string) =>
 const isInvestmentCategory = (category: string) => category.includes("주식");
 const isSavingsItem = (item: { type: string }) => item.type === "saving";
 const isInvestmentItem = (item: { type: string }) => item.type === "investment";
-const isRecurringPaymentEntry = (item: MoneyBookEntry) =>
-  item.source === "savings_payment" || item.source === "fixed_expense_payment";
+const isSavingsPaymentEntry = (item: MoneyBookEntry) =>
+  item.source === "savings_payment";
 const getDateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const mapDemoExpenseToEntry = (item: {
@@ -136,14 +136,14 @@ export default function AnalysisPage() {
             return false;
           }
 
-          if (isRecurringPaymentEntry(item)) {
+          if (isSavingsPaymentEntry(item)) {
             return item.status === "paid";
           }
 
           return true;
         });
         const scheduledItems = items.filter((item) => {
-          if (isRecurringPaymentEntry(item)) {
+          if (isSavingsPaymentEntry(item)) {
             return item.status === "scheduled";
           }
 
@@ -246,7 +246,7 @@ export default function AnalysisPage() {
           return false;
         }
 
-        if (isRecurringPaymentEntry(item)) {
+        if (isSavingsPaymentEntry(item)) {
           return item.status === "paid";
         }
 
@@ -257,7 +257,7 @@ export default function AnalysisPage() {
   const selectedScheduledMonthItems = useMemo(
     () =>
       selectedMonthItems.filter((item) => {
-        if (isRecurringPaymentEntry(item)) {
+        if (isSavingsPaymentEntry(item)) {
           return item.status === "scheduled";
         }
 
@@ -366,26 +366,26 @@ export default function AnalysisPage() {
               </div>
             </div>
             <div className="analysis-yearly-summary--grid">
-              <div>
-                <span className="label--md">누적 수입</span>
+              <div className="analysis-yearly-summary--item">
+                <span className="label--sm">누적 수입</span>
                 <strong className="title--sm">
                   {formatWon(yearlyActualSummary.income)}
                 </strong>
               </div>
-              <div>
-                <span className="label--md">누적 지출</span>
+              <div className="analysis-yearly-summary--item">
+                <span className="label--sm">누적 지출</span>
                 <strong className="title--sm">
                   {formatWon(yearlyActualSummary.expense)}
                 </strong>
               </div>
-              <div>
-                <span className="label--md">누적 저축/투자</span>
+              <div className="analysis-yearly-summary--item">
+                <span className="label--sm">누적 저축/투자</span>
                 <strong className="title--sm">
                   {formatWon(yearlyActualSummary.assetMove)}
                 </strong>
               </div>
-              <div>
-                <span className="label--md">누적 순흐름</span>
+              <div className="analysis-yearly-summary--item">
+                <span className="label--sm">누적 순흐름</span>
                 <strong className="title--sm">
                   {formatSignedWon(yearlyActualSummary.net)}
                 </strong>

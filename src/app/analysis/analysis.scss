@@ -77,12 +77,23 @@
   .analysis-yearly-summary--grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    gap: 1px;
+    background: var(--outline);
+    border: 1px solid var(--outline);
+    border-radius: 10px;
+    overflow: hidden;
+  }
 
-    > div {
-      display: grid;
-      gap: 4px;
-      min-width: 0;
+  .analysis-yearly-summary--item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    background: var(--surface-lowest);
+    min-width: 0;
+
+    > .label--sm {
+      color: var(--on-surface);
     }
   }
 
@@ -334,6 +345,7 @@
     }
 
     &--header {
+      width: 100%;
       min-height: 28px;
     }
 
@@ -574,6 +586,12 @@
     .analysis-year-grid,
     .analysis-month-card--body {
       grid-template-columns: 1fr;
+    }
+
+    .analysis-yearly-summary--item {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
     }
 
     .analysis-month-selector {

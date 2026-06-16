@@ -291,6 +291,7 @@ export default function HomeClient() {
   const [detailSort, setDetailSort] = useState<DetailSort>(null);
 
   const selectedDateKey = formatDate(selectedDate);
+  const todayKey = formatDate(today);
   const currentYear = selectedDate.getFullYear();
   const currentMonth = selectedDate.getMonth();
   const selectedMonthStartKey = formatDate(new Date(currentYear, currentMonth, 1));
@@ -572,11 +573,11 @@ export default function HomeClient() {
           category: rule?.category || rule?.name || "고정지출",
           memo: rule?.name ?? "고정지출",
           date: payment.payment_date,
-          status: payment.status,
+          status: payment.payment_date <= todayKey ? "paid" : "scheduled",
           created_at: payment.created_at,
         };
       }),
-    [activeStoredFixedExpensePayments, storedFixedExpenseRuleMap],
+    [activeStoredFixedExpensePayments, storedFixedExpenseRuleMap, todayKey],
   );
   const pausedStoredFixedExpenseItems = useMemo<DashboardExpense[]>(
     () =>
