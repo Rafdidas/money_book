@@ -1575,16 +1575,20 @@ export default function InvestPage() {
                   </button>
                 ) : null}
                 <div className="main-overview--form">
-                  <label className="main-overview--field">
-                    <span className="label--md">종목 검색</span>
+                  <div className="main-overview--field">
+                    <label className="label--md" htmlFor="stock-search-input">
+                      종목 검색
+                    </label>
                     <div className="autocomplete">
-                      <div className="autocomplete__control">
+                      <div className={`autocomplete__control ${selectedStock ? "is-selected" : ""}`}>
                         <input
+                          id="stock-search-input"
                           className="autocomplete__input"
                           type="text"
                           placeholder="종목명 또는 코드"
                           aria-label="종목 검색"
                           value={stockQuery}
+                          readOnly={Boolean(selectedStock)}
                           onChange={(event) => {
                             setStockQuery(event.target.value);
                             setSelectedStock(null);
@@ -1595,7 +1599,22 @@ export default function InvestPage() {
                             setStockQuery(event.currentTarget.value);
                           }}
                         />
-                        <AppIcon name="arrow_drop_down" className="autocomplete__icon" />
+                        {selectedStock ? (
+                          <button
+                            type="button"
+                            className="autocomplete__clear"
+                            aria-label="선택한 종목 지우기"
+                            onClick={() => {
+                              setSelectedStock(null);
+                              setStockQuery("");
+                              setStockSearchItems([]);
+                            }}
+                          >
+                            <AppIcon name="close" />
+                          </button>
+                        ) : (
+                          <AppIcon name="arrow_drop_down" className="autocomplete__icon" />
+                        )}
                       </div>
                       {stockSearchItems.length || isStockSearching ? (
                         <ul className="autocomplete__list">
@@ -1624,7 +1643,7 @@ export default function InvestPage() {
                         </ul>
                       ) : null}
                     </div>
-                  </label>
+                  </div>
                   <label className="main-overview--field">
                     <span className="label--md">계좌 구분</span>
                     <select

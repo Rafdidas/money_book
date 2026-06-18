@@ -1,7 +1,7 @@
 "use client";
 
 import type { Expense } from "@/types/expense";
-import { getDateMap } from "@/utils/calendar";
+import { getDateMap, getMonthCalendarDays } from "@/utils/calendar";
 import { formatDate } from "@/utils/date";
 
 type Props = {
@@ -21,15 +21,7 @@ export default function CalendarView({
   expenses,
 }: Props) {
   const dateMap = getDateMap(expenses);
-  const currentMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-  const startDay = new Date(currentMonth);
-  startDay.setDate(currentMonth.getDate() - currentMonth.getDay());
-
-  const calendarDays = Array.from({ length: 28 }, (_, index) => {
-    const day = new Date(startDay);
-    day.setDate(startDay.getDate() + index);
-    return day;
-  });
+  const calendarDays = getMonthCalendarDays(selectedDate);
 
   const selectedDateKey = formatDate(selectedDate);
   const selectedDayExpenses = expenses.filter((item) => item.date === selectedDateKey);

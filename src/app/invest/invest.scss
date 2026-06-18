@@ -233,8 +233,10 @@
 
       .badge {
         align-self: flex-start;
-        height: 20px;
-        padding-inline: 7px;
+        min-height: 22px;
+        height: auto;
+        padding: 2px 8px;
+        line-height: 1.35;
       }
     }
 

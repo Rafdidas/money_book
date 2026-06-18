@@ -338,3 +338,31 @@ with a simpler monthly cash-flow summary.
 - Do not remove previous context unless it is clearly obsolete.
 - Follow `AGENTS.md`: read relevant Next.js docs in `node_modules/next/dist/docs/`
   before writing Next.js code.
+# 2026-06-18 QA follow-up fixes
+
+- Investigated QA items reported from demo mode for production-shared code paths.
+- Root causes found:
+  - Dashboard/common calendar grid used fixed day counts, so 6-week months could be clipped.
+  - Dashboard recurring forms nested checkbox labels inside field labels, producing invalid HTML and a likely hydration warning source.
+  - Shared modal did not lock body scroll or compensate scrollbar width, causing background layout shifts.
+  - Investment stock autocomplete allowed free typing after a stock was selected.
+  - Investment holding account badges had tight vertical padding inside table rows.
+- Changed:
+  - Added shared dynamic month calendar day generation in `src/utils/calendar.ts`.
+  - Reused it in dashboard and `CalendarView`.
+  - Removed nested field labels around dashboard checkbox groups.
+  - Locked/restored body overflow and scrollbar padding in `Modal`.
+  - Made selected investment stock search read-only with a clear button.
+  - Loosened investment holdings badge padding.
+  - Clarified dashboard edit target copy as current-month direct-entry records.
+- Verification:
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Browser QA on `http://localhost:3001`:
+    - No hydration/runtime errors observed on `/`, `/app`, or `/app/invest`.
+    - Existing unrelated Next image warnings remain for the logo dimensions/LCP.
+    - Dashboard August 2026 calendar renders 42 cells and includes August 31.
+    - Modal open locks body overflow and applies 15px scrollbar compensation, then restores both on close.
+    - Dashboard form DOM has 0 nested labels and explicit labels for fields whose wrappers were changed.
+    - Investment stock search becomes read-only after selecting `삼성전자 (005930)` and shows a clear button.
+  - Screenshot capture through the in-app browser timed out at the CDP screenshot step; DOM/state checks were used instead.

@@ -9,6 +9,7 @@ import {
 } from "./constants";
 import type { FixedExpenseMeta, SavingsMeta } from "./types";
 import type { Expense } from "@/types/expense";
+import { getMonthCalendarDays } from "@/utils/calendar";
 import { formatDate } from "@/utils/date";
 
 export const formatCurrency = (value: number) =>
@@ -46,16 +47,7 @@ export const formatDetailDate = (dateValue: string) => {
   return `${String(date.getFullYear()).slice(2)}.${date.getMonth() + 1}.${date.getDate()}`;
 };
 
-export const getCalendarDays = (selectedDate: Date) => {
-  const firstDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-  const startDate = new Date(firstDay);
-  startDate.setDate(firstDay.getDate() - firstDay.getDay());
-  return Array.from({ length: 35 }, (_, index) => {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + index);
-    return date;
-  });
-};
+export const getCalendarDays = getMonthCalendarDays;
 
 export const getDaysInMonth = (year: number, month: number) =>
   new Date(year, month + 1, 0).getDate();

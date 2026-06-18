@@ -20,6 +20,10 @@
       border-color: var(--primary-high);
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary-high) 18%, transparent);
     }
+
+    &.is-selected {
+      background: var(--surface-lowest);
+    }
   }
 
   &__input {
@@ -48,6 +52,24 @@
     color: var(--on-surface);
     font-size: 18px;
     line-height: 16px;
+  }
+
+  &__clear {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-left: 6px;
+    border-radius: 4px;
+    color: var(--on-surface);
+
+    &:hover,
+    &:focus-visible {
+      background: var(--surface-low);
+      color: var(--on-surface-ultra-high);
+    }
   }
 
   &__helper {

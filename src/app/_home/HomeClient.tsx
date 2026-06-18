@@ -1205,7 +1205,7 @@ export default function HomeClient() {
   const handleInlineTypeChange = (type: InlineEntryType) => {
     if (inlineFormMode === "edit") {
       if (!monthlyEditableExpenses.some((item) => getInlineEntryType(item) === type)) {
-        alert("수정할 내역이 없습니다.");
+        alert("이번 달 수정할 직접 입력 내역이 없습니다.");
         return;
       }
 
@@ -2365,7 +2365,7 @@ export default function HomeClient() {
                   <div className="main-overview--form">
                     {inlineFormMode === "edit" ? (
                       <label className="main-overview--field">
-                        <span className="label--md">수정할 내역</span>
+                        <span className="label--md">이번 달 수정할 직접 입력 내역</span>
                         <select
                           className="main-overview--control body--sm"
                           value={inlineEditingId}
@@ -2373,7 +2373,7 @@ export default function HomeClient() {
                           disabled={inlineEditItems.length === 0}
                         >
                           {inlineEditItems.length === 0 ? (
-                            <option value="">이번 달 내역 없음</option>
+                            <option value="">이번 달 직접 입력 내역 없음</option>
                           ) : (
                             inlineEditItems.map((item) => (
                               <option key={item.id} value={item.id}>
@@ -2646,9 +2646,11 @@ export default function HomeClient() {
                       </label>
                     ) : null}
                     <div className="grid-col-3">
-                      <label className="main-overview--field flex-fill">
+                      <div className="main-overview--field flex-fill">
                         <div className="row-group row-group--center row-group--between">
-                          <span className="form-label label--md">납입 금액</span>
+                          <label className="form-label label--md" htmlFor="savings-payment-amount">
+                            납입 금액
+                          </label>
                           {savingsFormMode === "edit" ? (
                             <label className="row-group row-group--center row-group--gap-4">
                               <input
@@ -2663,6 +2665,7 @@ export default function HomeClient() {
                           ) : null}
                         </div>
                         <input
+                          id="savings-payment-amount"
                           className="main-overview--control body--sm"
                           type="text"
                           inputMode="numeric"
@@ -2672,7 +2675,7 @@ export default function HomeClient() {
                             setSavingsPaymentAmount(formatIntegerInput(event.target.value))
                           }
                         />
-                      </label>
+                      </div>
                       <label className="main-overview--field flex-fill">
                         <span className="form-label label--md">납입일</span>
                         <select
@@ -2690,9 +2693,11 @@ export default function HomeClient() {
                           })}
                         </select>
                       </label>
-                      <label className="main-overview--field  flex-fill">
+                      <div className="main-overview--field  flex-fill">
                         <div className="row-group row-group--center row-group--between">
-                          <span className="form-label label--md">만기일</span>
+                          <label className="form-label label--md" htmlFor="savings-maturity-date">
+                            만기일
+                          </label>
                           <label className="row-group row-group--center row-group--gap-4">
                             <input
                               type="checkbox"
@@ -2705,13 +2710,14 @@ export default function HomeClient() {
                           </label>
                         </div>
                         <input
+                          id="savings-maturity-date"
                           className="main-overview--control body--sm"
                           type="date"
                           value={savingsMaturityDate}
                           onChange={(event) => setSavingsMaturityDate(event.target.value)}
                           disabled={savingsHasNoMaturity}
                         />
-                      </label>
+                      </div>
                     </div>
                     <div className="row-group row-group--center row-group--gap-8">
                       <label className="main-overview--field  flex-fill">
@@ -2945,9 +2951,11 @@ export default function HomeClient() {
                       </label>
                     ) : null}
                     <div className="grid-col-2">
-                      <label className="main-overview--field  flex-fill">
+                      <div className="main-overview--field  flex-fill">
                         <div className="row-group row-group--center row-group--between">
-                          <span className="form-label label--md">지출 금액</span>
+                          <label className="form-label label--md" htmlFor="fixed-expense-amount">
+                            지출 금액
+                          </label>
                           {fixedExpenseFormMode === "edit" ? (
                             <label className="row-group row-group--center row-group--gap-4">
                               <input
@@ -2962,6 +2970,7 @@ export default function HomeClient() {
                           ) : null}
                         </div>
                         <input
+                          id="fixed-expense-amount"
                           className="main-overview--control body--sm"
                           type="text"
                           inputMode="numeric"
@@ -2971,10 +2980,12 @@ export default function HomeClient() {
                             setFixedExpenseAmount(formatIntegerInput(event.target.value))
                           }
                         />
-                      </label>
-                      <label className="main-overview--field  flex-fill">
+                      </div>
+                      <div className="main-overview--field  flex-fill">
                         <div className="row-group row-group--center row-group--between">
-                          <span className="form-label label--md">종료일</span>
+                          <label className="form-label label--md" htmlFor="fixed-expense-end-date">
+                            종료일
+                          </label>
                           <label className="row-group row-group--center row-group--gap-4">
                             <input
                               type="checkbox"
@@ -2987,13 +2998,14 @@ export default function HomeClient() {
                           </label>
                         </div>
                         <input
+                          id="fixed-expense-end-date"
                           className="main-overview--control body--sm"
                           type="date"
                           value={fixedExpenseEndDate}
                           onChange={(event) => setFixedExpenseEndDate(event.target.value)}
                           disabled={fixedExpenseHasNoEndDate}
                         />
-                      </label>
+                      </div>
                     </div>
                     <div className="grid-col-2">
                       <label className="main-overview--field flex-fill">
