@@ -28,7 +28,7 @@ export default function PublicCta({ variant }: PublicCtaProps) {
             ? "button button--sm button--primary"
             : variant === "hero"
               ? "button button--lg button--primary"
-              : "button button--md button--outline-primary"
+              : "button button--md button--primary"
         }
       >
         가계부로 이동
@@ -38,7 +38,7 @@ export default function PublicCta({ variant }: PublicCtaProps) {
 
   if (variant === "banner") {
     return (
-      <Link href="/auth/login" className="button button--md button--outline-primary">
+      <Link href="/auth/login" className="button button--md button--primary">
         무료로 시작하기
       </Link>
     );
@@ -54,7 +54,7 @@ export default function PublicCta({ variant }: PublicCtaProps) {
             : "button button--lg button--primary"
         }
       >
-        {variant === "header" ? "로그인" : "무료로 시작하기"}
+        무료로 시작하기
       </Link>
       <button
         type="button"

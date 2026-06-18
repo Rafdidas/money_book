@@ -1,5 +1,6 @@
 "use client";
 
+import { setWasmUrl } from "@lottiefiles/dotlottie-react";
 import {
   createContext,
   useContext,
@@ -13,6 +14,8 @@ import { isDemoModeEnabled } from "@/lib/demo";
 import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
 import type { ReactNode } from "react";
+
+setWasmUrl("/dotlottie-player.wasm");
 
 type AppDataContextValue = {
   displayName: string;

@@ -26,7 +26,8 @@ export default function Header() {
               src={logo}
               width={232}
               height={52}
-              loading="eager"
+              preload
+              style={{ width: "auto", height: "var(--header-logo-height)" }}
               alt="머니북가계부 로고"
             />
           </Link>

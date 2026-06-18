@@ -366,3 +366,111 @@ with a simpler monthly cash-flow summary.
     - Dashboard form DOM has 0 nested labels and explicit labels for fields whose wrappers were changed.
     - Investment stock search becomes read-only after selecting `삼성전자 (005930)` and shows a clear button.
   - Screenshot capture through the in-app browser timed out at the CDP screenshot step; DOM/state checks were used instead.
+
+# 2026-06-18 intro renewal pass 1
+
+- Implemented the first-pass intro renewal from the reviewed design direction.
+- Changed:
+  - Replaced generic hero copy with the approved value proposition:
+    `수입, 지출, 저축, 투자까지 한눈에 정리하는 나만의 가계부`.
+  - Added a secondary hero anchor CTA to jump to 주요 기능.
+  - Reworked the concerns section with sharper user problem copy.
+  - Added a 3-card core value section:
+    - 월별 흐름 파악
+    - 반복 예정 관리
+    - 자산 흐름 정리
+  - Replaced the old 5-card feature list with a compressed product-showcase section:
+    - 기록
+    - 예정
+    - 분석
+  - Strengthened free/mobile copy and badges.
+  - Changed the final CTA from a fixed bottom banner into a regular page-ending CTA.
+  - Updated public header CTA copy from `로그인` to `무료로 시작하기`.
+- Files changed:
+  - `src/app/_intro/IntroPage.tsx`
+  - `src/app/intro/intro.scss`
+  - `src/components/common/PublicCta.tsx`
+- Verification:
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Browser QA on `http://localhost:3001/`:
+    - Desktop DOM check found the renewed hero, concerns, value, feature showcase, free/mobile, and final CTA sections.
+    - `주요 기능 보기` anchor moves to `#intro-features`.
+    - Mobile 390px check found no horizontal overflow, 4 concern cards, 3 value cards, and 3 feature cards.
+    - Mobile screenshot verified the hero copy, CTA stack, and mockup image fit the first viewport.
+    - Existing unrelated Next image warnings remain for logo dimensions/LCP.
+
+# 2026-06-18 intro renewal pass 2
+
+- Polished the approved first-pass intro renewal without changing the section order.
+- Changed:
+  - Added code-native monthly summary cards over the feature showcase screenshot:
+    - 이번 달 남은 돈
+    - 예정 반영 후
+    - 투자 원금
+  - Kept the summary cards as a desktop overlay and stacked them under the
+    screenshot on mobile.
+  - Updated the public header logo image for Next 16 image behavior with
+    ratio-preserving style and responsive CSS-variable height.
+  - Set both reused intro screenshot images to eager loading so the duplicated
+    LCP image no longer produces a dev console warning.
+- Files changed:
+  - `src/app/_intro/IntroPage.tsx`
+  - `src/app/intro/intro.scss`
+  - `src/components/common/Header.tsx`
+  - `src/components/common/header.scss`
+- Verification:
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Browser plugin desktop DOM check on `http://localhost:3001/`:
+    - logo renders at 178x40 with no Next warning portal
+    - feature summary cards render as an overlay
+    - no horizontal overflow
+  - Chrome checks at `1280x900` and `390x1000`:
+    - no hydration, image aspect-ratio, or LCP warnings in console
+    - no horizontal overflow
+    - mobile feature summary cards render as stacked static cards
+
+# 2026-06-18 intro footer polish
+
+- Reworked `.intro-banner` from a standalone primary-color CTA band into a
+  quieter footer-style closing section.
+- Changed the footer background to the existing low surface color with a subtle
+  top border so it matches the intro page rhythm.
+- Changed the footer CTA to the existing primary button style for a clearer
+  final action.
+- Verified:
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Chrome checks at `1280x900` and `390x900` show no horizontal overflow or
+    console warnings.
+
+# 2026-06-18 intro footer Lottie
+
+- User approved trying `diffusionstudio/lottie` in the intro footer.
+- Installed the `diffusionstudio/lottie` text-to-lottie skill into:
+  - `C:\Users\박현규\.codex\skills\text-to-lottie`
+- Created a small footer animation:
+  - cards represent money flow being organized
+  - moving dot connects the flow
+  - final blue check confirms completion
+- Added app asset:
+  - `public/animations/intro-footer-flow.json`
+- Added app renderer:
+  - `src/app/_intro/IntroFooterLottie.tsx`
+- Inserted the animation into `.intro-banner` between the copy and CTA.
+- Added local dotLottie WASM asset to avoid CDN runtime failures:
+  - `public/dotlottie-player.wasm`
+- Set the WASM URL globally in `src/app/providers.tsx`, which also stabilizes
+  existing `DotLottieReact` usages.
+- Verified:
+  - Lottie JSON parses successfully with Node.
+  - Official diffusionstudio player at `http://127.0.0.1:3030/money-book-footer/scene-1`
+    renders frames 0, 48, and 95 with no player warnings.
+  - App footer renders the Lottie canvas on desktop and mobile.
+  - Chrome checks show no dotLottie WASM/CDN failures after local WASM setup.
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+- Note:
+  - Codex may need a restart before the newly installed `text-to-lottie` skill
+    appears in the automatic skill list, but it was read directly for this work.

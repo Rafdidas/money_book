@@ -1,4 +1,6 @@
 .app-header {
+  --header-logo-height: 40px;
+
   min-height: 52px;
 
   &--inner {
@@ -18,8 +20,7 @@
   }
   &__brand {
     > img {
-      width: auto;
-      height: 40px;
+      display: block;
     }
   }
 
@@ -46,7 +47,7 @@
       }
 
       .app-header__brand > img {
-        height: 34px;
+        --header-logo-height: 34px;
       }
 
       .hd-btn {
