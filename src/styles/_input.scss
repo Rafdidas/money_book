@@ -46,11 +46,11 @@
 
   &--invalid,
   &[aria-invalid="true"] {
-    border-color: #ff5e66;
+    border-color: var(--red-high);
   }
 
   &--valid {
-    border-color: #52c26d;
+    border-color: var(--green-high);
   }
 
   &--borderless {
@@ -92,10 +92,10 @@
   line-height: 1.5;
 
   &--invalid {
-    color: #d84f57;
+    color: var(--red-higher);
   }
 
   &--valid {
-    color: #2d9f57;
+    color: var(--green-higher);
   }
 }

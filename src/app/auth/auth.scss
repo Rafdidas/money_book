@@ -3,7 +3,7 @@
   min-height: 100vh;
   overflow: hidden;
   background: var(--surface-ultra-low);
-  color: #2a3437;
+  color: var(--on-surface-ultra-high);
 
   &::before {
     content: "";
@@ -183,12 +183,12 @@
     margin-top: 32px;
     padding-top: 25px;
     border-top: 1px solid var(--outline-low);
-    color: #566164;
+    color: var(--on-surface-higher);
   }
 
   .error-text {
     margin-top: -8px;
-    color: #9f403d;
+    color: var(--red-highest);
   }
 
   @media (max-width: 640px) {

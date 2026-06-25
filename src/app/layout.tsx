@@ -1,5 +1,6 @@
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import Header from "@/components/common/Header";
 import {
   getSiteUrl,
@@ -146,8 +147,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=window.location.pathname;var isIntro=p==="/"||p==="/intro";var t=window.localStorage.getItem("mb-theme");var theme=(!isIntro&&t==="dark")?"dark":"light";document.documentElement.setAttribute("data-theme",theme);}catch(e){}})();`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -162,6 +168,18 @@ export default function RootLayout({
         />
       </head>
       <body className="app-body">
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-EKPQWDNXFQ"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-EKPQWDNXFQ');
+          `}
+        </Script>
         <Providers>
           <div className="wrapper">
             <Header />

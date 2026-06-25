@@ -284,3 +284,16 @@
     --button-text-disabled: var(--on-surface-low, #c9cdd4);
   }
 }
+
+// 다크모드 — primary 버튼은 라이트에서 배경으로 --on-surface-ultra-high(거의 검정)를
+// 쓰는데, 다크에선 이 토큰이 거의 흰색이 되어 흰 텍스트와 겹친다. 브랜드 블루로 보정.
+[data-theme="dark"] .button--primary {
+  --button-bg: var(--primary);
+  --button-bg-hover: var(--primary-high);
+  --button-bg-pressed: var(--primary-higher);
+  --button-bg-disabled: var(--surface-mid);
+  --button-text: var(--on-primary-ultra-low);
+  --button-text-hover: var(--on-primary-ultra-low);
+  --button-text-pressed: var(--on-primary-ultra-low);
+  --button-text-disabled: var(--on-surface-high);
+}

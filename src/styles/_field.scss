@@ -2,10 +2,10 @@
   width: 100%;
   min-height: 40px;
   padding: 8px 12px;
-  border: 1px solid #c9cdd4;
+  border: 1px solid var(--outline-mid);
   border-radius: 6px;
-  background: #ffffff;
-  color: #222222;
+  background: var(--surface-ultra-low);
+  color: var(--on-surface-ultra-high);
   font-size: 15px;
   line-height: 1.5;
   outline: none;
@@ -17,27 +17,27 @@
   appearance: none;
 
   &::placeholder {
-    color: #979ea8;
+    color: var(--on-surface-high);
   }
 
   &:hover {
-    border-color: #979ea8;
+    border-color: var(--outline-high);
   }
 
   &:focus {
-    border-color: #5991ff;
-    box-shadow: 0 0 0 3px rgba(89, 145, 255, 0.12);
+    border-color: var(--primary-high);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-high) 16%, transparent);
   }
 
   &:read-only {
-    background: #f6f7f8;
-    color: #676c75;
+    background: var(--surface-lower);
+    color: var(--on-surface);
   }
 
   &:disabled {
     border-color: transparent;
-    background: rgba(55, 93, 137, 0.05);
-    color: #979ea8;
+    background: var(--transparency);
+    color: var(--on-surface-high);
     cursor: not-allowed;
   }
 }

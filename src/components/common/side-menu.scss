@@ -91,6 +91,7 @@
   }
 
   &--item {
+    width: 100%;
     min-height: 42px;
     padding: 9px 10px;
     border: 1px solid transparent;
@@ -443,6 +444,45 @@
   .mobile-drawer--panel,
   .mobile-bottom-nav {
     transition: none;
+  }
+}
+
+// 다크모드 — 모바일 헤더/하단 네비는 화이트 글래스를 하드코딩하므로 별도 보정
+[data-theme="dark"] {
+  .mobile-app-header {
+    background: color-mix(in srgb, var(--surface-ultra-low) 86%, transparent);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .mobile-app-header--menu {
+    background: color-mix(in srgb, var(--surface-ultra-low) 84%, transparent);
+  }
+
+  .mobile-bottom-nav {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(40, 44, 50, 0.55);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+
+    &::before {
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.16),
+        transparent
+      );
+    }
+
+    &::after {
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.16),
+        transparent,
+        rgba(255, 255, 255, 0.06)
+      );
+    }
   }
 }
 

@@ -10,6 +10,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AppAlertProvider from "@/components/app-alert/AppAlertProvider";
+import ThemeProvider from "@/components/common/ThemeProvider";
 import { isDemoModeEnabled } from "@/lib/demo";
 import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
@@ -157,7 +158,9 @@ export default function Providers({ children }: { children: ReactNode }) {
 
   return (
     <AppDataContext.Provider value={value}>
-      <AppAlertProvider>{children}</AppAlertProvider>
+      <ThemeProvider>
+        <AppAlertProvider>{children}</AppAlertProvider>
+      </ThemeProvider>
     </AppDataContext.Provider>
   );
 }

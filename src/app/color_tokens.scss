@@ -229,3 +229,74 @@
   --opacity-light-60: rgba(255, 255, 255, 0.6);
   --opacity-light-80: rgba(255, 255, 255, 0.8);
 }
+
+// ------------------------------  dark theme -------------------------------------------
+// 인트로 페이지 제외. 핵심 토큰만 손튜닝하고 나머지는 :root 값을 그대로 사용한다.
+[data-theme="dark"] {
+  // surface — base는 어둡게, 카드/올라간 표면(ultra-low)은 base보다 밝게
+  --surface: #15171a;
+  --surface-ultra-low: #20242a;
+  --surface-lowest: #1c2025;
+  --surface-lower: #191c21;
+  --surface-low: #262a30;
+  --surface-mid: #343941;
+  --surface-high: #454b54;
+  --surface-higher: #5c636d;
+  --surface-highest: #828a95;
+  --surface-ultra-high: #e7e9ec;
+  // on_surface — 텍스트/전경. 어두운 배경 위라 명도 방향을 반전
+  --on-surface: #9aa1ab;
+  --on-surface-ultra-low: #fff;
+  --on-surface-lowest: #2a2e35;
+  --on-surface-lower: #343941;
+  --on-surface-low: #3e444d;
+  --on-surface-mid: #565d67;
+  --on-surface-high: #7c838e;
+  --on-surface-higher: #b7bdc6;
+  --on-surface-highest: #d5dae1;
+  --on-surface-ultra-high: #f2f4f7;
+  // outline
+  --outline: #2c3037;
+  --outline-ultra-low: #15171a;
+  --outline-lowest: #23272d;
+  --outline-lower: #262a30;
+  --outline-low: #2f343b;
+  --outline-mid: #3c424a;
+  --outline-high: #5c636d;
+  --outline-higher: #868d97;
+  --outline-highest: #c9ced5;
+  --outline-ultra-high: #e7e9ec;
+  // primary — 옅은 틴트는 다크 블루로, 액티브용 명도 보정
+  --primary-ultra-low: #161e2b;
+  --primary-lowest: #1a2435;
+  --primary-lower: #1f2e45;
+  --primary-low: #28395a;
+  --primary-higher: #5e92ec;
+  --primary-highest: #6b9bec;
+  // transparency — 어두운 배경에선 흰색 기반 오버레이로
+  --transparency: rgba(255, 255, 255, 0.04);
+  --transparency-lower: rgba(255, 255, 255, 0.07);
+  --transparency-low: rgba(255, 255, 255, 0.09);
+  --transparency-mid: rgba(255, 255, 255, 0.13);
+  --transparency-high: rgba(255, 255, 255, 0.18);
+  --transparency-higher: rgba(255, 255, 255, 0.24);
+  // 강조색 — 독립 텍스트로 쓰이는 *-highest는 밝게
+  --red-highest: #ff8a98;
+  --green-highest: #5fd183;
+  --teal-highest: #45d6cf;
+  --blue-highest: #7fa3f4;
+  --violet-highest: #ec7fd4;
+  --orange-highest: #f6b65a;
+  --yellow-highest: #e6c53a;
+  // 강조색 배지 — 배경(*-lower)은 다크 틴트, 배지 텍스트(--on-*-high)는 밝게
+  --red-lower: #2e1a1e;
+  --on-red-high: #ff9da9;
+  --green-lower: #14271b;
+  --on-green-high: #6fd68e;
+  --teal-lower: #0c2826;
+  --on-teal-high: #4fdad2;
+  --blue-lower: #16203a;
+  --on-blue-high: #8faef5;
+  --violet-lower: #2c1528;
+  --on-violet-high: #ee8fd8;
+}

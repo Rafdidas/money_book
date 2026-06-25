@@ -1,5 +1,27 @@
 # Money Book Handoff
 
+## 다크모드 (2026-06-24)
+
+- 설계 문서: `docs/superpowers/specs/2026-06-24-dark-mode-design.md`
+- 인트로(`/`, `/intro`) 제외 앱 전체 다크모드. 기본 라이트, `localStorage["mb-theme"]` 저장.
+- 토글 버튼: `SideMenu`의 nav 리스트 문의하기 아래 (데스크톱/모바일 둘 다).
+- 구현:
+  - `src/app/color_tokens.scss`: `[data-theme="dark"]` 블록 추가 (핵심 토큰 손튜닝).
+  - `src/components/common/ThemeProvider.tsx` (신규): context/토글/저장, 인트로 강제 light.
+  - `src/app/layout.tsx`: `<head>` FOUC 방지 인라인 스크립트.
+  - `src/app/providers.tsx`: ThemeProvider로 감쌈.
+  - `src/components/common/SideMenu.tsx`: 토글 `<li>` 추가, `dark_mode`/`light_mode` 아이콘.
+  - `src/components/common/AppIcon.tsx`: 두 아이콘 path 추가.
+  - `src/components/common/side-menu.scss`: 모바일 하단 네비/헤더 글래스 다크 보정.
+- 버그 수정: `.button--primary`가 다크에서 흰배경+흰글씨로 사라지던 문제 →
+  `_button.scss`에 `[data-theme="dark"] .button--primary` 브랜드 블루 오버라이드.
+- 하드코딩 색 전면 토큰화 (다크에서 안 바뀌던 레거시 컴포넌트):
+  `_field.scss`, `_input.scss`, `expense-form.scss`, `expense-list.scss`,
+  `calendar-view.scss`, `expense-pie-chart.scss`, `footer.scss`, `auth.scss`.
+  (캘린더 선택일은 `var(--primary)`+흰 글씨로 통일)
+- 검증: `npm run lint` 통과, `npm run build` 통과.
+- 남은 일: 실기기/브라우저에서 라이트·다크 색감 미세조정 (팔레트는 손튜닝값이라 함께 확인 권장).
+
 ## Current Goal
 
 Refine the monthly analysis page into a clearer "summary -> comparison ->

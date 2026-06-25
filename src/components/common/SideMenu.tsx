@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import logo from "@/assets/img/monibuk-logo.svg";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import AppIcon, { type AppIconName } from "@/components/common/AppIcon";
+// 다크모드 토글: 로고 완성 후 주석 해제하고 배포 예정
+// import { useTheme } from "@/components/common/ThemeProvider";
 import { disableDemoMode } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
 
@@ -54,6 +56,7 @@ export default function SideMenu({
   isDemoMode = false,
 }: SideMenuProps) {
   const pathname = usePathname();
+  // const { theme, toggleTheme } = useTheme();
   const { alert, confirm } = useAppAlert();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
@@ -142,6 +145,21 @@ export default function SideMenu({
     window.location.replace("/auth/login");
   };
 
+  // 다크모드 토글: 로고 완성 후 주석 해제하고 배포 예정
+  // const themeToggleItem = (
+  //   <li>
+  //     <button
+  //       type="button"
+  //       className="side-menu--item row-group row-group--center row-group--gap-4 label--lg"
+  //       onClick={toggleTheme}
+  //       aria-pressed={theme === "dark"}
+  //     >
+  //       <AppIcon name={theme === "dark" ? "light_mode" : "dark_mode"} />
+  //       {theme === "dark" ? "라이트 모드" : "다크 모드"}
+  //     </button>
+  //   </li>
+  // );
+
   return (
     <>
       <aside className="side-menu">
@@ -172,6 +190,7 @@ export default function SideMenu({
                   </Link>
                 </li>
               ))}
+              {/* {themeToggleItem} */}
             </ul>
             <ul className="side-menu--list app-header__nav column-group column-group--gap-4 log-out--wrap">
               <li>
@@ -263,6 +282,7 @@ export default function SideMenu({
                   </Link>
                 </li>
               ))}
+              {/* {themeToggleItem} */}
             </ul>
           </nav>
           <ul className="side-menu--list log-out--wrap">
