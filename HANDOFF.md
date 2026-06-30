@@ -1,5 +1,20 @@
 # Money Book Handoff
 
+## README 포트폴리오 정리 (2026-06-30)
+
+- README를 문제→해결 구조로 재작성.
+- 배포 링크(`https://monibuk.com/`), 프로젝트 목적, 결과 수치, 트러블슈팅 기록을 추가.
+- 기술 스택 단순 나열을 제거하고 Next.js, React, Supabase, Chart.js, 외부 API를 어떻게 활용했는지 서술형으로 변경.
+- 결과 수치는 코드에서 확인한 값 기준으로 작성:
+  - 사용자 화면 11개
+  - 서버 API 2개
+  - Supabase 마이그레이션 7개
+  - 종목 검색 최대 12개
+  - 종목 마스터 12시간 캐시
+  - 종가 6시간 캐시
+  - 요청당 20개 종목, 5개 동시 조회, 사용자당 분당 30개 배치 요청 제한
+- 검증: `npm run lint` 통과, `npm run build` 통과.
+- 남은 일: README의 성과 수치에 실제 사용자/성능 지표가 생기면 교체 가능.
 ## 다크모드 (2026-06-24)
 
 - 설계 문서: `docs/superpowers/specs/2026-06-24-dark-mode-design.md`
