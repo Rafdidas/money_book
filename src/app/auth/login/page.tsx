@@ -1,13 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
+
+import safe from "@/assets/img/renewal/safe.svg";
 import { disableDemoMode, enableDemoMode } from "@/lib/demo";
 import { setRememberLogin } from "@/lib/supabase/auth-storage";
 import { supabase } from "@/lib/supabase/client";
-import logo from "@/assets/img/monibuk-logo.svg";
-import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -90,121 +91,111 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-page auth-page-login">
-      <div className="login-ornament-top" />
-      <div className="login-ornament-bottom" />
-
-      <main className="login-stage">
-        <section className="login-wrap">
-          <div className="auth-brand-block">
-            <h1 className="auth-brand auth-brand--logo headline--md">
-              <Image
-                src={logo}
-                width={232}
-                height={52}
-                alt="머니북가계부 로고"
-                priority
-              />
-            </h1>
-            <p className="auth-lead label--lg">
-              무료 개인 가계부로 현금흐름을 관리하세요
-            </p>
-          </div>
-          <section className="login-card">
-            <div className="auth-brand-block">
-              <h1 className="auth-brand headline--md">로그인</h1>
-              {/* <p className="auth-lead">당신의 자산 이야기를 기록합니다</p> */}
+    <div className="auth-page auth-page--login">
+      <main className="auth-shell" aria-labelledby="login-title">
+        <div className="auth-card-shell">
+          <aside className="auth-side" aria-label="머니북가계부 소개">
+            <div className="auth-side__orb auth-side__orb--top" aria-hidden="true" />
+            <div className="auth-side__orb auth-side__orb--bottom" aria-hidden="true" />
+            <Link href="/" className="auth-side__brand" aria-label="머니북가계부 홈">
+              <span className="auth-side__mark">M</span>
+              <span>머니북가계부</span>
+            </Link>
+            <div className="auth-side__content">
+              <h2>
+                돈의 흐름,
+                <br />
+                가볍게 정리해요
+              </h2>
+              <p>수입·지출·저축·투자까지, 흩어진 돈의 흐름을 머니북 하나로 모아서 봐요.</p>
+              <Image src={safe} width={340} height={314} alt="" priority />
             </div>
-            <form ref={formRef} className="auth-form" onSubmit={handleLogin}>
-              <div className="field-group">
-                <label className="field-label label--lg" htmlFor="login-email">
-                  이메일
-                </label>
-                <input
-                  className={`form-input form-input--md${emailError ? " form-input--invalid" : ""}`}
-                  id="login-email"
-                  name="email"
-                  type="email"
-                  placeholder="example@moneybook.com"
-                  value={email}
-                  autoComplete="email"
-                  aria-invalid={Boolean(emailError)}
-                  disabled={isSubmitting}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    if (emailError) {
-                      setEmailError("");
-                    }
-                  }}
-                />
-                {emailError ? (
-                  <p className="form-input-helper form-input-helper--invalid">
-                    {emailError}
-                  </p>
-                ) : null}
-              </div>
-              <div className="field-group">
-                <label className="field-label label--lg" htmlFor="login-password">
-                  비밀번호
-                </label>
-                <input
-                  className={`form-input form-input--md${passwordError ? " form-input--invalid" : ""}`}
-                  id="login-password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  autoComplete="current-password"
-                  aria-invalid={Boolean(passwordError)}
-                  disabled={isSubmitting}
-                  onChange={(event) => {
-                    setPassword(event.target.value);
-                    if (passwordError) {
-                      setPasswordError("");
-                    }
-                  }}
-                />
-                {passwordError ? (
-                  <p className="form-input-helper form-input-helper--invalid">
-                    {passwordError}
-                  </p>
-                ) : null}
-              </div>
-              <div className="login-footer row-group row-group--between body--sm">
-                <span>아직 회원이 아니신가요?</span>
-                <Link href="/auth/signup" className="body--md">
-                  회원가입
-                </Link>
-              </div>
-              <label className="auth-check label--md">
-                <input
-                  type="checkbox"
-                  checked={rememberLogin}
-                  disabled={isSubmitting}
-                  onChange={(event) => setRememberLoginState(event.target.checked)}
-                />
-                <span>로그인 유지</span>
-              </label>
-              <div className="column-group column-group--gap-16">
-                <button
-                  type="submit"
-                  className="button button--primary button--lg button--full label--lg"
-                  disabled={isSubmitting}
-                >
+            <p className="auth-side__foot">개인 가계부 서비스</p>
+          </aside>
+
+          <section className="auth-panel">
+            <div className="auth-form-wrap auth-form-wrap--login">
+              <h1 id="login-title" className="auth-title">
+                로그인
+              </h1>
+              <p className="auth-subtitle">머니북 계정으로 로그인해요</p>
+
+              <form ref={formRef} className="auth-form" onSubmit={handleLogin}>
+                <div className="auth-field">
+                  <label htmlFor="login-email">이메일</label>
+                  <input
+                    className={emailError ? "auth-input is-invalid" : "auth-input"}
+                    id="login-email"
+                    name="email"
+                    type="email"
+                    placeholder="example@moneybook.com"
+                    value={email}
+                    autoComplete="email"
+                    aria-invalid={Boolean(emailError)}
+                    disabled={isSubmitting}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      if (emailError) {
+                        setEmailError("");
+                      }
+                    }}
+                  />
+                  {emailError ? <p className="auth-error-text">{emailError}</p> : null}
+                </div>
+
+                <div className="auth-field auth-field--login-password">
+                  <label htmlFor="login-password">비밀번호</label>
+                  <input
+                    className={passwordError ? "auth-input is-invalid" : "auth-input"}
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    autoComplete="current-password"
+                    aria-invalid={Boolean(passwordError)}
+                    disabled={isSubmitting}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      if (passwordError) {
+                        setPasswordError("");
+                      }
+                    }}
+                  />
+                  {passwordError ? <p className="auth-error-text">{passwordError}</p> : null}
+                </div>
+
+                <div className="auth-login-options">
+                  <label className="auth-check">
+                    <input
+                      type="checkbox"
+                      checked={rememberLogin}
+                      disabled={isSubmitting}
+                      onChange={(event) => setRememberLoginState(event.target.checked)}
+                    />
+                    로그인 유지
+                  </label>
+                  <span className="auth-muted-action">비밀번호 찾기</span>
+                </div>
+
+                <button type="submit" className="auth-submit" disabled={isSubmitting}>
                   {isSubmitting ? "로그인 중..." : "로그인"}
                 </button>
                 <button
                   type="button"
-                  className="button button--outline button--lg button--full label--lg"
+                  className="auth-demo-button"
                   onClick={handleDemoLogin}
                   disabled={isSubmitting}
                 >
                   데모 체험하기
                 </button>
-              </div>
-            </form>
+                <p className="auth-bottom-link">
+                  아직 계정이 없으신가요? <Link href="/auth/signup">회원가입</Link>
+                </p>
+              </form>
+            </div>
           </section>
-        </section>
+        </div>
       </main>
     </div>
   );

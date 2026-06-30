@@ -496,3 +496,157 @@ with a simpler monthly cash-flow summary.
 - Note:
   - Codex may need a restart before the newly installed `text-to-lottie` skill
     appears in the automatic skill list, but it was read directly for this work.
+
+# 2026-06-29 intro design HTML transfer
+
+- Started the screen-by-screen transfer from the provided design HTML.
+- Scope for this pass is intro/landing only.
+- Changed:
+  - Copied only design SVG assets into `src/assets/img/renewal`.
+  - Did not copy `support.js` or `image-slot.js` into the app runtime.
+  - Replaced the intro page structure with the design HTML section order:
+    header, hero, problem cards, solution cards, feature section, two access cards, final CTA, footer.
+  - Converted repeated design markup into React arrays and `map` rendering.
+  - Added `IntroCta` for signup/app/demo actions while keeping the page body server-rendered.
+  - Replaced the old public intro header with the new in-page header to avoid duplicate chrome.
+  - Rewrote `intro.scss` with transferred spacing, typography, radius, button, card, grid, shadow, and color values from the design HTML.
+  - Used `머니북가계부` for the visible service name and checked the touched intro code/assets for banned source-brand traces.
+- Verification so far:
+  - `npm run lint`: passed.
+- Remaining:
+  - Run `npm run build`.
+  - Verify desktop and mobile renderings.
+
+# 2026-06-29 intro design HTML transfer verification
+
+- Completed verification for the intro-only design HTML transfer.
+- Verification:
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Chrome headless screenshots captured:
+    - `C:\tmp\money-book-intro-desktop.png` at 1280x900.
+    - `C:\tmp\money-book-intro-mobile.png` at 390x1000.
+  - CDP layout checks at 1280x900 and 390x1000:
+    - Section order is header, hero, concerns, values, features, access, final CTA, footer.
+    - Rendered card counts match the design transfer: 4 concern cards, 3 value cards, 3 feature items, 2 access cards.
+    - Visible brand is `머니북가계부`.
+    - Hero title is `수입, 지출, 저축, 투자까지 한눈에 정리해요` with design line breaks.
+    - CTA buttons render at 56px height on desktop and mobile.
+    - No horizontal overflow on desktop or mobile.
+    - Final CTA background resolves to `rgb(49, 130, 246)` from the design brand color.
+- Note:
+  - The in-app browser and image viewer tools failed with the current sandbox helper error, so visual QA used Chrome headless screenshots plus CDP layout metrics.
+- Remaining:
+  - None for the intro-only implementation pass.
+
+# 2026-06-29 intro fixed header polish
+
+- Adjusted the transferred intro header per follow-up feedback.
+- Changed:
+  - Made `.intro-header` fixed at the top with translucent chrome, blur, and bottom border.
+  - Added `.intro-page` top padding to match the fixed header height.
+  - Standardized the header `로그인` and `시작하기` buttons to the same 40px height on desktop and mobile.
+- Verification:
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Chrome headless CDP checks at 1280x900 and 390x1000:
+    - header `position` is `fixed`.
+    - header top remains `0` after scrolling.
+    - header height is `77px` and page padding-top is `77px`.
+    - `로그인` button height is `40px`.
+    - `시작하기` button height is `40px`.
+    - no horizontal overflow.
+
+# 2026-06-29 auth design HTML transfer
+
+- Transferred the provided design HTML structure to `/auth/login` and `/auth/signup`.
+- Changed:
+  - Copied only the auth illustration SVG assets into `src/assets/img/renewal`:
+    - `safe.svg`
+    - `rocket.svg`
+  - Did not copy `support.js` or `image-slot.js` into the app runtime.
+  - Rebuilt login as the design's two-panel layout while preserving Supabase login, remember-login, demo mode, and redirect logic.
+  - Rebuilt signup as the design's two-panel layout while preserving Supabase signup, callback URL, validation, and redirect logic.
+  - Rewrote `auth.scss` with transferred values for panel width, form width, gradient side panel, brand marks, typography, input heights, button heights, radii, colors, and mobile collapse.
+  - Kept minimal legacy auth styles for callback/status surfaces that still use `signup-stage`, `signup-wrap`, and `signup-card`.
+  - Used `머니북가계부` for visible service naming and checked the touched auth code/assets for banned source-brand traces.
+- Verification:
+  - banned source-brand search in touched auth files/assets: no matches.
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Chrome headless CDP checks at 1280x900 and 390x1000:
+    - `/auth/login`: title `로그인`, brand `머니북가계부`, desktop side panel visible, mobile side panel hidden.
+    - `/auth/signup`: title `회원가입`, brand `머니북가계부`, desktop side panel visible, mobile side panel hidden.
+    - desktop panel width: 480px; form width: 380px.
+    - login inputs: 52px; login/demo buttons: 56px.
+    - signup inputs: 50px; signup button: 56px.
+    - no horizontal overflow on desktop or mobile.
+
+# 2026-06-29 auth project2 design transfer
+
+- Updated `/auth/login` and `/auth/signup` to the revised auth design from the second provided design package.
+- Changed:
+  - Rebuilt both auth pages into a single centered card shell with a gradient side panel and a white form panel.
+  - Kept Supabase login/signup behavior, remember-login behavior, demo login behavior, callback URL handling, validation, and redirects intact.
+  - Updated the auth Sass values to match the revised design card shell:
+    - page background `#e9ecef`
+    - shell max-width `1080px`
+    - shell min-height `600px`
+    - shell radius `28px`
+    - shell shadow `0 30px 70px rgba(20, 40, 80, 0.16)`
+    - desktop panel direction `row`
+    - mobile panel direction `column`
+    - login input height `52px`
+    - signup input height `50px`
+    - primary/auth action button height `56px`
+  - Kept the visible service name as `머니북가계부`.
+  - Did not copy `support.js` or `image-slot.js` into the app runtime.
+- Verification:
+  - source-brand search in touched auth files/assets: no matches.
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Chrome headless CDP checks at 1280x900 and 390x1000:
+    - `/auth/login`: title `로그인`, subtitle `머니북 계정으로 로그인해요`, brand `머니북가계부`.
+    - `/auth/signup`: title `회원가입`, subtitle `무료로 머니북을 시작해요`, brand `머니북가계부`.
+    - desktop card width is `1080px`, radius is `28px`, shell padding is `40px`, and direction is `row`.
+    - mobile card width is `390px`, radius is `0px`, shell padding is `0px`, and direction is `column`.
+    - desktop and mobile side panels are visible for both pages.
+    - login inputs are `52px`; login action buttons are `56px`.
+    - signup inputs are `50px`; signup action button is `56px`.
+    - no horizontal overflow on desktop or mobile.
+
+# 2026-06-30 dashboard design HTML transfer
+
+- Transferred the revised dashboard screen structure to `/app`.
+- Changed:
+  - Reordered the dashboard surface to match the agreed screen order: hero, summary stats, expected balance, schedule/category grid, calendar/quick record grid, savings/fixed expense grid, recent entries.
+  - Rebuilt `DashboardSummaryCards` into the design stat grid and full expected-balance card while keeping existing dashboard summary data.
+  - Rebuilt `DashboardScheduleCard` into the design card/list shape while keeping existing schedule summary data.
+  - Converted the old detail table into a recent entries full card using the existing monthly entry list.
+  - Kept calendar, quick record, savings, fixed expense, and recurring management behavior intact while restyling their containers and controls.
+  - Added dashboard tokens and transferred style values in `src/app/page.scss`: 36px desktop app padding, 20px mobile app padding, 18px card radius, 14px stat gap, 16px section grid gap, 44px header action height, 48px form control height, and 52px submit height.
+- Verification:
+  - source-brand search in touched dashboard files: no matches.
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+  - Chrome CDP checks on the existing 3000 dev server with demo mode enabled:
+    - desktop 1280x900: schedule/category, calendar/quick record, and savings/fixed expense grids render as two columns.
+    - mobile 390x1000: the same grids collapse to one column.
+    - section order matches the requested dashboard order.
+    - card radius is `18px`, main padding is `36px` desktop and `20px 20px 104px` mobile.
+    - add button height is `44px`, input height is `48px`, submit height is `52px`.
+    - no horizontal overflow on desktop or mobile.
+
+# 2026-06-30 dashboard transfer reverted by user
+
+- User reverted the dashboard implementation files after the dashboard transfer pass.
+- Confirmed current state:
+  - `src/app/_home/HomeClient.tsx`: no diff.
+  - `src/app/_home/DashboardSummaryCards.tsx`: no diff.
+  - `src/app/_home/DashboardScheduleCard.tsx`: no diff.
+  - `src/app/page.scss`: no diff.
+- Result:
+  - Dashboard transfer changes are no longer present in the working tree.
+  - Remaining modified files are from the intro/auth transfer work and this handoff log.
+- Remaining:
+  - Re-plan the dashboard transfer before re-implementation if the work resumes.
