@@ -800,3 +800,13 @@ with a simpler monthly cash-flow summary.
 - offset 기반 더 보기의 새 문의 이후 경계 이동 가능성을 확인했습니다.
 - `created_at`과 `id`를 함께 사용하는 복합 커서 설계와 TDD 구현 계획을 추가했습니다.
 - 구현은 새 `dev` worktree에서 수행하며, 기존 문의·금융 데이터·Supabase 스키마를 변경하지 않습니다.
+
+# 2026-07-14 문의 복합 커서 페이지네이션
+
+- `getInquiries`를 offset에서 `created_at DESC, id DESC` 복합 커서 조회로 전환했습니다.
+- 다음 요청은 마지막 표시 문의의 생성 시각과 ID를 사용하므로, 새 문의가 추가돼도 기존 페이지 경계가 이동하지 않습니다.
+- 문의 페이지는 숫자 페이지 대신 `nextCursor`를 보관해 더 보기 요청에 전달합니다.
+- 검증:
+  - `npm run lint`: 통과.
+  - `npm run test`: 8개 파일, 18개 테스트 통과.
+  - `npm run build`: Next.js 16.2.10 빌드 통과.

@@ -26,25 +26,45 @@ export const getCurrentProfileRole = async (): Promise<ProfileRole> => {
 
 export const INQUIRIES_PAGE_SIZE = 20;
 
-export const getInquiries = async (
-  page: number,
-  pageSize = INQUIRIES_PAGE_SIZE,
-): Promise<{ items: Inquiry[]; hasMore: boolean }> => {
-  const safePage = Math.max(0, page);
-  const safePageSize = Math.max(1, pageSize);
-  const start = safePage * safePageSize;
+export type InquiryCursor = {
+  createdAt: string;
+  id: string;
+};
 
-  const { data, error } = await supabase
+export const getInquiries = async (
+  cursor?: InquiryCursor,
+  pageSize = INQUIRIES_PAGE_SIZE,
+): Promise<{ items: Inquiry[]; hasMore: boolean; nextCursor: InquiryCursor | null }> => {
+  const safePageSize = Math.max(1, pageSize);
+
+  let query = supabase
     .from("inquiries")
     .select("*")
     .order("created_at", { ascending: false })
-    .range(start, start + safePageSize);
+    .order("id", { ascending: false });
+
+  if (cursor) {
+    query = query.or(
+      `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`,
+    );
+  }
+
+  const { data, error } = await query.range(0, safePageSize);
 
   if (error) throw new Error(error.message);
 
   const items = ((data || []) as Inquiry[]).slice(0, safePageSize);
+  const hasMore = (data || []).length > safePageSize;
+  const lastItem = items.at(-1);
 
-  return { items, hasMore: (data || []).length > safePageSize };
+  return {
+    items,
+    hasMore,
+    nextCursor:
+      hasMore && lastItem
+        ? { createdAt: lastItem.created_at, id: lastItem.id }
+        : null,
+  };
 };
 
 export const createInquiry = async (payload: { title: string; content: string }) => {

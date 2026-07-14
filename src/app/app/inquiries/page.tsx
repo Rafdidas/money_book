@@ -11,6 +11,7 @@ import {
   getCurrentProfileRole,
   getInquiries,
 } from "@/lib/api/inquiries";
+import type { InquiryCursor } from "@/lib/api/inquiries";
 import type { Inquiry, InquiryStatus, ProfileRole } from "@/types/inquiry";
 import "./inquiries.scss";
 
@@ -47,6 +48,7 @@ export default function InquiriesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<InquiryCursor | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isAdmin = role === "ADMIN";
 
@@ -54,6 +56,7 @@ export default function InquiriesPage() {
     if (isDemoMode) {
       setIsLoading(false);
       setHasMore(false);
+      setNextCursor(null);
       return;
     }
 
@@ -62,11 +65,12 @@ export default function InquiriesPage() {
     try {
       const [nextRole, nextInquiries] = await Promise.all([
         getCurrentProfileRole(),
-        getInquiries(0),
+        getInquiries(),
       ]);
       setRole(nextRole);
       setInquiries(nextInquiries.items);
       setHasMore(nextInquiries.hasMore);
+      setNextCursor(nextInquiries.nextCursor);
       setSelectedInquiryId((current) =>
         nextInquiries.items.some((item) => item.id === current)
           ? current
@@ -80,16 +84,17 @@ export default function InquiriesPage() {
   }, [alert, isDemoMode]);
 
   const loadMoreInquiries = async () => {
-    if (isLoadingMore || !hasMore) return;
+    if (isLoadingMore || !hasMore || !nextCursor) return;
 
     setIsLoadingMore(true);
     try {
-      const nextPage = await getInquiries(Math.ceil(inquiries.length / 20));
+      const nextPage = await getInquiries(nextCursor);
       setInquiries((current) => {
         const currentIds = new Set(current.map((inquiry) => inquiry.id));
         return [...current, ...nextPage.items.filter((inquiry) => !currentIds.has(inquiry.id))];
       });
       setHasMore(nextPage.hasMore);
+      setNextCursor(nextPage.nextCursor);
     } catch (error) {
       alert(error instanceof Error ? error.message : "문의 목록을 더 불러오지 못했습니다.");
     } finally {
