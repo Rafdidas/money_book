@@ -1,3 +1,21 @@
+# 2026-07-14 security and test baseline implementation plan
+
+- User approved `docs/superpowers/specs/2026-07-14-production-stabilization-design.md`.
+- Added `docs/superpowers/plans/2026-07-14-security-test-baseline.md` for the first independently releasable slice.
+- Plan scope:
+  - targeted Next.js `16.2.10` patch without `npm audit fix`;
+  - Vitest regression harness and finance-summary/stock-normalization characterization;
+  - Next.js Proxy matcher and access tests;
+  - desktop/mobile Playwright smoke tests for public, unauthenticated, and demo flows;
+  - a final audit, lint, test, build, E2E, and diff release gate.
+- Production DB/data changes: none in this first implementation plan.
+- Production deployment: separate verified checkpoint after the A+B implementation passes.
+- Verification:
+  - Next.js 16 local upgrade, Proxy, Vitest, and Playwright guides reviewed;
+  - placeholder and type-consistency self-review completed;
+  - `git diff --check`: passed.
+- Remaining: commit the plan, request the model change, and execute only after user confirmation.
+
 # Money Book Handoff
 
 ## README 포트폴리오 정리 (2026-06-30)
