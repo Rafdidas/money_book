@@ -769,3 +769,13 @@ with a simpler monthly cash-flow summary.
   - Remaining modified files are from the intro/auth transfer work and this handoff log.
 - Remaining:
   - Re-plan the dashboard transfer before re-implementation if the work resumes.
+
+# 2026-07-14 Release C 계획 검토
+
+- 운영 안정화 3차 범위를 계획으로 확정했습니다: 복구 가능한 App Router 오류 화면, 주식 API 오류 정규화·입력 길이 제한, 기본 보안 헤더, 문의 목록 20건 단위 더 보기입니다.
+- Next.js 16 공식 `error.md`, `headers.md`, `route-handlers.md`를 확인했습니다.
+- Next.js 16의 재시도 API는 `reset`이 아닌 `unstable_retry`임을 반영했습니다.
+- HSTS와 CSP 강제, 분산 환경 검색 API rate limit, DB 스키마 변경은 추가 운영 호환성 검토가 필요해 이번 범위에서 제외했습니다.
+- 운영 데이터·Supabase 원격·마이그레이션·배포는 수행하지 않았습니다.
+- 남은 작업:
+  - `dev` 브랜치에서 구현과 테스트를 수행하고, 전체 검증 뒤 `main`에 fast-forward 병합합니다.
