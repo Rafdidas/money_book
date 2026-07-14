@@ -1,3 +1,16 @@
+# 2026-07-14 main merge verification
+
+- Added `.worktrees/**` exclusions to ESLint and Vitest so the root checkout does not recursively lint or collect tests from an active isolated worktree.
+- Production DB/data changes: none.
+- Verification on merged `main`:
+  - `npm audit --audit-level=high`: passed; 4 moderate and 1 low findings remain.
+  - `npm run lint`: passed.
+  - `npm run test`: 12 tests passed.
+  - `npm run build`: passed.
+  - `npm run test:e2e`: 6 tests passed across desktop and mobile Chromium.
+  - `git diff --check`: passed.
+- Note: existing intro image aspect-ratio warnings remain visible in browser logs and are outside this stabilization slice.
+
 # 2026-07-14 security and test baseline - release gate
 
 - Next.js: `16.2.10`.
