@@ -779,3 +779,18 @@ with a simpler monthly cash-flow summary.
 - 운영 데이터·Supabase 원격·마이그레이션·배포는 수행하지 않았습니다.
 - 남은 작업:
   - `dev` 브랜치에서 구현과 테스트를 수행하고, 전체 검증 뒤 `main`에 fast-forward 병합합니다.
+
+# 2026-07-14 Release C 운영 안정화
+
+- 변경:
+  - `error.tsx`와 `global-error.tsx`에 한국어 오류 복구 화면 및 `unstable_retry` 재시도 동작을 추가했습니다.
+  - 주식 검색은 80자 초과 입력을 거절하고, 검색·종가 API의 예기치 않은 오류를 고정된 한국어 메시지로 응답하도록 변경했습니다.
+  - 전 경로에 `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`를 추가했습니다. CSP와 HSTS는 호환성 검토 후속 작업입니다.
+  - 문의 목록은 생성일 내림차순의 기존 읽기 쿼리에 20건 look-ahead `range()`를 적용했고, 더 보기 버튼으로 다음 페이지를 이어서 표시합니다.
+- 검증:
+  - `npm run lint`: 통과.
+  - `npm run test`: 8개 파일, 17개 테스트 통과.
+  - `npm run build`: Next.js 16.2.10 프로덕션 빌드 통과.
+  - `npm run test:e2e`: 데스크톱·모바일 Chromium 6개 통과.
+  - `npm audit --audit-level=high`: high 취약점 없음. moderate 4개·low 1개는 남아 있으며, 강제 수정은 Next 다운그레이드를 제안해 적용하지 않았습니다.
+- 운영 데이터·Supabase 원격·마이그레이션·배포는 수행하지 않았습니다.

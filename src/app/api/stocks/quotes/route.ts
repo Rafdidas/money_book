@@ -139,11 +139,9 @@ export async function POST(request: Request) {
 
     return Response.json({ quotes, failures });
   } catch (error) {
+    console.error("stock-quotes-failed", error);
     return Response.json(
-      {
-        message:
-          error instanceof Error ? error.message : "최근 종가 조회에 실패했습니다.",
-      },
+      { message: "잠시 후 다시 시도해주세요." },
       { status: 500 },
     );
   }

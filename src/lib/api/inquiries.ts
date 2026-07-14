@@ -24,15 +24,27 @@ export const getCurrentProfileRole = async (): Promise<ProfileRole> => {
   return data.role as ProfileRole;
 };
 
-export const getInquiries = async () => {
+export const INQUIRIES_PAGE_SIZE = 20;
+
+export const getInquiries = async (
+  page: number,
+  pageSize = INQUIRIES_PAGE_SIZE,
+): Promise<{ items: Inquiry[]; hasMore: boolean }> => {
+  const safePage = Math.max(0, page);
+  const safePageSize = Math.max(1, pageSize);
+  const start = safePage * safePageSize;
+
   const { data, error } = await supabase
     .from("inquiries")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(start, start + safePageSize);
 
   if (error) throw new Error(error.message);
 
-  return (data || []) as Inquiry[];
+  const items = ((data || []) as Inquiry[]).slice(0, safePageSize);
+
+  return { items, hasMore: (data || []).length > safePageSize };
 };
 
 export const createInquiry = async (payload: { title: string; content: string }) => {

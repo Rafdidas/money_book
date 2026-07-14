@@ -45,12 +45,15 @@ export default function InquiriesPage() {
   const [answerTitle, setAnswerTitle] = useState("");
   const [answerContent, setAnswerContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isAdmin = role === "ADMIN";
 
   const loadInquiries = useCallback(async () => {
     if (isDemoMode) {
       setIsLoading(false);
+      setHasMore(false);
       return;
     }
 
@@ -59,14 +62,15 @@ export default function InquiriesPage() {
     try {
       const [nextRole, nextInquiries] = await Promise.all([
         getCurrentProfileRole(),
-        getInquiries(),
+        getInquiries(0),
       ]);
       setRole(nextRole);
-      setInquiries(nextInquiries);
+      setInquiries(nextInquiries.items);
+      setHasMore(nextInquiries.hasMore);
       setSelectedInquiryId((current) =>
-        nextInquiries.some((item) => item.id === current)
+        nextInquiries.items.some((item) => item.id === current)
           ? current
-          : nextInquiries[0]?.id || "",
+          : nextInquiries.items[0]?.id || "",
       );
     } catch (error) {
       alert(error instanceof Error ? error.message : "문의 목록을 불러오지 못했습니다.");
@@ -74,6 +78,24 @@ export default function InquiriesPage() {
       setIsLoading(false);
     }
   }, [alert, isDemoMode]);
+
+  const loadMoreInquiries = async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const nextPage = await getInquiries(Math.ceil(inquiries.length / 20));
+      setInquiries((current) => {
+        const currentIds = new Set(current.map((inquiry) => inquiry.id));
+        return [...current, ...nextPage.items.filter((inquiry) => !currentIds.has(inquiry.id))];
+      });
+      setHasMore(nextPage.hasMore);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "문의 목록을 더 불러오지 못했습니다.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthResolved) return;
@@ -283,6 +305,16 @@ export default function InquiriesPage() {
                   )}
                 </div>
               </section>
+                {hasMore ? (
+                  <button
+                    className="button button--secondary button--md"
+                    type="button"
+                    disabled={isLoadingMore}
+                    onClick={loadMoreInquiries}
+                  >
+                    {isLoadingMore ? "불러오는 중" : "더 보기"}
+                  </button>
+                ) : null}
             </div>
 
             <section className="card inquiry-detail column-group column-group--gap-20">
