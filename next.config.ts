@@ -11,6 +11,8 @@ const cspReportOnly = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
+  "report-uri /api/csp-reports",
+  "report-to csp-endpoint",
 ].join("; ");
 
 const nextConfig: NextConfig = {
@@ -30,6 +32,7 @@ const nextConfig: NextConfig = {
           },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Content-Security-Policy-Report-Only", value: cspReportOnly },
+          { key: "Reporting-Endpoints", value: "csp-endpoint=\"/api/csp-reports\"" },
         ],
       },
     ];

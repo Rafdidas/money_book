@@ -817,3 +817,13 @@ with a simpler monthly cash-flow summary.
 - 검증: `npm run lint`, `npm run test`(9개 파일 19개), `npm run build`, `npm run test:e2e`(6개) 통과.
 - `npm audit --audit-level=high`에서 high 취약점은 없고 moderate 4개·low 1개가 남았습니다. 강제 수정은 Next 다운그레이드를 제안해 적용하지 않았습니다.
 - 운영 데이터·Supabase 원격·마이그레이션·배포는 수행하지 않았습니다.
+
+# 2026-07-14 CSP 보고 자동 수집 준비
+
+- 로컬 마이그레이션으로 `csp_reports` 테이블, RLS, 30일 초과 보고 삭제 함수를 추가했습니다. 원격 DB에는 실행하지 않았습니다.
+- `/api/csp-reports`는 보고 URL의 query·fragment를 제거하고, 허용 필드와 16KiB 본문 제한을 적용한 뒤 서버 전용 서비스 역할 클라이언트로만 저장합니다.
+- Report-Only CSP에 `report-uri`, `report-to`와 `Reporting-Endpoints`를 연결했습니다.
+- 검증:
+  - `npm run lint`: 통과.
+  - `npm run test`: 10개 파일, 20개 테스트 통과.
+  - `npm run build`: 통과.
