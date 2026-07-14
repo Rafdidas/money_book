@@ -827,3 +827,13 @@ with a simpler monthly cash-flow summary.
   - `npm run lint`: 통과.
   - `npm run test`: 10개 파일, 20개 테스트 통과.
   - `npm run build`: 통과.
+
+# 2026-07-14 CSP 최신 보고 형식 호환
+
+- Reporting API의 `application/reports+json` 배열 형식도 수집하며, Report-Only의 `reporting` 상태값은 기존 스키마 값인 `report`로 저장합니다.
+- 구형 `report-uri` 형식은 유지하고, 최신 형식도 URL query·fragment 제거 규칙을 동일하게 적용합니다.
+- 원격 데이터·마이그레이션·배포는 수행하지 않았습니다.
+- 검증:
+  - `npm run lint`: 통과.
+  - `npm test`: 10개 파일, 21개 테스트 통과.
+  - `npm run build`: 통과. dev worktree에 원본의 비추적 `.env.local`을 복사한 뒤 원본과 같은 환경으로 확인했습니다.

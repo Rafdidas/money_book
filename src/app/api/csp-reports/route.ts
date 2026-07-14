@@ -6,12 +6,24 @@ const MAX_REPORT_BYTES = 16 * 1024;
 const MAX_URI_LENGTH = 2_000;
 const MAX_DIRECTIVE_LENGTH = 100;
 
-type CspReport = {
+type LegacyCspReport = {
   "document-uri"?: unknown;
   "blocked-uri"?: unknown;
   "effective-directive"?: unknown;
   disposition?: unknown;
   "status-code"?: unknown;
+};
+
+type ReportingApiCspReport = {
+  type?: unknown;
+  url?: unknown;
+  body?: {
+    blockedURL?: unknown;
+    disposition?: unknown;
+    documentURL?: unknown;
+    effectiveDirective?: unknown;
+    statusCode?: unknown;
+  };
 };
 
 const sanitizeUri = (value: unknown) => {
@@ -25,15 +37,22 @@ const sanitizeUri = (value: unknown) => {
   }
 };
 
-const normalizeReport = (payload: unknown) => {
-  const report = (payload as { "csp-report"?: CspReport })?.["csp-report"];
-  if (!report) return null;
-
-  const documentUri = sanitizeUri(report["document-uri"]);
-  const blockedUri = sanitizeUri(report["blocked-uri"]);
-  const effectiveDirective = report["effective-directive"];
-  const disposition = report.disposition;
-  const statusCode = report["status-code"];
+const normalizeReportFields = ({
+  documentUri: documentUriValue,
+  blockedUri: blockedUriValue,
+  effectiveDirective,
+  disposition: dispositionValue,
+  statusCode,
+}: {
+  documentUri: unknown;
+  blockedUri: unknown;
+  effectiveDirective: unknown;
+  disposition: unknown;
+  statusCode: unknown;
+}) => {
+  const documentUri = sanitizeUri(documentUriValue);
+  const blockedUri = sanitizeUri(blockedUriValue);
+  const disposition = dispositionValue === "reporting" ? "report" : dispositionValue;
 
   if (
     !documentUri ||
@@ -53,6 +72,36 @@ const normalizeReport = (payload: unknown) => {
     disposition,
     status_code: statusCode ?? null,
   };
+};
+
+const normalizeReport = (payload: unknown) => {
+  const legacyReport = (payload as { "csp-report"?: LegacyCspReport })?.["csp-report"];
+  if (legacyReport) {
+    return normalizeReportFields({
+      documentUri: legacyReport["document-uri"],
+      blockedUri: legacyReport["blocked-uri"],
+      effectiveDirective: legacyReport["effective-directive"],
+      disposition: legacyReport.disposition,
+      statusCode: legacyReport["status-code"],
+    });
+  }
+
+  const reportingApiReport = Array.isArray(payload)
+    ? payload.find(
+        (report): report is ReportingApiCspReport =>
+          typeof report === "object" && report !== null && (report as ReportingApiCspReport).type === "csp-violation",
+      )
+    : null;
+
+  if (!reportingApiReport?.body) return null;
+
+  return normalizeReportFields({
+    documentUri: reportingApiReport.body.documentURL ?? reportingApiReport.url,
+    blockedUri: reportingApiReport.body.blockedURL,
+    effectiveDirective: reportingApiReport.body.effectiveDirective,
+    disposition: reportingApiReport.body.disposition,
+    statusCode: reportingApiReport.body.statusCode,
+  });
 };
 
 export async function POST(request: Request) {
