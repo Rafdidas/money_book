@@ -1,3 +1,14 @@
+# 2026-07-14 browser regression baseline
+
+- Added Playwright desktop/mobile Chromium coverage for the public landing page, unauthenticated app redirect, and demo entry.
+- Production DB/data changes: none; the browser suite uses local demo storage only.
+- Verification:
+  - `npm run test:e2e`: 6 tests passed.
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+- Note: Next.js reports the expected local worktree lockfile warning; existing intro image aspect-ratio warnings appeared in browser logs.
+- Remaining: final release gate and handoff.
+
 # 2026-07-14 Proxy regression contract
 
 - Added matcher coverage for protected `/app` paths and public auth/API paths.
