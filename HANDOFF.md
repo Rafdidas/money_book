@@ -810,3 +810,10 @@ with a simpler monthly cash-flow summary.
   - `npm run lint`: 통과.
   - `npm run test`: 8개 파일, 18개 테스트 통과.
   - `npm run build`: Next.js 16.2.10 빌드 통과.
+
+# 2026-07-14 CSP Report-Only
+
+- 전 경로에 현재 리소스 출처를 선언한 `Content-Security-Policy-Report-Only` 헤더를 추가했습니다. 차단 CSP·HSTS·보고 저장 API는 추가하지 않았습니다.
+- 검증: `npm run lint`, `npm run test`(9개 파일 19개), `npm run build`, `npm run test:e2e`(6개) 통과.
+- `npm audit --audit-level=high`에서 high 취약점은 없고 moderate 4개·low 1개가 남았습니다. 강제 수정은 Next 다운그레이드를 제안해 적용하지 않았습니다.
+- 운영 데이터·Supabase 원격·마이그레이션·배포는 수행하지 않았습니다.
