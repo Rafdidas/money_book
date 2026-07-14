@@ -1,3 +1,15 @@
+# 2026-07-14 Next.js security patch
+
+- Updated Next.js from `16.2.4` to `16.2.10` with a targeted install.
+- React and React DOM remain `19.2.4`.
+- Production DB/data changes: none.
+- Verification:
+  - `npm audit --audit-level=high`: passed; remaining audit findings are 4 moderate and 1 low.
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+- Note: the remaining PostCSS remediation proposes a breaking downgrade to Next.js `9.3.3` when forced, so it is intentionally excluded from this patch-only release.
+- Remaining: Vitest and Playwright regression baseline.
+
 # 2026-07-14 security and test baseline - pre-change
 
 - Scope: Next.js patch update and regression-test foundation only.
