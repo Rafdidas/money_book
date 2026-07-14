@@ -1,3 +1,16 @@
+# 2026-07-14 security and test baseline - pre-change
+
+- Scope: Next.js patch update and regression-test foundation only.
+- Production DB/data changes: none.
+- Baseline:
+  - Node: `v24.12.0`
+  - npm: `11.6.2`
+  - Next.js: `16.2.4`
+  - `npm audit --audit-level=high`: 1 high, 3 moderate, 1 low; high finding is Next.js.
+  - `npm run lint`: passed.
+  - `npm run build`: passed after copying the ignored local `.env.local` into the isolated worktree.
+- Note: build warns that the parent checkout's `package-lock.json` is also visible from the worktree. This is a local worktree warning only; no `next.config.ts` change is included in this release.
+- Remaining: targeted Next.js update and automated regression coverage.
 # 2026-07-14 security and test baseline implementation plan
 
 - User approved `docs/superpowers/specs/2026-07-14-production-stabilization-design.md`.
