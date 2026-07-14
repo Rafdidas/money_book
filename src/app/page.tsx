@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import IntroPage from "@/app/_intro/IntroPage";
-import ResourcePreloads from "@/components/common/ResourcePreloads";
 import {
   getSiteUrl,
   siteDescription,
@@ -145,7 +144,6 @@ const pageJsonLd = [
 export default function Home() {
   return (
     <>
-      <ResourcePreloads />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

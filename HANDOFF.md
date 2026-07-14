@@ -841,3 +841,13 @@ with a simpler monthly cash-flow summary.
 # 2026-07-14 CSP 보고 30일 보관 자동 정리
 
 - `pg_cron`이 활성화된 Supabase에서 매일 UTC 03:15에 `delete_expired_csp_reports()`를 호출하는 로컬 마이그레이션을 추가했습니다.
+- 원격 Supabase에 마이그레이션을 적용했고, 로컬·원격 버전 `20260714000001` 일치를 확인했습니다.
+
+# 2026-07-14 미사용 visual_bg preload 제거
+
+- 홈 화면에서 실제 렌더링 없이 `visual_bg.png`를 강제 preload하던 컴포넌트와 이미지 자산을 제거했습니다.
+- 이미지의 남은 코드 참조가 없음을 확인했습니다.
+- 검증:
+  - `npm run lint`: 통과.
+  - `npm test`: 10개 파일, 21개 테스트 통과.
+  - `npm run build`: 통과.
