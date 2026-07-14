@@ -1,3 +1,24 @@
+# 2026-07-14 Proxy regression contract
+
+- Added matcher coverage for protected `/app` paths and public auth/API paths.
+- Added access coverage for unauthenticated redirect, authenticated access, and demo-cookie access.
+- Used the installed Next.js `unstable_doesMiddlewareMatch` testing adapter export; Proxy implementation remains unchanged.
+- Production DB/data changes: none.
+- Verification:
+  - `npm run test -- src/proxy.test.ts`: 4 tests passed.
+  - `npm run test`: 12 tests passed.
+  - `npm run lint`: passed.
+  - `npm run build`: passed.
+- Remaining: browser smoke coverage.
+
+# 2026-07-14 test baseline catch-up
+
+- Vitest harness and finance-summary/stock-normalization characterization were added in the preceding commits.
+- Production DB/data changes: none.
+- Verification:
+  - date formatting: 2 tests passed.
+  - finance summary and stock normalization: 6 tests passed.
+  - all current unit tests: 12 tests passed.
 # 2026-07-14 Next.js security patch
 
 - Updated Next.js from `16.2.4` to `16.2.10` with a targeted install.
