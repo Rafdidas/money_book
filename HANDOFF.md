@@ -794,3 +794,9 @@ with a simpler monthly cash-flow summary.
   - `npm run test:e2e`: 데스크톱·모바일 Chromium 6개 통과.
   - `npm audit --audit-level=high`: high 취약점 없음. moderate 4개·low 1개는 남아 있으며, 강제 수정은 Next 다운그레이드를 제안해 적용하지 않았습니다.
 - 운영 데이터·Supabase 원격·마이그레이션·배포는 수행하지 않았습니다.
+
+# 2026-07-14 문의 커서 페이지네이션 계획
+
+- offset 기반 더 보기의 새 문의 이후 경계 이동 가능성을 확인했습니다.
+- `created_at`과 `id`를 함께 사용하는 복합 커서 설계와 TDD 구현 계획을 추가했습니다.
+- 구현은 새 `dev` worktree에서 수행하며, 기존 문의·금융 데이터·Supabase 스키마를 변경하지 않습니다.
