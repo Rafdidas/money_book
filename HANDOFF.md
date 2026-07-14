@@ -1,3 +1,19 @@
+# 2026-07-14 security and test baseline - release gate
+
+- Next.js: `16.2.10`.
+- Vitest excludes `e2e/**`, leaving Playwright as the sole runner for browser specifications.
+- Production DB/data changes: none.
+- Product behavior changes: none intended.
+- Verification:
+  - `npm audit --audit-level=high`: passed; 4 moderate and 1 low findings remain.
+  - `npm run lint`: passed.
+  - `npm run test`: 12 tests passed.
+  - `npm run build`: passed.
+  - `npm run test:e2e`: 6 tests passed across desktop and mobile Chromium.
+  - `git diff --check`: passed.
+- Note: local worktree lockfile and existing intro image aspect-ratio warnings remain non-blocking follow-up items.
+- Deployment: not executed in this implementation slice.
+
 # 2026-07-14 browser regression baseline
 
 - Added Playwright desktop/mobile Chromium coverage for the public landing page, unauthenticated app redirect, and demo entry.
