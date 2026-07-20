@@ -858,3 +858,8 @@ with a simpler monthly cash-flow summary.
 - `src/lib/api/customCategories.ts`에 최근 20개 조회, 공백 제거·영문 로케일 소문자 정규화 upsert, 사용자 소유 삭제 API를 추가했습니다.
 - 검증: 집중 테스트 4개, 전체 Vitest 25개, `npm run lint`, `npm run build` 통과.
 - 원격 Supabase 마이그레이션 및 배포는 실행하지 않았습니다.
+# 2026-07-20 데모 직접입력 카테고리 저장
+
+- `mb-demo-custom-categories:v1` 로컬 저장소에 데모 직접입력 카테고리를 안전하게 복원·저장하도록 했고, 데모 재설정 시 함께 제거합니다.
+- 화면 독립 유틸리티는 유형별 최신 5개 목록과 정규화 이름 기준 불변 upsert를 제공합니다.
+- 검증: `npm run lint`, `npm run test`(13개 파일, 29개 테스트), `npm run build` 통과.

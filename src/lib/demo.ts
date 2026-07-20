@@ -1,3 +1,4 @@
+import type { CustomCategory, CustomCategoryType } from "@/lib/api/customCategories";
 import type { Expense } from "@/types/expense";
 
 export const DEMO_MODE_STORAGE_KEY = "money-book:demo-mode";
@@ -6,6 +7,7 @@ export const DEMO_DATA_VERSION_STORAGE_KEY = "money-book:demo-data-version";
 export const DEMO_INVESTMENT_OWNER_KEY = "demo";
 export const DEMO_STOCK_HOLDINGS_STORAGE_KEY = "money-book:stock-holdings:demo";
 export const DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY = "money-book:demo-stock-holdings-version";
+export const DEMO_CUSTOM_CATEGORIES_STORAGE_KEY = "mb-demo-custom-categories:v1";
 export const DEMO_MODE_COOKIE_KEY = "money-book-demo-mode";
 export const DEMO_USER_ID = "demo-user";
 
@@ -14,6 +16,25 @@ const demoSavingsId = "demo-savings-emergency";
 const demoFixedExpenseId = "demo-fixed-expense-phone";
 const savingsCategory = "📩저축";
 const investmentCategory = "📈주식";
+const customCategoryTypes: CustomCategoryType[] = [
+  "expense",
+  "income",
+  "savings",
+  "investment",
+];
+
+const isDemoCustomCategory = (value: unknown): value is CustomCategory => {
+  if (!value || typeof value !== "object") return false;
+
+  const category = value as Record<string, unknown>;
+  return (
+    typeof category.id === "string" &&
+    customCategoryTypes.includes(category.type as CustomCategoryType) &&
+    typeof category.name === "string" &&
+    category.name.trim().length > 0 &&
+    typeof category.lastUsedAt === "string"
+  );
+};
 
 const formatDateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
@@ -323,6 +344,27 @@ export const writeDemoExpenses = (expenses: Expense[]) => {
   window.localStorage.setItem(DEMO_EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
 };
 
+export const readDemoCustomCategories = (): CustomCategory[] => {
+  if (typeof window === "undefined") return [];
+
+  const storedCategories = window.localStorage.getItem(DEMO_CUSTOM_CATEGORIES_STORAGE_KEY);
+  if (!storedCategories) return [];
+
+  try {
+    const parsedCategories: unknown = JSON.parse(storedCategories);
+    if (!Array.isArray(parsedCategories)) return [];
+
+    return parsedCategories.filter(isDemoCustomCategory);
+  } catch {
+    return [];
+  }
+};
+
+export const writeDemoCustomCategories = (categories: CustomCategory[]) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(DEMO_CUSTOM_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+};
+
 export const enableDemoMode = () => {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(DEMO_MODE_STORAGE_KEY, "true");
@@ -330,15 +372,18 @@ export const enableDemoMode = () => {
   writeDemoExpenses(readDemoExpenses());
 };
 
-export const disableDemoMode = () => {
+export const clearDemoMode = () => {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(DEMO_MODE_STORAGE_KEY);
   window.localStorage.removeItem(DEMO_EXPENSES_STORAGE_KEY);
   window.localStorage.removeItem(DEMO_DATA_VERSION_STORAGE_KEY);
   window.localStorage.removeItem(DEMO_STOCK_HOLDINGS_STORAGE_KEY);
   window.localStorage.removeItem(DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY);
+  window.localStorage.removeItem(DEMO_CUSTOM_CATEGORIES_STORAGE_KEY);
   window.document.cookie = `${DEMO_MODE_COOKIE_KEY}=; Path=/; Max-Age=0; SameSite=Lax`;
 };
+
+export const disableDemoMode = clearDemoMode;
 
 export const isDemoModeEnabled = () => {
   if (typeof window === "undefined") return false;
