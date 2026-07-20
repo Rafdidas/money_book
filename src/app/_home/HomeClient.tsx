@@ -1256,11 +1256,9 @@ export default function HomeClient() {
   const handleCustomCategoryDelete = async (id: string) => {
     try {
       if (isDemoMode) {
-        setCustomCategories((previousCategories) => {
-          const nextCategories = removeCustomCategory(previousCategories, id);
-          writeDemoCustomCategories(nextCategories);
-          return nextCategories;
-        });
+        const nextCategories = removeCustomCategory(customCategories, id);
+        writeDemoCustomCategories(nextCategories);
+        setCustomCategories(nextCategories);
         return;
       }
 
@@ -2201,11 +2199,9 @@ export default function HomeClient() {
               name: category,
               lastUsedAt: new Date().toISOString(),
             };
-            setCustomCategories((previousCategories) => {
-              const nextCategories = upsertRecentCategory(previousCategories, savedCategory);
-              writeDemoCustomCategories(nextCategories);
-              return nextCategories;
-            });
+            const nextCategories = upsertRecentCategory(customCategories, savedCategory);
+            writeDemoCustomCategories(nextCategories);
+            setCustomCategories(nextCategories);
           } else {
             const savedCategory = await saveCustomCategory(inlineType, category);
             setCustomCategories((previousCategories) =>
