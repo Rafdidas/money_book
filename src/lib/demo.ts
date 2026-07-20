@@ -23,16 +23,22 @@ const customCategoryTypes: CustomCategoryType[] = [
   "investment",
 ];
 
+const isParseableIsoTimestamp = (value: string) =>
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) &&
+  !Number.isNaN(Date.parse(value));
+
 const isDemoCustomCategory = (value: unknown): value is CustomCategory => {
   if (!value || typeof value !== "object") return false;
 
   const category = value as Record<string, unknown>;
   return (
     typeof category.id === "string" &&
+    category.id.trim().length > 0 &&
     customCategoryTypes.includes(category.type as CustomCategoryType) &&
     typeof category.name === "string" &&
     category.name.trim().length > 0 &&
-    typeof category.lastUsedAt === "string"
+    typeof category.lastUsedAt === "string" &&
+    isParseableIsoTimestamp(category.lastUsedAt)
   );
 };
 

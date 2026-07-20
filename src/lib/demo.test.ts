@@ -24,8 +24,10 @@ describe("demo custom category storage", () => {
       JSON.stringify([
         category,
         { ...category, id: 1 },
+        { ...category, id: "   " },
         { ...category, type: "invalid" },
         { ...category, name: "" },
+        { ...category, lastUsedAt: "not-a-timestamp" },
         null,
       ]),
     );

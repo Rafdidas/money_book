@@ -863,3 +863,8 @@ with a simpler monthly cash-flow summary.
 - `mb-demo-custom-categories:v1` 로컬 저장소에 데모 직접입력 카테고리를 안전하게 복원·저장하도록 했고, 데모 재설정 시 함께 제거합니다.
 - 화면 독립 유틸리티는 유형별 최신 5개 목록과 정규화 이름 기준 불변 upsert를 제공합니다.
 - 검증: `npm run lint`, `npm run test`(13개 파일, 29개 테스트), `npm run build` 통과.
+
+# 2026-07-20 데모 직접입력 카테고리 저장 검증 보강
+
+- 데모 직접입력 카테고리 복원 시 공백 ID와 파싱 불가한 타임스탬프를 유효하지 않은 레코드로 필터링합니다.
+- 검증: 집중 `npm run test -- src/lib/demo.test.ts`(2개), 전체 `npm run test`(13개 파일, 29개 테스트) 통과.
