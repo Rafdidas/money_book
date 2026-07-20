@@ -48,11 +48,20 @@ const isActualEntry = (item: DashboardEntry) =>
   item.status !== "skipped" &&
   item.status !== "cancelled";
 
-export const isDashboardSavingsItem = (item: { category: string }) =>
-  item.category.includes("적금") || item.category.includes("저축");
+type DashboardClassifiableEntry = {
+  category: string;
+  entry_type?: Expense["entry_type"];
+};
 
-export const isDashboardInvestmentItem = (item: { category: string }) =>
-  item.category.includes("주식");
+export const isDashboardSavingsItem = (item: DashboardClassifiableEntry) =>
+  item.entry_type != null
+    ? item.entry_type === "savings"
+    : item.category.includes("적금") || item.category.includes("저축");
+
+export const isDashboardInvestmentItem = (item: DashboardClassifiableEntry) =>
+  item.entry_type != null
+    ? item.entry_type === "investment"
+    : item.category.includes("주식");
 
 export const getDashboardMonthlySummary = (
   entries: DashboardEntry[],

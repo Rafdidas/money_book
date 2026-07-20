@@ -13,6 +13,7 @@ import {
 } from "@/lib/api/moneyBookEntries";
 import { readDemoExpenses } from "@/lib/demo";
 import { formatSignedWon, formatWon } from "@/utils/money";
+import { mapExpenseToAnalysisEntry } from "./entryMapping";
 
 const monthNames = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
 const formatCurrency = formatWon;
@@ -25,38 +26,12 @@ const getMonthStateLabel = (state: MonthState) => {
   if (state === "empty") return "기록 없음";
   return "완료";
 };
-const isSavingsCategory = (category: string) =>
-  category.includes("적금") || category.includes("저축");
-const isInvestmentCategory = (category: string) => category.includes("주식");
 const isSavingsItem = (item: { type: string }) => item.type === "saving";
 const isInvestmentItem = (item: { type: string }) => item.type === "investment";
 const isSavingsPaymentEntry = (item: MoneyBookEntry) =>
   item.source === "savings_payment";
 const getDateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-const mapDemoExpenseToEntry = (item: {
-  id: string;
-  amount: number;
-  type: "income" | "expense";
-  category: string;
-  memo: string;
-  date: string;
-}): MoneyBookEntry => {
-  const isSavings = isSavingsCategory(item.category);
-  const isInvestment = isInvestmentCategory(item.category);
-
-  return {
-    id: item.id,
-    source: isSavings ? "legacy_savings" : "expense",
-    amount: item.amount,
-    type: isSavings ? "saving" : isInvestment ? "investment" : item.type,
-    category: item.category,
-    memo: item.memo,
-    date: item.date,
-    originId: item.id,
-  };
-};
-
 export default function AnalysisPage() {
   const today = new Date();
   const todayKey = getDateKey(today);
@@ -116,7 +91,7 @@ export default function AnalysisPage() {
       isDemoMode
         ? readDemoExpenses()
             .filter((item) => new Date(item.date).getFullYear() === selectedYear)
-            .map(mapDemoExpenseToEntry)
+            .map(mapExpenseToAnalysisEntry)
         : analysisEntries,
     [analysisEntries, isDemoMode, selectedYear],
   );

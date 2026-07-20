@@ -913,3 +913,16 @@ with a simpler monthly cash-flow summary.
   - `npm run build`: Next.js 16.2.10 프로덕션 빌드 통과.
   - Playwright 신규 demo 회귀: desktop/mobile Chromium 2개 통과. 기존 demo-login smoke desktop 1개도 통과.
 - 원격 Supabase 마이그레이션과 배포는 수행하지 않았습니다. 배포 시 `20260720000000_create_user_custom_categories.sql`, `20260720010000_add_expense_entry_type.sql`을 애플리케이션보다 먼저 적용해야 합니다.
+
+# 2026-07-21 durable subtype 요약·분석 후속 수정
+
+- dashboard 월 요약·예정 항목 분류가 non-null `entry_type`을 우선해 임의 이름의 직접입력 저축·투자를 각각 저축·투자로 집계합니다. subtype이 null/undefined인 기존 행만 category 문자열 fallback을 사용합니다.
+- demo 분석 화면의 Expense 변환을 `entryMapping.ts` 순수 함수로 분리했습니다. durable savings/investment/expense/income을 우선하고 null legacy 행의 저축·주식 category 추론은 유지합니다.
+- TDD RED: dashboard durable 임의 이름이 일반 지출로 잘못 집계됐고, analysis pure mapper가 없어 focused 2개 파일이 실패했습니다.
+- 검증:
+  - 집중 테스트: 2개 파일, 9개 테스트 통과.
+  - `npm run lint`: 통과.
+  - `npm run test`: 17개 파일, 49개 테스트 통과.
+  - `npm run build`: Next.js 16.2.10 프로덕션 빌드 통과.
+- 입력 UI나 저장 흐름은 변경하지 않아 Playwright E2E 재실행 대상은 아니며, 변경된 두 분류 경계는 순수 함수 테스트로 직접 검증했습니다.
+- 원격 Supabase 마이그레이션과 배포는 여전히 수행하지 않았습니다.

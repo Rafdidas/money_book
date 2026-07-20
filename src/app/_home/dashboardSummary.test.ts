@@ -11,6 +11,7 @@ const entry = (
 ): DashboardEntry => ({
   user_id: "user-1",
   memo: "",
+  entry_type: null,
   created_at: "2026-07-01T00:00:00.000Z",
   ...overrides,
 });
@@ -37,6 +38,70 @@ describe("getDashboardMonthlySummary", () => {
       expenseCount: 1,
       incomeAverage: 3_000_000,
       expenseAverage: 500_000,
+    });
+  });
+
+  it("durable subtype으로 임의 이름 저축·투자를 지출과 분리한다", () => {
+    const entries: DashboardEntry[] = [
+      entry({
+        id: "durable-saving",
+        amount: 400_000,
+        type: "expense",
+        entry_type: "savings",
+        category: "여행 준비금",
+        date: "2026-07-03",
+      }),
+      entry({
+        id: "durable-investment",
+        amount: 300_000,
+        type: "expense",
+        entry_type: "investment",
+        category: "미래 자산",
+        date: "2026-07-04",
+      }),
+      entry({
+        id: "durable-expense",
+        amount: 50_000,
+        type: "expense",
+        entry_type: "expense",
+        category: "저축 모임 회비",
+        date: "2026-07-05",
+      }),
+    ];
+
+    expect(getDashboardMonthlySummary(entries, 2026, 6)).toMatchObject({
+      actualExpense: 50_000,
+      actualSavings: 400_000,
+      actualInvestment: 300_000,
+      expenseCount: 1,
+    });
+  });
+
+  it("null subtype인 기존 행은 category 기반 분류를 유지한다", () => {
+    const entries: DashboardEntry[] = [
+      entry({
+        id: "legacy-saving",
+        amount: 200_000,
+        type: "expense",
+        entry_type: null,
+        category: "비상금 저축",
+        date: "2026-07-03",
+      }),
+      entry({
+        id: "legacy-investment",
+        amount: 100_000,
+        type: "expense",
+        entry_type: null,
+        category: "해외 주식",
+        date: "2026-07-04",
+      }),
+    ];
+
+    expect(getDashboardMonthlySummary(entries, 2026, 6)).toMatchObject({
+      actualExpense: 0,
+      actualSavings: 200_000,
+      actualInvestment: 100_000,
+      expenseCount: 0,
     });
   });
 });
