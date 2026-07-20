@@ -2153,13 +2153,11 @@ export default function HomeClient() {
           return;
         }
         if (isDemoMode) {
-          setExpenses((prev) => {
-            const next = prev.map((item) =>
-              item.id === selectedInlineExpense.id ? { ...item, ...payload } : item,
-            );
-            writeDemoExpenses(next);
-            return next;
-          });
+          const nextExpenses = expenses.map((item) =>
+            item.id === selectedInlineExpense.id ? { ...item, ...payload } : item,
+          );
+          writeDemoExpenses(nextExpenses);
+          setExpenses(nextExpenses);
         } else {
           await updateExpense(selectedInlineExpense.id, payload);
           setExpenses((prev) =>
@@ -2179,11 +2177,9 @@ export default function HomeClient() {
             created_at: new Date().toISOString(),
             ...payload,
           };
-          setExpenses((prev) => {
-            const next = [demoExpense, ...prev];
-            writeDemoExpenses(next);
-            return next;
-          });
+          const nextExpenses = [demoExpense, ...expenses];
+          writeDemoExpenses(nextExpenses);
+          setExpenses(nextExpenses);
         } else {
           const saved = await createExpense(payload);
           setExpenses((prev) => [...prev, ...(saved || [])]);
