@@ -851,3 +851,10 @@ with a simpler monthly cash-flow summary.
   - `npm run lint`: 통과.
   - `npm test`: 10개 파일, 21개 테스트 통과.
   - `npm run build`: 통과.
+
+# 2026-07-20 최근 직접입력 카테고리 데이터 모델과 API
+
+- `user_custom_categories` 로컬 Supabase 마이그레이션을 추가했습니다. 사용자·유형·정규화 이름의 유니크 제약, 최근 사용 인덱스, 그리고 select/insert/update/delete RLS 정책을 포함합니다.
+- `src/lib/api/customCategories.ts`에 최근 20개 조회, 공백 제거·영문 로케일 소문자 정규화 upsert, 사용자 소유 삭제 API를 추가했습니다.
+- 검증: 집중 테스트 4개, 전체 Vitest 25개, `npm run lint`, `npm run build` 통과.
+- 원격 Supabase 마이그레이션 및 배포는 실행하지 않았습니다.
