@@ -889,5 +889,10 @@ with a simpler monthly cash-flow summary.
   - `npm run test`: 13개 파일, 30개 테스트 통과.
   - `npm run build`: Next.js 16.2.10 프로덕션 빌드 통과.
   - `npm run test:e2e`: 데스크톱·모바일 Chromium 6개 통과. 로고 이미지 aspect-ratio 경고는 기존 경고입니다.
-- 렌더링 UI의 데스크톱 및 390px 수동 검증은 루트 컨트롤러가 인앱 브라우저에서 후속 수행합니다.
+- 렌더링 UI 검증:
+  - 인앱 Browser Node 런타임이 `windows sandbox failed: helper_unknown_error: setup refresh had errors`로 두 번 실패해 Playwright 대체 검증을 사용했습니다.
+  - 프로덕션 로컬 URL `http://127.0.0.1:3002/app`에서 1440x1000 및 390x844 뷰포트를 확인했습니다.
+  - 직접입력 카테고리가 저장·렌더링되고, 칩 선택 시 입력란에 이름이 채워지며, 추천 삭제 후에도 입력 텍스트와 기존 지출 내역이 유지됨을 확인했습니다.
+  - 페이지 가로 넘침이 없었고, 삭제 버튼은 데스크톱 32x32px·모바일 44x44px 터치 영역을 유지했습니다.
+  - 로컬 환경에서만 Vercel Analytics/Speed Insights 스크립트의 404/MIME 콘솔 오류가 관찰됐으며, 기능 런타임 오류는 없었습니다. 스크린샷은 작업 시각화 폴더에 저장했습니다.
 - 원격 Supabase 마이그레이션 및 배포는 여전히 수행되지 않았습니다.
