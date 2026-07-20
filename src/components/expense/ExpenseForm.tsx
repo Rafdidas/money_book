@@ -3,7 +3,10 @@
 import type { Expense } from "@/types/expense";
 import { useState } from "react";
 
-type ExpenseFormData = Pick<Expense, "amount" | "category" | "memo" | "date" | "type">;
+type ExpenseFormData = Pick<
+  Expense,
+  "amount" | "category" | "memo" | "date" | "type" | "entry_type"
+>;
 
 type Props = {
   selectedDate: string;
@@ -45,6 +48,7 @@ export default function ExpenseForm({
         memo,
         date,
         type,
+        entry_type: type,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "저장 중 오류가 발생했습니다.";

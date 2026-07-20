@@ -1,6 +1,9 @@
 import type { Expense } from "@/types/expense";
 
-export type ExpenseFormData = Pick<Expense, "amount" | "category" | "memo" | "date" | "type">;
+export type ExpenseFormData = Pick<
+  Expense,
+  "amount" | "category" | "memo" | "date" | "type" | "entry_type"
+>;
 export type InlineFormMode = "create" | "edit";
 export type InlineEntryType = Expense["type"] | "savings" | "investment";
 

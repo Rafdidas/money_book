@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CustomCategory } from "@/lib/api/customCategories";
 import {
   getRecentCategoriesForType,
+  loadRecentCustomCategories,
   removeCustomCategory,
   upsertRecentCategory,
 } from "./customCategories";
@@ -64,5 +65,24 @@ describe("custom category list helpers", () => {
     expect(result).toEqual([categories[0], categories[2]]);
     expect(result).not.toBe(categories);
     expect(categories).toHaveLength(3);
+  });
+
+  it("isolates a recent-category query failure from dashboard data loading", async () => {
+    const expenses = [{ id: "existing-expense" }];
+    const accounts = [{ id: "existing-account" }];
+    const rules = [{ id: "existing-rule" }];
+
+    const [loadedExpenses, loadedAccounts, loadedRules, loadedCategories] =
+      await Promise.all([
+        Promise.resolve(expenses),
+        Promise.resolve(accounts),
+        Promise.resolve(rules),
+        loadRecentCustomCategories(() => Promise.reject(new Error("조회 실패"))),
+      ]);
+
+    expect(loadedExpenses).toBe(expenses);
+    expect(loadedAccounts).toBe(accounts);
+    expect(loadedRules).toBe(rules);
+    expect(loadedCategories).toEqual([]);
   });
 });

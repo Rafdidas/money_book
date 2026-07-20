@@ -27,3 +27,13 @@ export const removeCustomCategory = (
   categories: CustomCategory[],
   id: string,
 ): CustomCategory[] => categories.filter((category) => category.id !== id);
+
+export const loadRecentCustomCategories = async (
+  load: () => Promise<CustomCategory[]>,
+): Promise<CustomCategory[]> => {
+  try {
+    return await load();
+  } catch {
+    return [];
+  }
+};

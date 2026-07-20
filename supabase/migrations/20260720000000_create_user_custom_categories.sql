@@ -12,6 +12,25 @@ create table if not exists public.user_custom_categories (
 create index if not exists idx_user_custom_categories_recent
   on public.user_custom_categories(user_id, entry_type, last_used_at desc);
 
+create or replace function public.set_user_custom_category_fields()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.name := btrim(new.name);
+  new.normalized_name := lower(new.name);
+  new.last_used_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_user_custom_category_fields
+  on public.user_custom_categories;
+create trigger set_user_custom_category_fields
+  before insert or update on public.user_custom_categories
+  for each row execute function public.set_user_custom_category_fields();
+
 alter table public.user_custom_categories enable row level security;
 
 do $$

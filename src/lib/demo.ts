@@ -11,7 +11,7 @@ export const DEMO_CUSTOM_CATEGORIES_STORAGE_KEY = "mb-demo-custom-categories:v1"
 export const DEMO_MODE_COOKIE_KEY = "money-book-demo-mode";
 export const DEMO_USER_ID = "demo-user";
 
-const currentDemoDataVersion = "2";
+const currentDemoDataVersion = "3";
 const demoSavingsId = "demo-savings-emergency";
 const demoFixedExpenseId = "demo-fixed-expense-phone";
 const savingsCategory = "📩저축";
@@ -71,11 +71,13 @@ const createDemoExpense = (
   category: string,
   amount: number,
   memo: string,
+  entryType: Expense["entry_type"] = type,
 ): Expense => ({
   id,
   user_id: DEMO_USER_ID,
   amount,
   type,
+  entry_type: entryType,
   category,
   memo,
   date: formatDateKey(date),
@@ -104,6 +106,7 @@ const createDemoSavingsExpenses = (referenceDate = new Date()): Expense[] => {
       savingsCategory,
       500000,
       memo,
+      "savings",
     ),
   );
 };
@@ -144,6 +147,7 @@ const createDemoInvestmentExpenses = (referenceDate = new Date()): Expense[] => 
       investmentCategory,
       420000,
       "국내 주식 정기 매수",
+      "investment",
     ),
     createDemoExpense(
       "demo-investment-stock-prev",
@@ -152,6 +156,7 @@ const createDemoInvestmentExpenses = (referenceDate = new Date()): Expense[] => 
       investmentCategory,
       350000,
       "국내 주식 정기 매수",
+      "investment",
     ),
   ];
 };
@@ -184,6 +189,28 @@ const ensureCurrentDemoFeatures = (expenses: Expense[], referenceDate = new Date
   if (!additions.length) return expenses;
 
   return [...additions, ...expenses].sort((left, right) => right.date.localeCompare(left.date));
+};
+
+const ensureDemoExpenseEntryTypes = (expenses: Expense[]) => {
+  let changed = false;
+  const nextExpenses = expenses.map((expense) => {
+    if (customCategoryTypes.includes(expense.entry_type as CustomCategoryType)) {
+      return expense;
+    }
+
+    changed = true;
+    const entryType: CustomCategoryType =
+      expense.type === "income"
+        ? "income"
+        : expense.category.includes("적금") || expense.category.includes("저축")
+          ? "savings"
+          : expense.category.includes("주식")
+            ? "investment"
+            : "expense";
+    return { ...expense, entry_type: entryType };
+  });
+
+  return changed ? nextExpenses : expenses;
 };
 
 export const createDemoExpenses = (referenceDate = new Date()): Expense[] => {
@@ -328,7 +355,8 @@ export const readDemoExpenses = () => {
 
   try {
     const parsedExpenses = JSON.parse(storedExpenses) as Expense[];
-    let demoExpenses = ensureDemoSavings(parsedExpenses);
+    let demoExpenses = ensureDemoExpenseEntryTypes(parsedExpenses);
+    demoExpenses = ensureDemoSavings(demoExpenses);
     if (window.localStorage.getItem(DEMO_DATA_VERSION_STORAGE_KEY) !== currentDemoDataVersion) {
       demoExpenses = ensureCurrentDemoFeatures(demoExpenses);
       window.localStorage.setItem(DEMO_DATA_VERSION_STORAGE_KEY, currentDemoDataVersion);

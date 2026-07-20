@@ -1,8 +1,10 @@
 import { supabase } from '../supabase/client';
+import type { ExpenseEntryType } from '@/types/expense';
 
-type ExpensePayload = {
+export type ExpensePayload = {
   amount: number;
   type: 'income' | 'expense';
+  entry_type: ExpenseEntryType | null;
   category: string;
   memo: string;
   date: string;
@@ -11,6 +13,7 @@ type ExpensePayload = {
 export const createExpense = async ({
   amount,
   type,
+  entry_type,
   category,
   memo,
   date,
@@ -26,6 +29,7 @@ export const createExpense = async ({
       user_id: user.id,
       amount,
       type,
+      entry_type,
       category,
       memo,
       date,

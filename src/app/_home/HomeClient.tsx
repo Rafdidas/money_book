@@ -76,6 +76,7 @@ import {
 } from "./dashboardSummary";
 import {
   getRecentCategoriesForType,
+  loadRecentCustomCategories,
   removeCustomCategory,
   upsertRecentCategory,
 } from "./customCategories";
@@ -131,6 +132,7 @@ const getInlineCategoryOptions = (type: InlineEntryType) => {
 };
 
 const getInlineEntryType = (expense: Expense): InlineEntryType => {
+  if (expense.entry_type) return expense.entry_type;
   if (expense.type === "income") return "income";
   if (isSavingsItem(expense)) return "savings";
   if (isInvestmentItem(expense)) return "investment";
@@ -399,7 +401,7 @@ export default function HomeClient() {
           getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to, {
             includeCancelled: true,
           }),
-          getRecentCustomCategories(),
+          loadRecentCustomCategories(getRecentCustomCategories),
         ]);
         if (!isCancelled) {
           setExpenses(data || []);
@@ -555,6 +557,7 @@ export default function HomeClient() {
           user_id: payment.user_id,
           amount: payment.amount,
           type: "expense",
+          entry_type: "savings",
           category: savingsCategory,
           memo: account?.name ?? "적금",
           date: payment.payment_date,
@@ -574,6 +577,7 @@ export default function HomeClient() {
           user_id: payment.user_id,
           amount: payment.amount,
           type: "expense",
+          entry_type: "savings",
           category: savingsCategory,
           memo: account?.name ?? "적금",
           date: payment.payment_date,
@@ -593,6 +597,7 @@ export default function HomeClient() {
           user_id: payment.user_id,
           amount: payment.amount,
           type: "expense",
+          entry_type: "expense",
           category: rule?.category || rule?.name || "고정지출",
           memo: rule?.name ?? "고정지출",
           date: payment.payment_date,
@@ -612,6 +617,7 @@ export default function HomeClient() {
           user_id: payment.user_id,
           amount: payment.amount,
           type: "expense",
+          entry_type: "expense",
           category: rule?.category || rule?.name || "고정지출",
           memo: rule?.name ?? "고정지출",
           date: payment.payment_date,
@@ -869,6 +875,7 @@ export default function HomeClient() {
         user_id: payment.user_id,
         amount: payment.amount,
         type: "expense",
+        entry_type: "savings",
         category: savingsCategory,
         memo: account.name,
         date: payment.payment_date,
@@ -979,6 +986,7 @@ export default function HomeClient() {
         user_id: payment.user_id,
         amount: payment.amount,
         type: "expense",
+        entry_type: "expense",
         category: rule.category || rule.name,
         memo: rule.name,
         date: payment.payment_date,
@@ -1352,6 +1360,7 @@ export default function HomeClient() {
           memo: nextMemo,
           date: item.date,
           type: item.type,
+          entry_type: item.entry_type,
         }),
       ),
     );
@@ -1414,6 +1423,7 @@ export default function HomeClient() {
           memo: nextMemo,
           date: item.date,
           type: item.type,
+          entry_type: item.entry_type,
         }),
       ),
     );
@@ -1525,6 +1535,7 @@ export default function HomeClient() {
                 memo: getMemoWithPauseState(item.memo, !isPaused),
                 date: item.date,
                 type: item.type,
+                entry_type: item.entry_type,
               }),
             ),
           );
@@ -1605,6 +1616,7 @@ export default function HomeClient() {
                 memo: getMemoWithPauseState(item.memo, !isPaused),
                 date: item.date,
                 type: item.type,
+                entry_type: item.entry_type,
               }),
             ),
           );
@@ -1691,6 +1703,7 @@ export default function HomeClient() {
       memo: encodeSavingsMemo(meta),
       date,
       type: "expense",
+      entry_type: "savings",
     }));
 
     try {
@@ -1863,6 +1876,7 @@ export default function HomeClient() {
       memo,
       date,
       type: "expense",
+      entry_type: "expense",
     }));
 
     try {
@@ -2028,6 +2042,7 @@ export default function HomeClient() {
               memo: nextMemo,
               date: item.date,
               type: item.type,
+              entry_type: item.entry_type,
             }),
           ),
         );
@@ -2099,6 +2114,7 @@ export default function HomeClient() {
               memo: nextMemo,
               date: item.date,
               type: item.type,
+              entry_type: item.entry_type,
             }),
           ),
         );
@@ -2143,6 +2159,7 @@ export default function HomeClient() {
       memo,
       date: inlineDate,
       type: inlineType === "income" ? "income" : "expense",
+      entry_type: inlineType,
     };
 
     try {
@@ -2529,11 +2546,17 @@ export default function HomeClient() {
                       </label>
                     </div>
                     {inlineCategory === customCategoryValue ? (
-                      <label className="main-overview--field">
-                        <span className="label--md">직접입력 카테고리</span>
+                      <div className="main-overview--field">
+                        <label
+                          className="label--md"
+                          htmlFor="inline-custom-category"
+                        >
+                          직접입력 카테고리
+                        </label>
                         {recentCustomCategories.length ? (
                           <div
                             className="main-overview--custom-category-list"
+                            role="group"
                             aria-label="최근 직접입력 카테고리"
                           >
                             {recentCustomCategories.map((customCategory) => (
@@ -2559,6 +2582,7 @@ export default function HomeClient() {
                           </div>
                         ) : null}
                         <input
+                          id="inline-custom-category"
                           className="main-overview--control body--sm"
                           type="text"
                           placeholder="예: 병원, 선물"
@@ -2567,7 +2591,7 @@ export default function HomeClient() {
                             setInlineCustomCategory(event.target.value)
                           }
                         />
-                      </label>
+                      </div>
                     ) : null}
                     <div className="main-overview--form-grid">
                       <label className="main-overview--field">

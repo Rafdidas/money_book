@@ -134,13 +134,21 @@ export const isSavingsCategory = (category: string) =>
   category.includes("적금") || category.includes("저축");
 
 export const isSavingsItem = (item: Expense) =>
-  item.type === "expense" && !parseFixedExpenseMemo(item.memo) && isSavingsCategory(item.category);
+  item.entry_type
+    ? item.entry_type === "savings"
+    : item.type === "expense" &&
+      !parseFixedExpenseMemo(item.memo) &&
+      isSavingsCategory(item.category);
 
 export const isInvestmentItem = (item: Expense) =>
-  item.type === "expense" && investmentCategoryOptions.includes(item.category);
+  item.entry_type
+    ? item.entry_type === "investment"
+    : item.type === "expense" && investmentCategoryOptions.includes(item.category);
 
 export const isFixedExpenseItem = (item: Expense) =>
-  item.type === "expense" && Boolean(parseFixedExpenseMemo(item.memo));
+  item.type === "expense" &&
+  (!item.entry_type || item.entry_type === "expense") &&
+  Boolean(parseFixedExpenseMemo(item.memo));
 
 export const getFallbackSavingsMeta = (item: Expense): SavingsMeta => {
   const date = new Date(`${item.date}T00:00:00`);

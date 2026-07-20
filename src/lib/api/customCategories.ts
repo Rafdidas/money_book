@@ -13,6 +13,13 @@ export type CustomCategory = {
   lastUsedAt: string;
 };
 
+const customCategoryTypes: CustomCategoryType[] = [
+  "expense",
+  "income",
+  "savings",
+  "investment",
+];
+
 type CustomCategoryRow = {
   id: string;
   entry_type: CustomCategoryType;
@@ -42,16 +49,22 @@ const toCustomCategory = (row: CustomCategoryRow): CustomCategory => ({
 
 export const getRecentCustomCategories = async (): Promise<CustomCategory[]> => {
   const userId = await getAuthenticatedUserId();
-  const { data, error } = await supabase
-    .from("user_custom_categories")
-    .select("id, entry_type, name, last_used_at")
-    .eq("user_id", userId)
-    .order("last_used_at", { ascending: false })
-    .limit(20);
+  const results = await Promise.all(
+    customCategoryTypes.map(async (type) => {
+      const { data, error } = await supabase
+        .from("user_custom_categories")
+        .select("id, entry_type, name, last_used_at")
+        .eq("user_id", userId)
+        .eq("entry_type", type)
+        .order("last_used_at", { ascending: false })
+        .limit(5);
 
-  if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as CustomCategoryRow[]).map(toCustomCategory);
+    }),
+  );
 
-  return ((data ?? []) as CustomCategoryRow[]).map(toCustomCategory);
+  return results.flat();
 };
 
 export const saveCustomCategory = async (
@@ -67,8 +80,6 @@ export const saveCustomCategory = async (
         user_id: userId,
         entry_type: type,
         name: trimmedName,
-        normalized_name: normalizeCustomCategoryName(name),
-        last_used_at: new Date().toISOString(),
       },
       { onConflict: "user_id,entry_type,normalized_name" },
     )

@@ -896,3 +896,20 @@ with a simpler monthly cash-flow summary.
   - 페이지 가로 넘침이 없었고, 삭제 버튼은 데스크톱 32x32px·모바일 44x44px 터치 영역을 유지했습니다.
   - 로컬 환경에서만 Vercel Analytics/Speed Insights 스크립트의 404/MIME 콘솔 오류가 관찰됐으며, 기능 런타임 오류는 없었습니다. 스크린샷은 작업 시각화 폴더에 저장했습니다.
 - 원격 Supabase 마이그레이션 및 배포는 여전히 수행되지 않았습니다.
+
+# 2026-07-20 최근 직접입력 카테고리 최종 리뷰 수정
+
+- `public.expenses.entry_type` nullable 컬럼과 4개 subtype check를 추가하는 로컬 마이그레이션을 만들었습니다. 신규 직접입력 지출·수입·저축·투자와 데모 내역은 subtype을 명시적으로 저장하며, 기존 null 행은 종전 category/memo 추론을 유지합니다.
+- 홈 분류와 월별 분석 매핑은 durable `entry_type`을 우선하고, 추천 카테고리 삭제는 입력값·기존 내역·저장된 subtype을 변경하지 않습니다.
+- 최근 직접입력 카테고리는 4개 유형별 `limit(5)` 쿼리를 병렬 실행해 한 유형이 다른 유형을 밀어내지 않습니다. 조회 실패는 빈 추천 목록으로만 격리되고 dashboard expenses/accounts/rules/payments는 유지됩니다.
+- 직접입력 필드는 `htmlFor`/`id`를 사용하며, 최근 추천 컨트롤에는 이름이 있는 `role="group"`을 제공합니다.
+- 아직 원격에 적용하지 않은 최초 custom-category 마이그레이션에 trim/lower 정규화와 서버 `now()` 갱신 trigger를 추가해 direct PostgREST 쓰기도 동일한 유니크/정렬 규칙을 따릅니다.
+- 회귀 검증은 API 유형별 5개·DB 오류 전파, durable create payload·reload 분류·analysis bucket, dashboard 실패 격리, demo storage, 추천 삭제 보존을 포함합니다.
+- 검증:
+  - 최초 RED: 집중 6개 파일 중 5개 파일, 9개 테스트가 누락 동작으로 실패.
+  - 집중 GREEN: 6개 파일, 20개 테스트 통과. self-review precedence 회귀 2개도 RED 확인 후 GREEN.
+  - `npm run lint`: 통과.
+  - `npm run test`: 16개 파일, 42개 테스트 통과.
+  - `npm run build`: Next.js 16.2.10 프로덕션 빌드 통과.
+  - Playwright 신규 demo 회귀: desktop/mobile Chromium 2개 통과. 기존 demo-login smoke desktop 1개도 통과.
+- 원격 Supabase 마이그레이션과 배포는 수행하지 않았습니다. 배포 시 `20260720000000_create_user_custom_categories.sql`, `20260720010000_add_expense_entry_type.sql`을 애플리케이션보다 먼저 적용해야 합니다.
