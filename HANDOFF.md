@@ -877,3 +877,17 @@ with a simpler monthly cash-flow summary.
 
 - 데모 직접입력 카테고리 복원 시 공백 ID와 파싱 불가한 타임스탬프를 유효하지 않은 레코드로 필터링합니다.
 - 검증: 집중 `npm run test -- src/lib/demo.test.ts`(2개), 전체 `npm run test`(13개 파일, 29개 테스트) 통과.
+
+# 2026-07-20 최근 직접입력 카테고리 반응형 제어 스타일
+
+- `src/app/page.scss`에 최근 직접입력 카테고리 목록과 칩의 범위 한정 스타일을 추가했습니다. 목록은 줄바꿈되며, 긴 이름은 선택 버튼 안에서 말줄임 처리됩니다.
+- 선택·삭제 버튼은 프로젝트 색상 토큰과 `:focus-visible` 포커스 링을 사용합니다. 모바일(760px 이하)에서는 삭제 버튼이 최소 44px 터치 영역을 유지합니다.
+- 변경된 파일: `src/app/page.scss`, `HANDOFF.md`.
+- 검증:
+  - `npm run test -- src/lib/api/customCategories.test.ts src/app/_home/customCategories.test.ts`: 2개 파일, 7개 테스트 통과.
+  - `npm run lint`: 통과.
+  - `npm run test`: 13개 파일, 30개 테스트 통과.
+  - `npm run build`: Next.js 16.2.10 프로덕션 빌드 통과.
+  - `npm run test:e2e`: 데스크톱·모바일 Chromium 6개 통과. 로고 이미지 aspect-ratio 경고는 기존 경고입니다.
+- 렌더링 UI의 데스크톱 및 390px 수동 검증은 루트 컨트롤러가 인앱 브라우저에서 후속 수행합니다.
+- 원격 Supabase 마이그레이션 및 배포는 여전히 수행되지 않았습니다.
