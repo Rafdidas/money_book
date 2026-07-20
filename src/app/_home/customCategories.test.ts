@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CustomCategory } from "@/lib/api/customCategories";
 import {
   getRecentCategoriesForType,
+  removeCustomCategory,
   upsertRecentCategory,
 } from "./customCategories";
 
@@ -47,6 +48,20 @@ describe("custom category list helpers", () => {
 
     expect(result).toHaveLength(categories.length);
     expect(result).toEqual([reusedCategory, categories[0], categories[2]]);
+    expect(result).not.toBe(categories);
+    expect(categories).toHaveLength(3);
+  });
+
+  it("removes only the requested suggestion while leaving other categories intact", () => {
+    const categories = [
+      category("category-1", "expense", "식비", "2026-07-20T10:00:00.000Z"),
+      category("category-2", "expense", "교통", "2026-07-19T10:00:00.000Z"),
+      category("category-3", "income", "급여", "2026-07-18T10:00:00.000Z"),
+    ];
+
+    const result = removeCustomCategory(categories, "category-2");
+
+    expect(result).toEqual([categories[0], categories[2]]);
     expect(result).not.toBe(categories);
     expect(categories).toHaveLength(3);
   });

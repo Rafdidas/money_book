@@ -15,8 +15,20 @@ import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
 import { useAppData } from "@/app/providers";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
-import { DEMO_USER_ID, readDemoExpenses, writeDemoExpenses } from "@/lib/demo";
+import {
+  DEMO_USER_ID,
+  readDemoCustomCategories,
+  readDemoExpenses,
+  writeDemoCustomCategories,
+  writeDemoExpenses,
+} from "@/lib/demo";
 import "@/lib/chart";
+import {
+  deleteCustomCategory,
+  getRecentCustomCategories,
+  saveCustomCategory,
+  type CustomCategory,
+} from "@/lib/api/customCategories";
 import {
   createExpense,
   createExpenses,
@@ -62,6 +74,11 @@ import {
   getDashboardMonthlySummary,
   getDashboardScheduleSummary,
 } from "./dashboardSummary";
+import {
+  getRecentCategoriesForType,
+  removeCustomCategory,
+  upsertRecentCategory,
+} from "./customCategories";
 import {
   categoryChartColors,
   categoryOptions,
@@ -245,6 +262,7 @@ export default function HomeClient() {
   } = useAppData();
   const { alert, confirm } = useAppAlert();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
   const [storedSavingsAccounts, setStoredSavingsAccounts] = useState<StoredSavingsAccount[]>([]);
   const [storedSavingsPayments, setStoredSavingsPayments] = useState<SavingsPayment[]>([]);
   const [storedFixedExpenseRules, setStoredFixedExpenseRules] = useState<FixedExpenseRule[]>([]);
@@ -349,6 +367,7 @@ export default function HomeClient() {
     if (isDemoMode) {
       window.queueMicrotask(() => {
         setExpenses(readDemoExpenses());
+        setCustomCategories(readDemoCustomCategories());
         setStoredSavingsAccounts([]);
         setStoredSavingsPayments([]);
         setStoredFixedExpenseRules([]);
@@ -369,6 +388,7 @@ export default function HomeClient() {
           payments,
           fixedRules,
           fixedPayments,
+          categories,
         ] = await Promise.all([
           getExpensesByRange(dashboardRange.from, dashboardRange.to),
           getSavingsAccounts(),
@@ -379,9 +399,11 @@ export default function HomeClient() {
           getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to, {
             includeCancelled: true,
           }),
+          getRecentCustomCategories(),
         ]);
         if (!isCancelled) {
           setExpenses(data || []);
+          setCustomCategories(categories);
           setStoredSavingsAccounts(accounts);
           setStoredSavingsPayments(payments);
           setStoredFixedExpenseRules(fixedRules);
@@ -390,6 +412,7 @@ export default function HomeClient() {
       } catch {
         if (!isCancelled) {
           setExpenses([]);
+          setCustomCategories([]);
           setStoredSavingsAccounts([]);
           setStoredSavingsPayments([]);
           setStoredFixedExpenseRules([]);
@@ -781,6 +804,10 @@ export default function HomeClient() {
   }, {});
   const calendarDays = getCalendarDays(selectedDate);
   const activeCategoryOptions = getInlineCategoryOptions(inlineType);
+  const recentCustomCategories = useMemo(
+    () => getRecentCategoriesForType(customCategories, inlineType),
+    [customCategories, inlineType],
+  );
   const activeInlineTabType =
     inlineFormMode === "edit" ? inlineEditListType : inlineType;
   const savingsAccounts = useMemo<SavingsAccount[]>(() => {
@@ -1225,6 +1252,25 @@ export default function HomeClient() {
     setInlineType(type);
     setInlineCategory(nextCategoryOptions[0]);
     setInlineCustomCategory("");
+  };
+  const handleCustomCategoryDelete = async (id: string) => {
+    try {
+      if (isDemoMode) {
+        setCustomCategories((previousCategories) => {
+          const nextCategories = removeCustomCategory(previousCategories, id);
+          writeDemoCustomCategories(nextCategories);
+          return nextCategories;
+        });
+        return;
+      }
+
+      await deleteCustomCategory(id);
+      setCustomCategories((previousCategories) =>
+        removeCustomCategory(previousCategories, id),
+      );
+    } catch {
+      alert("최근 카테고리를 삭제하지 못했습니다.");
+    }
   };
   const handleSavingsModeChange = (mode: InlineFormMode) => {
     setSavingsFormMode(mode);
@@ -2146,6 +2192,30 @@ export default function HomeClient() {
         }
         resetInlineCreateForm(payload.date);
       }
+      if (inlineCategory === customCategoryValue) {
+        try {
+          if (isDemoMode) {
+            const savedCategory: CustomCategory = {
+              id: `demo-custom-category-${Date.now()}`,
+              type: inlineType,
+              name: category,
+              lastUsedAt: new Date().toISOString(),
+            };
+            setCustomCategories((previousCategories) => {
+              const nextCategories = upsertRecentCategory(previousCategories, savedCategory);
+              writeDemoCustomCategories(nextCategories);
+              return nextCategories;
+            });
+          } else {
+            const savedCategory = await saveCustomCategory(inlineType, category);
+            setCustomCategories((previousCategories) =>
+              upsertRecentCategory(previousCategories, savedCategory),
+            );
+          }
+        } catch {
+          alert("최근 카테고리를 저장하지 못했습니다.");
+        }
+      }
       setSelectedDate(new Date(`${payload.date}T00:00:00`));
     } catch (error) {
       const message = error instanceof Error ? error.message : "저장 중 오류가 발생했습니다.";
@@ -2468,7 +2538,34 @@ export default function HomeClient() {
                     </div>
                     {inlineCategory === customCategoryValue ? (
                       <label className="main-overview--field">
-                        <span className="label--md">임시 카테고리</span>
+                        <span className="label--md">직접입력 카테고리</span>
+                        {recentCustomCategories.length ? (
+                          <div
+                            className="main-overview--custom-category-list"
+                            aria-label="최근 직접입력 카테고리"
+                          >
+                            {recentCustomCategories.map((customCategory) => (
+                              <span
+                                className="main-overview--custom-category-chip"
+                                key={customCategory.id}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => setInlineCustomCategory(customCategory.name)}
+                                >
+                                  {customCategory.name}
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label={`${customCategory.name} 최근 카테고리 삭제`}
+                                  onClick={() => handleCustomCategoryDelete(customCategory.id)}
+                                >
+                                  <AppIcon name="close" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
                         <input
                           className="main-overview--control body--sm"
                           type="text"

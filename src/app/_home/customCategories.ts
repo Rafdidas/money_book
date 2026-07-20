@@ -22,3 +22,8 @@ export const upsertRecentCategory = (
       normalizeCategoryName(existingCategory.name) !== normalizeCategoryName(category.name),
   ),
 ];
+
+export const removeCustomCategory = (
+  categories: CustomCategory[],
+  id: string,
+): CustomCategory[] => categories.filter((category) => category.id !== id);
