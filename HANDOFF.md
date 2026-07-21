@@ -926,3 +926,14 @@ with a simpler monthly cash-flow summary.
   - `npm run build`: Next.js 16.2.10 프로덕션 빌드 통과.
 - 입력 UI나 저장 흐름은 변경하지 않아 Playwright E2E 재실행 대상은 아니며, 변경된 두 분류 경계는 순수 함수 테스트로 직접 검증했습니다.
 - 원격 Supabase 마이그레이션과 배포는 여전히 수행하지 않았습니다.
+
+# 2026-07-21 최근 직접입력 카테고리 원격 마이그레이션 적용
+
+- 테스트 중 `Could not find the 'entry_type' column of 'expenses' in the schema cache` 오류를 재현·조사했습니다.
+- `npx supabase migration list`에서 로컬 `20260720000000`, `20260720010000`이 원격에는 미적용임을 확인해 원인을 확정했습니다.
+- `npx supabase db push --dry-run`으로 두 additive 마이그레이션만 대상임을 확인한 뒤 연결된 원격 Supabase에 적용했습니다.
+- 적용 내용: 사용자별 최근 직접입력 카테고리 테이블·RLS·정규화 trigger, `public.expenses.entry_type` nullable 컬럼·4개 subtype check.
+- 검증:
+  - 로컬·원격 마이그레이션 버전이 `20260720000000`, `20260720010000`까지 일치합니다.
+  - Supabase REST 익명 읽기 쿼리에서 `expenses.entry_type`과 `user_custom_categories` 모두 schema-cache 오류 없이 응답했습니다.
+- 애플리케이션 배포는 수행하지 않았습니다.
