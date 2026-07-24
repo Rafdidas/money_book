@@ -63,9 +63,10 @@ export const metadata: Metadata = {
     locale: "ko_KR",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
+    images: ["/opengraph-image.png"],
   },
   robots: {
     index: true,
