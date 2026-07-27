@@ -937,3 +937,14 @@ with a simpler monthly cash-flow summary.
   - 로컬·원격 마이그레이션 버전이 `20260720000000`, `20260720010000`까지 일치합니다.
   - Supabase REST 익명 읽기 쿼리에서 `expenses.entry_type`과 `user_custom_categories` 모두 schema-cache 오류 없이 응답했습니다.
 - 애플리케이션 배포는 수행하지 않았습니다.
+
+# 2026-07-27 Open Graph 대표 이미지 검증
+
+- `src/app/opengraph-image.png` 응답은 로컬 개발 서버에서 HTTP 200, `Content-Type: image/png`, 275,084바이트로 확인했습니다.
+- Supabase 환경 변수가 없는 초기 확인에서는 홈페이지 `/`가 HTTP 500이었고, 스택은 `src/lib/supabase/client.ts`의 URL/API key 부재를 가리켰습니다. Open Graph 변경 커밋은 `layout.tsx` metadata와 정적 이미지/alt 파일만 변경했으며, 해당 Supabase 초기화·홈페이지 컴포넌트·환경 파일은 변경하지 않았습니다. 검증용 `.env.local` 제공 후 `/`는 HTTP 200이었습니다.
+- 렌더링된 홈페이지 HTML에서 `og:image`와 `twitter:image`가 Open Graph 이미지(1200×630, PNG)를 가리키고, `twitter:card`는 `summary_large_image`임을 확인했습니다.
+- 검증:
+  - `npm run lint`: 통과.
+  - `npm run build`: 통과. 정적 라우트 목록에 `/`와 `/opengraph-image.png`가 포함됩니다.
+  - `npm run test:e2e`: 실행 전 Windows sandbox가 `windows sandbox: helper_unknown_error: setup refresh had errors`로 실패했습니다. `playwright.config.ts`의 desktop/mobile Chromium 회귀 검증을 실행하지 못했습니다.
+- E2E 실행 전 수동으로 시작한 포트 3001 개발 서버를 종료했습니다. Playwright 설정의 포트 3100에는 충돌하는 수동 서버가 없었습니다.
