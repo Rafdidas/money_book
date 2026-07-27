@@ -946,5 +946,6 @@ with a simpler monthly cash-flow summary.
 - 검증:
   - `npm run lint`: 통과.
   - `npm run build`: 통과. 정적 라우트 목록에 `/`와 `/opengraph-image.png`가 포함됩니다.
-  - `npm run test:e2e`: 실행 전 Windows sandbox가 `windows sandbox: helper_unknown_error: setup refresh had errors`로 실패했습니다. `playwright.config.ts`의 desktop/mobile Chromium 회귀 검증을 실행하지 못했습니다.
+  - `npm run test`: 19개 파일, 51개 테스트 통과.
+  - `npm run test:e2e`: desktop/mobile Chromium 8개 테스트 통과.
 - E2E 실행 전 수동으로 시작한 포트 3001 개발 서버를 종료했습니다. Playwright 설정의 포트 3100에는 충돌하는 수동 서버가 없었습니다.
