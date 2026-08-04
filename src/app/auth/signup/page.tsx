@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 import rocket from "@/assets/img/renewal/rocket.svg";
 import { disableDemoMode } from "@/lib/demo";
@@ -25,7 +25,14 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [legalConsentError, setLegalConsentError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const termsCheckboxRef = useRef<HTMLInputElement>(null);
+  const privacyCheckboxRef = useRef<HTMLInputElement>(null);
+  const ageCheckboxRef = useRef<HTMLInputElement>(null);
 
   const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -40,8 +47,23 @@ export default function SignupPage() {
       return;
     }
 
+    if (!termsAccepted || !privacyAccepted || !ageConfirmed) {
+      setLegalConsentError("회원가입을 위해 모든 필수 약관에 동의해주세요.");
+
+      if (!termsAccepted) {
+        termsCheckboxRef.current?.focus();
+      } else if (!privacyAccepted) {
+        privacyCheckboxRef.current?.focus();
+      } else {
+        ageCheckboxRef.current?.focus();
+      }
+
+      return;
+    }
+
     try {
       setPasswordError("");
+      setLegalConsentError("");
       setIsSubmitting(true);
 
       const { error } = await supabase.auth.signUp({
@@ -51,6 +73,9 @@ export default function SignupPage() {
           emailRedirectTo: getAuthCallbackUrl(),
           data: {
             name,
+            termsAccepted: true,
+            privacyAccepted: true,
+            ageConfirmed: true,
           },
         },
       });
@@ -180,6 +205,63 @@ export default function SignupPage() {
                   />
                   {passwordError ? <p className="auth-error-text">{passwordError}</p> : null}
                 </div>
+
+                <fieldset className="auth-field auth-field--signup" aria-describedby={legalConsentError ? "signup-legal-consent-error" : undefined}>
+                  <legend>필수 약관 동의</legend>
+                  <label>
+                    <input
+                      ref={termsCheckboxRef}
+                      type="checkbox"
+                      name="termsAccepted"
+                      checked={termsAccepted}
+                      required
+                      aria-invalid={Boolean(legalConsentError && !termsAccepted)}
+                      disabled={isSubmitting}
+                      onChange={(event) => {
+                        setTermsAccepted(event.target.checked);
+                        if (legalConsentError) setLegalConsentError("");
+                      }}
+                    />{" "}
+                    <Link href="/legal/terms">이용약관</Link>에 동의합니다.
+                  </label>
+                  <label>
+                    <input
+                      ref={privacyCheckboxRef}
+                      type="checkbox"
+                      name="privacyAccepted"
+                      checked={privacyAccepted}
+                      required
+                      aria-invalid={Boolean(legalConsentError && !privacyAccepted)}
+                      disabled={isSubmitting}
+                      onChange={(event) => {
+                        setPrivacyAccepted(event.target.checked);
+                        if (legalConsentError) setLegalConsentError("");
+                      }}
+                    />{" "}
+                    <Link href="/legal/privacy">개인정보 처리방침</Link>에 동의합니다.
+                  </label>
+                  <label>
+                    <input
+                      ref={ageCheckboxRef}
+                      type="checkbox"
+                      name="ageConfirmed"
+                      checked={ageConfirmed}
+                      required
+                      aria-invalid={Boolean(legalConsentError && !ageConfirmed)}
+                      disabled={isSubmitting}
+                      onChange={(event) => {
+                        setAgeConfirmed(event.target.checked);
+                        if (legalConsentError) setLegalConsentError("");
+                      }}
+                    />{" "}
+                    만 14세 이상입니다.
+                  </label>
+                  {legalConsentError ? (
+                    <p id="signup-legal-consent-error" className="auth-error-text" role="alert">
+                      {legalConsentError}
+                    </p>
+                  ) : null}
+                </fieldset>
 
                 <button type="submit" className="auth-submit auth-submit--signup" disabled={isSubmitting}>
                   {isSubmitting ? "가입 중..." : "회원가입"}
