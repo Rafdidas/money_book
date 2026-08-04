@@ -131,30 +131,38 @@ export default function Providers({ children }: { children: ReactNode }) {
         return;
       }
 
-      const destination = await getAuthenticatedDestination();
+      try {
+        const destination = await getAuthenticatedDestination();
 
-      if (destination !== "/app") {
-        router.replace(destination);
-        return;
+        if (isCancelled) return;
+
+        if (destination !== "/app") {
+          router.replace(destination);
+          return;
+        }
+
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData.user;
+
+        if (isCancelled) return;
+
+        if (!user) {
+          router.replace("/auth/login");
+          return;
+        }
+
+        const metadataName =
+          typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "";
+
+        setDisplayName(metadataName || user.email?.split("@")[0] || "게스트");
+        setDisplayEmail(user.email || "");
+        setIsDemoMode(false);
+        setIsAuthResolved(true);
+      } catch {
+        if (!isCancelled) {
+          router.replace("/auth/login");
+        }
       }
-
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-
-      if (!user) {
-        router.replace("/auth/login");
-        return;
-      }
-
-      if (isCancelled) return;
-
-      const metadataName =
-        typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "";
-
-      setDisplayName(metadataName || user.email?.split("@")[0] || "게스트");
-      setDisplayEmail(user.email || "");
-      setIsDemoMode(false);
-      setIsAuthResolved(true);
     };
 
     fetchAppData();

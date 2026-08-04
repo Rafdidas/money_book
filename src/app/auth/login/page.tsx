@@ -22,15 +22,27 @@ export default function LoginPage() {
   const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
-    const redirectIfLoggedIn = async () => {
-      const destination = await getAuthenticatedDestination();
+    let isCancelled = false;
 
-      if (destination !== "/auth/login") {
-        router.replace(destination);
+    const redirectIfLoggedIn = async () => {
+      try {
+        const destination = await getAuthenticatedDestination();
+
+        if (!isCancelled && destination !== "/auth/login") {
+          router.replace(destination);
+        }
+      } catch {
+        if (!isCancelled) {
+          setPasswordError("로그인 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
+        }
       }
     };
 
     redirectIfLoggedIn();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [router]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -80,6 +92,9 @@ export default function LoginPage() {
       setPassword("");
       router.replace(await getAuthenticatedDestination());
       router.refresh();
+    } catch {
+      setPasswordError("로그인 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      router.replace("/auth/login");
     } finally {
       setIsSubmitting(false);
     }
