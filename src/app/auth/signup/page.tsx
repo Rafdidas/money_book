@@ -133,7 +133,7 @@ export default function SignupPage() {
               </h1>
               <p className="auth-subtitle auth-subtitle--signup">무료로 머니북을 시작해요</p>
 
-              <form className="auth-form auth-form--signup" onSubmit={handleSignup}>
+              <form className="auth-form auth-form--signup" noValidate onSubmit={handleSignup}>
                 <div className="auth-field auth-field--signup">
                   <label htmlFor="signup-name">이름</label>
                   <input

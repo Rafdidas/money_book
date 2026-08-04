@@ -38,6 +38,11 @@ describe("legal consent API", () => {
     expect(maybeSingle).toHaveBeenCalledOnce();
   });
 
+  it("surfaces a Korean error when the profile lookup is rejected", async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: new Error("query failed") });
+
+    await expect(getCurrentUserLegalConsent()).rejects.toThrow("동의 정보를 불러오지 못했습니다.");
+  });
   it("returns null when the authenticated profile is absent", async () => {
     maybeSingle.mockResolvedValue({ data: null, error: null });
 
