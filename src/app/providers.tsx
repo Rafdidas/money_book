@@ -11,7 +11,9 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import AppAlertProvider from "@/components/app-alert/AppAlertProvider";
 import ThemeProvider from "@/components/common/ThemeProvider";
+import { getCurrentUserLegalConsent } from "@/lib/api/legalConsent";
 import { isDemoModeEnabled } from "@/lib/demo";
+import { needsCurrentLegalConsent } from "@/lib/legal/consentStatus";
 import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
 import type { ReactNode } from "react";
@@ -27,6 +29,23 @@ type AppDataContextValue = {
 };
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
+
+export type AuthenticatedDestination = "/app" | "/auth/consent" | "/auth/login";
+
+export const getAuthenticatedDestination = async (): Promise<AuthenticatedDestination> => {
+  if (isDemoModeEnabled()) {
+    return "/app";
+  }
+
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData.user) {
+    return "/auth/login";
+  }
+
+  const profile = await getCurrentUserLegalConsent();
+  return needsCurrentLegalConsent(profile) ? "/auth/consent" : "/app";
+};
 
 export const useAppData = () => {
   const context = useContext(AppDataContext);
@@ -109,6 +128,13 @@ export default function Providers({ children }: { children: ReactNode }) {
         setDisplayEmail("demo@moneybook.local");
         setIsDemoMode(true);
         setIsAuthResolved(true);
+        return;
+      }
+
+      const destination = await getAuthenticatedDestination();
+
+      if (destination !== "/app") {
+        router.replace(destination);
         return;
       }
 

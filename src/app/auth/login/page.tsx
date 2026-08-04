@@ -8,6 +8,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import safe from "@/assets/img/renewal/safe.svg";
 import { disableDemoMode, enableDemoMode } from "@/lib/demo";
 import { setRememberLogin } from "@/lib/supabase/auth-storage";
+import { getAuthenticatedDestination } from "@/app/providers";
 import { supabase } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -22,10 +23,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     const redirectIfLoggedIn = async () => {
-      const { data } = await supabase.auth.getUser();
+      const destination = await getAuthenticatedDestination();
 
-      if (data.user) {
-        router.replace("/app");
+      if (destination !== "/auth/login") {
+        router.replace(destination);
       }
     };
 
@@ -77,7 +78,7 @@ export default function LoginPage() {
       formRef.current?.reset();
       setEmail("");
       setPassword("");
-      router.replace("/app");
+      router.replace(await getAuthenticatedDestination());
       router.refresh();
     } finally {
       setIsSubmitting(false);
