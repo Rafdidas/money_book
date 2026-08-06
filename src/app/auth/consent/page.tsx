@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 
 import { getAuthenticatedDestination } from "@/app/providers";
+import Checkbox from "@/components/common/Checkbox";
 import { recordCurrentLegalConsent } from "@/lib/api/legalConsent";
 import { supabase } from "@/lib/supabase/client";
 
@@ -84,6 +85,17 @@ export default function ConsentPage() {
     if (error) setError("");
   };
 
+  const allConsentsAccepted = termsAccepted && privacyAccepted && ageConfirmed;
+  const isConsentPartiallyAccepted =
+    !allConsentsAccepted && (termsAccepted || privacyAccepted || ageConfirmed);
+
+  const handleToggleAllConsents = (accepted: boolean) => {
+    setTermsAccepted(accepted);
+    setPrivacyAccepted(accepted);
+    setAgeConfirmed(accepted);
+    if (error) setError("");
+  };
+
   return (
     <div className="auth-page auth-page--consent">
       <main className="auth-shell" aria-labelledby="consent-title">
@@ -108,20 +120,43 @@ export default function ConsentPage() {
               <p className="auth-subtitle">서비스를 계속 이용하려면 필수 약관에 동의해주세요.</p>
 
               <form className="auth-form auth-consent__form" noValidate onSubmit={handleSubmit}>
-                <fieldset className="auth-consent__choices" aria-describedby={error ? "consent-error" : undefined} disabled={isSubmitting || isSigningOut}>
+                <fieldset className="auth-consent__choices auth-consent-field" aria-describedby={error ? "consent-error" : undefined} disabled={isSubmitting || isSigningOut}>
                   <legend>필수 약관 동의</legend>
-                  <label className="auth-consent__choice">
-                    <input ref={termsCheckboxRef} type="checkbox" checked={termsAccepted} required aria-invalid={Boolean(error && !termsAccepted)} onChange={(event) => handleChoiceChange(setTermsAccepted, event.target.checked)} />
-                    <span><Link href="/legal/terms">이용약관</Link>에 동의합니다. <em>(필수)</em></span>
-                  </label>
-                  <label className="auth-consent__choice">
-                    <input ref={privacyCheckboxRef} type="checkbox" checked={privacyAccepted} required aria-invalid={Boolean(error && !privacyAccepted)} onChange={(event) => handleChoiceChange(setPrivacyAccepted, event.target.checked)} />
-                    <span><Link href="/legal/privacy">개인정보 처리방침</Link>에 동의합니다. <em>(필수)</em></span>
-                  </label>
-                  <label className="auth-consent__choice">
-                    <input ref={ageCheckboxRef} type="checkbox" checked={ageConfirmed} required aria-invalid={Boolean(error && !ageConfirmed)} onChange={(event) => handleChoiceChange(setAgeConfirmed, event.target.checked)} />
-                    <span>만 14세 이상입니다. <em>(필수)</em></span>
-                  </label>
+                  <Checkbox
+                    checked={allConsentsAccepted}
+                    indeterminate={isConsentPartiallyAccepted}
+                    onChange={handleToggleAllConsents}
+                  >
+                    전체 동의
+                  </Checkbox>
+                  <hr className="auth-consent-field__divider" />
+                  <Checkbox
+                    ref={termsCheckboxRef}
+                    checked={termsAccepted}
+                    required
+                    invalid={Boolean(error && !termsAccepted)}
+                    onChange={(next) => handleChoiceChange(setTermsAccepted, next)}
+                  >
+                    <Link href="/legal/terms">이용약관</Link>에 동의합니다. <em>(필수)</em>
+                  </Checkbox>
+                  <Checkbox
+                    ref={privacyCheckboxRef}
+                    checked={privacyAccepted}
+                    required
+                    invalid={Boolean(error && !privacyAccepted)}
+                    onChange={(next) => handleChoiceChange(setPrivacyAccepted, next)}
+                  >
+                    <Link href="/legal/privacy">개인정보 처리방침</Link>에 동의합니다. <em>(필수)</em>
+                  </Checkbox>
+                  <Checkbox
+                    ref={ageCheckboxRef}
+                    checked={ageConfirmed}
+                    required
+                    invalid={Boolean(error && !ageConfirmed)}
+                    onChange={(next) => handleChoiceChange(setAgeConfirmed, next)}
+                  >
+                    만 14세 이상입니다. <em>(필수)</em>
+                  </Checkbox>
                 </fieldset>
 
                 {error ? <p id="consent-error" className="auth-error-text auth-consent__error" role="alert">{error}</p> : null}

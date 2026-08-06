@@ -11,6 +11,7 @@ import Calendar from "react-calendar";
 import type { Value } from "react-calendar/dist/shared/types.js";
 import Modal from "@/components/common/Modal";
 import AppIcon from "@/components/common/AppIcon";
+import Checkbox from "@/components/common/Checkbox";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
 import { useAppData } from "@/app/providers";
@@ -2765,16 +2766,13 @@ export default function HomeClient() {
                             납입 금액
                           </label>
                           {savingsFormMode === "edit" ? (
-                            <label className="row-group row-group--center row-group--gap-4">
-                              <input
-                                type="checkbox"
-                                checked={savingsStartsThisMonth}
-                                onChange={(event) =>
-                                  handleSavingsStartMonthChange(event.target.checked)
-                                }
-                              />
-                              <span className="caption--md">이번 달 부터 변경</span>
-                            </label>
+                            <Checkbox
+                              className="checkbox--compact caption--md"
+                              checked={savingsStartsThisMonth}
+                              onChange={handleSavingsStartMonthChange}
+                            >
+                              이번 달 부터 변경
+                            </Checkbox>
                           ) : null}
                         </div>
                         <input
@@ -2811,16 +2809,13 @@ export default function HomeClient() {
                           <label className="form-label label--md" htmlFor="savings-maturity-date">
                             만기일
                           </label>
-                          <label className="row-group row-group--center row-group--gap-4">
-                            <input
-                              type="checkbox"
-                              checked={savingsHasNoMaturity}
-                              onChange={(event) =>
-                                setSavingsHasNoMaturity(event.target.checked)
-                              }
-                            />
-                            <span className="caption--md">만기일 없음</span>
-                          </label>
+                          <Checkbox
+                            className="checkbox--compact caption--md"
+                            checked={savingsHasNoMaturity}
+                            onChange={setSavingsHasNoMaturity}
+                          >
+                            만기일 없음
+                          </Checkbox>
                         </div>
                         <input
                           id="savings-maturity-date"
@@ -3070,16 +3065,13 @@ export default function HomeClient() {
                             지출 금액
                           </label>
                           {fixedExpenseFormMode === "edit" ? (
-                            <label className="row-group row-group--center row-group--gap-4">
-                              <input
-                                type="checkbox"
-                                checked={fixedExpenseStartsThisMonth}
-                                onChange={(event) =>
-                                  handleFixedExpenseStartMonthChange(event.target.checked)
-                                }
-                              />
-                              <span className="caption--md">이번 달 부터 변경</span>
-                            </label>
+                            <Checkbox
+                              className="checkbox--compact caption--md"
+                              checked={fixedExpenseStartsThisMonth}
+                              onChange={handleFixedExpenseStartMonthChange}
+                            >
+                              이번 달 부터 변경
+                            </Checkbox>
                           ) : null}
                         </div>
                         <input
@@ -3099,16 +3091,13 @@ export default function HomeClient() {
                           <label className="form-label label--md" htmlFor="fixed-expense-end-date">
                             종료일
                           </label>
-                          <label className="row-group row-group--center row-group--gap-4">
-                            <input
-                              type="checkbox"
-                              checked={fixedExpenseHasNoEndDate}
-                              onChange={(event) =>
-                                setFixedExpenseHasNoEndDate(event.target.checked)
-                              }
-                            />
-                            <span className="caption--md">종료일 설정 안함</span>
-                          </label>
+                          <Checkbox
+                            className="checkbox--compact caption--md"
+                            checked={fixedExpenseHasNoEndDate}
+                            onChange={setFixedExpenseHasNoEndDate}
+                          >
+                            종료일 설정 안함
+                          </Checkbox>
                         </div>
                         <input
                           id="fixed-expense-end-date"

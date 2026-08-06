@@ -306,20 +306,7 @@
   margin-bottom: 24px;
 }
 
-.auth-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--auth-sub);
-  font-size: 13.5px;
-  cursor: pointer;
-
-  input {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--auth-brand);
-  }
-}
+// `.auth-check`는 공용 `Checkbox` 컴포넌트로 대체되어 사용처가 없어졌다.
 
 .auth-muted-action {
   color: var(--auth-brand);

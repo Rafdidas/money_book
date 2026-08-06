@@ -13,6 +13,7 @@ import AppAlertProvider from "@/components/app-alert/AppAlertProvider";
 import ThemeProvider from "@/components/common/ThemeProvider";
 import { getCurrentUserLegalConsent } from "@/lib/api/legalConsent";
 import { isDemoModeEnabled } from "@/lib/demo";
+import { isLegalConsentGateEnabled } from "@/lib/legal/consentGate";
 import { needsCurrentLegalConsent } from "@/lib/legal/consentStatus";
 import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
@@ -43,8 +44,18 @@ export const getAuthenticatedDestination = async (): Promise<AuthenticatedDestin
     return "/auth/login";
   }
 
-  const profile = await getCurrentUserLegalConsent();
-  return needsCurrentLegalConsent(profile) ? "/auth/consent" : "/app";
+  if (!isLegalConsentGateEnabled()) {
+    return "/app";
+  }
+
+  try {
+    const profile = await getCurrentUserLegalConsent(userData.user.id);
+    return needsCurrentLegalConsent(profile) ? "/auth/consent" : "/app";
+  } catch {
+    // 동의 조회 실패로 이미 인증된 사용자의 접근을 막지 않는다.
+    // 동의 게이트는 보안 경계가 아니라 기록 장치이므로 실패 시 통과시킨다.
+    return "/app";
+  }
 };
 
 export const useAppData = () => {

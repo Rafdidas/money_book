@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { maybeSingle, select, from, rpc } = vi.hoisted(() => ({
+const { maybeSingle, eq, select, from, rpc } = vi.hoisted(() => ({
   maybeSingle: vi.fn(),
+  eq: vi.fn(),
   select: vi.fn(),
   from: vi.fn(),
   rpc: vi.fn(),
@@ -11,12 +12,17 @@ vi.mock("@/lib/supabase/client", () => ({
   supabase: { from, rpc },
 }));
 
+import {
+  CURRENT_PRIVACY_VERSION,
+  CURRENT_TERMS_VERSION,
+} from "@/lib/legal/legalDocuments";
 import { getCurrentUserLegalConsent, recordCurrentLegalConsent } from "./legalConsent";
 
 describe("legal consent API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    select.mockReturnValue({ maybeSingle });
+    eq.mockReturnValue({ maybeSingle });
+    select.mockReturnValue({ eq });
     from.mockReturnValue({ select });
   });
 
@@ -30,7 +36,7 @@ describe("legal consent API", () => {
     };
     maybeSingle.mockResolvedValue({ data: profile, error: null });
 
-    await expect(getCurrentUserLegalConsent()).resolves.toEqual(profile);
+    await expect(getCurrentUserLegalConsent("user-1")).resolves.toEqual(profile);
     expect(from).toHaveBeenCalledWith("profiles");
     expect(select).toHaveBeenCalledWith(
       "terms_version, terms_agreed_at, privacy_version, privacy_agreed_at, age_confirmed_at",
@@ -38,22 +44,36 @@ describe("legal consent API", () => {
     expect(maybeSingle).toHaveBeenCalledOnce();
   });
 
+  it("narrows the lookup to the given user so admin row visibility cannot break it", async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: null });
+
+    await getCurrentUserLegalConsent("user-1");
+
+    expect(eq).toHaveBeenCalledWith("id", "user-1");
+  });
+
   it("surfaces a Korean error when the profile lookup is rejected", async () => {
     maybeSingle.mockResolvedValue({ data: null, error: new Error("query failed") });
 
-    await expect(getCurrentUserLegalConsent()).rejects.toThrow("동의 정보를 불러오지 못했습니다.");
+    await expect(getCurrentUserLegalConsent("user-1")).rejects.toThrow(
+      "동의 정보를 불러오지 못했습니다.",
+    );
   });
   it("returns null when the authenticated profile is absent", async () => {
     maybeSingle.mockResolvedValue({ data: null, error: null });
 
-    await expect(getCurrentUserLegalConsent()).resolves.toBeNull();
+    await expect(getCurrentUserLegalConsent("user-1")).resolves.toBeNull();
   });
 
-  it("records current legal consent without client-supplied arguments", async () => {
+  it("records consent with the versions declared in legalDocuments", async () => {
     rpc.mockResolvedValue({ error: null });
 
     await expect(recordCurrentLegalConsent()).resolves.toBeUndefined();
-    expect(rpc).toHaveBeenCalledWith("record_current_legal_consent");
+    // 버전이 SQL에 하드코딩되어 있으면 TS 상수만 올렸을 때 재동의가 해소되지 않는다.
+    expect(rpc).toHaveBeenCalledWith("record_current_legal_consent", {
+      p_terms_version: CURRENT_TERMS_VERSION,
+      p_privacy_version: CURRENT_PRIVACY_VERSION,
+    });
   });
 
   it("surfaces a Korean error when recording consent is rejected", async () => {

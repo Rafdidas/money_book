@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import logo from "@/assets/img/monibuk-logo.svg";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import AppIcon, { type AppIconName } from "@/components/common/AppIcon";
+import LegalLinks from "@/components/common/LegalLinks";
 // 다크모드 토글: 로고 완성 후 주석 해제하고 배포 예정
 // import { useTheme } from "@/components/common/ThemeProvider";
 import { disableDemoMode } from "@/lib/demo";
@@ -212,6 +213,7 @@ export default function SideMenu({
               </li>
             </ul>
           </div>
+          <LegalLinks className="side-menu--legal" />
         </div>
       </aside>
 
@@ -304,6 +306,7 @@ export default function SideMenu({
               </button>
             </li>
           </ul>
+          <LegalLinks className="mobile-drawer--legal" />
         </aside>
       </div>
 

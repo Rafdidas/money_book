@@ -1,5 +1,5 @@
 import { render, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   consumeAuthHashSession,
@@ -51,6 +51,11 @@ describe("getAuthenticatedDestination", () => {
     consumeAuthHashSession.mockResolvedValue(undefined);
     isDemoModeEnabled.mockReturnValue(false);
     getUser.mockResolvedValue({ data: { user: null } });
+    process.env.NEXT_PUBLIC_LEGAL_CONSENT_GATE = "true";
+  });
+
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_LEGAL_CONSENT_GATE;
   });
 
   const mockLegalProfile = (profile: typeof legacyProfile) => {
@@ -74,13 +79,27 @@ describe("getAuthenticatedDestination", () => {
     await expect(getAuthenticatedDestination()).resolves.toBe("/app");
   });
 
-  it("redirects to login when the app consent lookup fails", async () => {
+  it("skips the consent lookup entirely when the gate is disabled", async () => {
+    delete process.env.NEXT_PUBLIC_LEGAL_CONSENT_GATE;
+    mockLegalProfile(legacyProfile);
+
+    await expect(getAuthenticatedDestination()).resolves.toBe("/app");
+    expect(getCurrentUserLegalConsent).not.toHaveBeenCalled();
+  });
+
+  it("lets an authenticated user through when the consent lookup fails", async () => {
     getUser.mockResolvedValue({ data: { user: authenticatedUser } });
     getCurrentUserLegalConsent.mockRejectedValue(new Error("profile unavailable"));
 
-    render(<Providers>protected content</Providers>);
+    await expect(getAuthenticatedDestination()).resolves.toBe("/app");
+  });
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/auth/login"));
+  it("narrows the consent lookup to the authenticated user id", async () => {
+    mockLegalProfile(currentProfile);
+
+    await getAuthenticatedDestination();
+
+    expect(getCurrentUserLegalConsent).toHaveBeenCalledWith(authenticatedUser.id);
   });
 
   it("does not navigate after the app consent lookup resolves following unmount", async () => {

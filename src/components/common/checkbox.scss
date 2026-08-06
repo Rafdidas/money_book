@@ -1,0 +1,156 @@
+// Vercel Geist 체크박스를 프로젝트 토큰으로 옮긴 것.
+// 원본의 gray-100~1000 스케일 대신 기존 surface/outline/primary 토큰을 써서
+// 라이트·다크 테마가 자동으로 따라오게 한다.
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  // 터치 조작 영역을 확보한다.
+  min-height: 44px;
+  color: var(--on-surface-ultra-high);
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+
+  &.is-disabled {
+    color: var(--on-surface);
+    cursor: not-allowed;
+  }
+}
+
+// 폼 라벨 옆에 인라인으로 들어가는 자리. 44px 높이를 쓰면 행이 무너진다.
+.checkbox--compact {
+  min-height: 0;
+  gap: 6px;
+  font-size: inherit;
+  color: inherit;
+
+  .checkbox__box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .checkbox__icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// 화면에서는 감추되 포커스는 받을 수 있어야 한다.
+// display:none이나 visibility:hidden을 쓰면 키보드로 도달할 수 없다.
+// `.checkbox`로 한 단계 더 좁히는 이유: `_input.scss`의 전역
+// `input[type="checkbox"]`가 클래스 하나보다 우선순위가 높아 크기를 덮어쓴다.
+.checkbox .checkbox__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.checkbox__box {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--outline);
+  border-radius: 5px;
+  background: var(--surface-lowest);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.checkbox__icon {
+  fill: none;
+  stroke: var(--on-primary);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.checkbox:hover .checkbox__input:not(:disabled) + .checkbox__box {
+  background: var(--surface-low);
+}
+
+.checkbox__input:focus-visible + .checkbox__box {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.checkbox__input:checked + .checkbox__box {
+  border-color: var(--primary);
+  background: var(--primary);
+
+  .checkbox__icon {
+    opacity: 1;
+  }
+}
+
+// 부분 선택은 체크 표시가 아니라 가로선이고, 배경은 기본 상태를 유지한다.
+.checkbox__input:indeterminate + .checkbox__box {
+  border-color: var(--outline-high);
+  background: var(--surface-lowest);
+
+  .checkbox__icon {
+    stroke: var(--on-surface-ultra-high);
+    opacity: 1;
+  }
+}
+
+.checkbox__input[aria-invalid="true"] + .checkbox__box {
+  border-color: var(--error, #d64545);
+}
+
+.checkbox__input:disabled + .checkbox__box {
+  border-color: var(--outline-low);
+  background: var(--surface-low);
+}
+
+.checkbox__input:disabled:checked + .checkbox__box {
+  border-color: var(--surface-high);
+  background: var(--surface-high);
+}
+
+.checkbox__label {
+  a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  em {
+    color: var(--on-surface);
+    font-style: normal;
+  }
+}
+
+// 동의 항목 묶음. 전체 동의와 개별 항목을 구분선으로 나눈다.
+.auth-consent-field {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+
+  legend {
+    padding: 0;
+    margin-bottom: 2px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  &__divider {
+    height: 0;
+    margin: 2px 0;
+    border: 0;
+    border-top: 1px solid var(--outline-low);
+  }
+}

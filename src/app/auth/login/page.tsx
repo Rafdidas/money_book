@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import safe from "@/assets/img/renewal/safe.svg";
+import Checkbox from "@/components/common/Checkbox";
 import { disableDemoMode, enableDemoMode } from "@/lib/demo";
 import { setRememberLogin } from "@/lib/supabase/auth-storage";
 import { getAuthenticatedDestination } from "@/app/providers";
@@ -182,16 +183,14 @@ export default function LoginPage() {
                 </div>
 
                 <div className="auth-login-options">
-                  <label className="auth-check">
-                    <input
-                      type="checkbox"
-                      checked={rememberLogin}
-                      disabled={isSubmitting}
-                      onChange={(event) => setRememberLoginState(event.target.checked)}
-                    />
+                  <Checkbox
+                    checked={rememberLogin}
+                    disabled={isSubmitting}
+                    onChange={setRememberLoginState}
+                  >
                     로그인 유지
-                  </label>
-                  <span className="auth-muted-action">비밀번호 찾기</span>
+                  </Checkbox>
+                  {/* <span className="auth-muted-action">비밀번호 찾기</span> */}
                 </div>
 
                 <button type="submit" className="auth-submit" disabled={isSubmitting}>

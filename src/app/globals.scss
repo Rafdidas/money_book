@@ -1,4 +1,5 @@
 @use "../app/color_tokens.scss";
+@use "../components/common/checkbox";
 @use "../components/common/header";
 @use "../components/common/footer";
 @use "../components/common/modal";
@@ -14,9 +15,11 @@
 @use "../styles/autocomplete";
 @use "../styles/button";
 @use "../styles/badge";
+@use "../styles/legal-links";
 @use "./page";
 @use "./analysis/analysis";
 @use "./auth/auth";
+@use "./legal/legal";
 
 
 html,
@@ -341,3 +344,87 @@ $limit: 64;
   gap: 8px;
 }
 // ------------------------------------------------------------------------------------
+
+
+//로우 정렬 + 갭 조정
+.row-group {
+  display: flex;
+
+  @for $i from 2 through 36 {
+    &--gap-#{$i} {
+      gap: #{$i}px;
+    }
+  }
+
+  &--content-center {
+    justify-content: center;
+  }
+
+  &--center {
+    align-items: center;
+  }
+
+  &--between {
+    justify-content: space-between;
+  }
+
+  &--full {
+    flex: 1;
+  }
+
+  &--end {
+    justify-content: flex-end;
+  }
+
+  &--reverse {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+
+  &--start {
+    align-items: flex-start;
+  }
+
+  &--bottom {
+    align-items: flex-end;
+  }
+}
+
+.flex-fill {
+  flex: 1 1 auto;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+//ex) class="row-group row-group--gap-8 ~ row-group--gap-36"
+
+//컬럼 정렬 + 갭 조정
+.column-group {
+  display: flex;
+  flex-direction: column;
+
+  @for $i from 4 through 48 {
+    &--gap-#{$i} {
+      gap: #{$i}px;
+    }
+  }
+
+  &--center {
+    justify-content: center;
+  }
+
+  &--between {
+    justify-content: space-between;
+  }
+
+  &--start {
+    align-items: flex-start;
+  }
+
+  &--end {
+    align-items: flex-end;
+  }
+}
+

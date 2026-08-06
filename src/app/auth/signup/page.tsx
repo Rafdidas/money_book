@@ -6,13 +6,30 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 
 import rocket from "@/assets/img/renewal/rocket.svg";
+import Checkbox from "@/components/common/Checkbox";
 import { disableDemoMode } from "@/lib/demo";
+import {
+  CURRENT_PRIVACY_VERSION,
+  CURRENT_TERMS_VERSION,
+} from "@/lib/legal/legalDocuments";
 import { getAuthCallbackUrl } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
 
 const getSignupErrorMessage = (message: string) => {
   if (message.includes("email rate limit exceeded")) {
     return "인증 메일 요청이 많습니다. 잠시 후 다시 시도해주세요.";
+  }
+
+  // 동의 메타데이터가 없거나 잘못되면 `handle_new_user_profile` 트리거가 가입을
+  // 되돌리고 Supabase는 원문 오류를 그대로 반환한다. 화면 검증을 통과한 정상
+  // 경로에서는 나오지 않지만, DB 문구가 사용자에게 노출되지 않도록 매핑한다.
+  if (
+    message.includes("Database error saving new user") ||
+    message.includes("Terms, privacy, and age confirmation are required") ||
+    message.includes("version is required") ||
+    message.includes("version is too long")
+  ) {
+    return "약관 동의 정보를 확인하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.";
   }
 
   return message;
@@ -33,6 +50,22 @@ export default function SignupPage() {
   const termsCheckboxRef = useRef<HTMLInputElement>(null);
   const privacyCheckboxRef = useRef<HTMLInputElement>(null);
   const ageCheckboxRef = useRef<HTMLInputElement>(null);
+
+  const allConsentsAccepted = termsAccepted && privacyAccepted && ageConfirmed;
+  const isConsentPartiallyAccepted =
+    !allConsentsAccepted && (termsAccepted || privacyAccepted || ageConfirmed);
+
+  const handleConsentChange = (setAccepted: (accepted: boolean) => void, accepted: boolean) => {
+    setAccepted(accepted);
+    if (legalConsentError) setLegalConsentError("");
+  };
+
+  const handleToggleAllConsents = (accepted: boolean) => {
+    setTermsAccepted(accepted);
+    setPrivacyAccepted(accepted);
+    setAgeConfirmed(accepted);
+    if (legalConsentError) setLegalConsentError("");
+  };
 
   const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,11 +104,15 @@ export default function SignupPage() {
         password,
         options: {
           emailRedirectTo: getAuthCallbackUrl(),
+          // 키 이름은 handle_new_user_profile 트리거가 읽는 이름과 반드시 같아야 한다.
+          // (supabase/migrations/20260804000000_add_legal_consent.sql)
           data: {
             name,
-            termsAccepted: true,
-            privacyAccepted: true,
-            ageConfirmed: true,
+            terms_agreed: true,
+            privacy_agreed: true,
+            age_confirmed: true,
+            terms_version: CURRENT_TERMS_VERSION,
+            privacy_version: CURRENT_PRIVACY_VERSION,
           },
         },
       });
@@ -206,56 +243,50 @@ export default function SignupPage() {
                   {passwordError ? <p className="auth-error-text">{passwordError}</p> : null}
                 </div>
 
-                <fieldset className="auth-field auth-field--signup" aria-describedby={legalConsentError ? "signup-legal-consent-error" : undefined}>
+                <fieldset className="auth-consent-field" aria-describedby={legalConsentError ? "signup-legal-consent-error" : undefined}>
                   <legend>필수 약관 동의</legend>
-                  <label>
-                    <input
-                      ref={termsCheckboxRef}
-                      type="checkbox"
-                      name="termsAccepted"
-                      checked={termsAccepted}
-                      required
-                      aria-invalid={Boolean(legalConsentError && !termsAccepted)}
-                      disabled={isSubmitting}
-                      onChange={(event) => {
-                        setTermsAccepted(event.target.checked);
-                        if (legalConsentError) setLegalConsentError("");
-                      }}
-                    />{" "}
+                  <Checkbox
+                    checked={allConsentsAccepted}
+                    indeterminate={isConsentPartiallyAccepted}
+                    disabled={isSubmitting}
+                    onChange={handleToggleAllConsents}
+                  >
+                    전체 동의
+                  </Checkbox>
+                  <hr className="auth-consent-field__divider" />
+                  <Checkbox
+                    ref={termsCheckboxRef}
+                    name="termsAccepted"
+                    checked={termsAccepted}
+                    required
+                    invalid={Boolean(legalConsentError && !termsAccepted)}
+                    disabled={isSubmitting}
+                    onChange={(next) => handleConsentChange(setTermsAccepted, next)}
+                  >
                     <Link href="/legal/terms">이용약관</Link>에 동의합니다.
-                  </label>
-                  <label>
-                    <input
-                      ref={privacyCheckboxRef}
-                      type="checkbox"
-                      name="privacyAccepted"
-                      checked={privacyAccepted}
-                      required
-                      aria-invalid={Boolean(legalConsentError && !privacyAccepted)}
-                      disabled={isSubmitting}
-                      onChange={(event) => {
-                        setPrivacyAccepted(event.target.checked);
-                        if (legalConsentError) setLegalConsentError("");
-                      }}
-                    />{" "}
+                  </Checkbox>
+                  <Checkbox
+                    ref={privacyCheckboxRef}
+                    name="privacyAccepted"
+                    checked={privacyAccepted}
+                    required
+                    invalid={Boolean(legalConsentError && !privacyAccepted)}
+                    disabled={isSubmitting}
+                    onChange={(next) => handleConsentChange(setPrivacyAccepted, next)}
+                  >
                     <Link href="/legal/privacy">개인정보 처리방침</Link>에 동의합니다.
-                  </label>
-                  <label>
-                    <input
-                      ref={ageCheckboxRef}
-                      type="checkbox"
-                      name="ageConfirmed"
-                      checked={ageConfirmed}
-                      required
-                      aria-invalid={Boolean(legalConsentError && !ageConfirmed)}
-                      disabled={isSubmitting}
-                      onChange={(event) => {
-                        setAgeConfirmed(event.target.checked);
-                        if (legalConsentError) setLegalConsentError("");
-                      }}
-                    />{" "}
+                  </Checkbox>
+                  <Checkbox
+                    ref={ageCheckboxRef}
+                    name="ageConfirmed"
+                    checked={ageConfirmed}
+                    required
+                    invalid={Boolean(legalConsentError && !ageConfirmed)}
+                    disabled={isSubmitting}
+                    onChange={(next) => handleConsentChange(setAgeConfirmed, next)}
+                  >
                     만 14세 이상입니다.
-                  </label>
+                  </Checkbox>
                   {legalConsentError ? (
                     <p id="signup-legal-consent-error" className="auth-error-text" role="alert">
                       {legalConsentError}

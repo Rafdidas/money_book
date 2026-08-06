@@ -1,0 +1,28 @@
+// 약관·처리방침 링크는 인트로 푸터, 데스크톱 사이드 메뉴, 모바일 드로어에서
+// 같은 컴포넌트를 쓰므로 배치별 크기만 modifier로 조정한다.
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+.intro-footer__legal {
+  margin-top: 8px;
+  justify-content: center;
+  font-size: 12px;
+
+  a {
+    // 모바일 조작 영역을 확보한다.
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 4px;
+  }
+}

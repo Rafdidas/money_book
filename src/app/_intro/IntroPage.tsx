@@ -10,6 +10,7 @@ import iconInvest from "@/assets/img/renewal/icon-invest.svg";
 import iconPiggy from "@/assets/img/renewal/icon-piggy.svg";
 import iconRecurring from "@/assets/img/renewal/icon-recurring.svg";
 import iconSearch from "@/assets/img/renewal/icon-search.svg";
+import LegalLinks from "@/components/common/LegalLinks";
 import sync from "@/assets/img/renewal/sync.svg";
 import IntroCta from "./IntroCta";
 
@@ -230,6 +231,7 @@ export default function IntroPage() {
           <span>머니북가계부</span>
         </Link>
         <p>개인 가계부 서비스</p>
+        <LegalLinks className="intro-footer__legal" />
       </footer>
     </div>
   );
