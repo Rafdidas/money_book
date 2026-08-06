@@ -6,7 +6,7 @@
 
 로그인 화면에 "비밀번호 찾기" 자리가 주석으로만 남아 있고, 비밀번호를 잊은
 사용자가 계정을 되찾을 방법이 없다. 이번 작업으로 이메일 기반 재설정 흐름을
-추가한다.
+추가하고, 그 과정에서 드러난 비밀번호 검증 공백을 함께 메운다.
 
 ## 아이디 찾기를 만들지 않는 이유
 
@@ -50,6 +50,25 @@ Supabase 기본 SMTP를 그대로 사용한다. 과거 가입 인증 메일이 �
 `resetPasswordForEmail`은 기존 가입 인증 메일과 동일한 Supabase Auth 메일
 경로를 사용한다.
 
+## 비밀번호 규칙
+
+**8자 이상, 영문과 숫자를 각각 1자 이상 포함.** 최대 길이는 72바이트로
+제한한다(해시 알고리즘 상한).
+
+현재 회원가입 화면에는 규칙 검증이 전혀 없다. 그래서 Supabase 서버가 거부하면
+`alert("회원가입 실패: Password should be at least 6 characters")`처럼 영문
+원문이 그대로 노출된다. 재설정 화면과 규칙이 어긋나지 않도록 공용 모듈로
+분리한다.
+
+- `src/lib/auth/password.ts`에 규칙 상수, 검증 함수, 한국어 오류 문구를 둔다.
+- 회원가입과 비밀번호 재설정 두 화면이 같은 함수를 호출한다.
+- Supabase 프로젝트 Auth 설정의 최소 길이·필수 문자 조건을 같은 값으로 맞춘다.
+  화면을 통과한 값이 서버에서 거부되는 상황을 없애기 위함이다.
+
+오류 문구: `비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다.`
+
+기존 가입자의 비밀번호는 그대로 유효하다. 규칙은 새로 설정할 때만 적용된다.
+
 ## 범위
 
 **신규 화면**
@@ -61,6 +80,10 @@ Supabase 기본 SMTP를 그대로 사용한다. 과거 가입 인증 메일이 �
 
 - `/auth/login` — 주석 처리된 "비밀번호 찾기" 자리를
   `/auth/forgot-password` 링크로 활성화, 이메일 필드에 아이디 안내 문구 추가
+- `/auth/signup` — 공용 비밀번호 규칙 검증을 인라인 오류로 추가하고, 빈 값
+  검증에 쓰이는 `alert()`를 인라인 문구로 교체한다. 로그인 화면은 이미 인라인
+  방식이라 회원가입만 혼자 alert를 쓰고 있다. 이미 있는 불일치 문구
+  ("비밀번호가 일치하지 않습니다.")는 그대로 둔다.
 
 **범위 제외**
 
@@ -71,18 +94,67 @@ Supabase 기본 SMTP를 그대로 사용한다. 과거 가입 인증 메일이 �
 
 ## 흐름
 
-1. 로그인 화면에서 "비밀번호 찾기" → `/auth/forgot-password`
-2. 이메일 입력 후 제출 →
-   `supabase.auth.resetPasswordForEmail(email, { redirectTo })`
-3. 결과와 무관하게 항상 동일한 완료 문구를 표시한다 (계정 열거 방지)
-4. 메일 링크 → `/auth/reset-password#access_token=...`
-5. 기존 `consumeAuthHashSession()`으로 복구 세션 수립
-6. 새 비밀번호 + 확인 입력 → `supabase.auth.updateUser({ password })`
-7. 완료 안내 후 `/app`으로 이동
+### 1단계 — `/auth/forgot-password`
 
-`redirectTo`는 `/auth/callback`이 아니라 `/auth/reset-password`를 직접
-가리킨다. 콜백 화면은 세션이 수립되면 곧바로 `/app`으로 이동시키므로, 콜백을
+기본 상태
+
+- 제목 "비밀번호 찾기", 부제 "가입하신 이메일로 재설정 링크를 보내드립니다"
+- 이메일 입력 한 칸과 `[재설정 링크 받기]` 버튼
+- 하단에 "로그인으로 돌아가기" 링크
+
+검증과 제출
+
+- 빈 값이면 "이메일을 입력해주세요."를 인라인으로 표시한다.
+- 제출 중에는 버튼 문구를 "전송 중..."으로 바꾸고 입력을 비활성화한다.
+- `supabase.auth.resetPasswordForEmail(email, { redirectTo })`를 호출한다.
+
+완료 상태 (화면 이동 없이 같은 카드를 전환)
+
+- "메일을 보냈습니다 / `입력한 주소`로 재설정 링크를 보냈습니다. 도착하지
+  않으면 스팸함을 확인해주세요."
+- `[로그인으로 돌아가기]`와 "메일이 오지 않았나요? 다시 보내기"를 함께 둔다.
+- 재발송에는 60초 쿨다운을 건다. Supabase 발송 한도에 걸려 실패하는 것을
+  미리 막는다.
+
+가입되지 않은 이메일을 입력해도, 그리고 호출이 오류를 반환해도 **동일한 완료
+화면**을 보여준다. 여기서 "가입되지 않은 이메일입니다"를 알려주면 계정 열거
+창구가 그대로 생긴다.
+
+### 2단계 — 메일
+
+Supabase 기본 템플릿이 발송되고, 링크는 `/auth/reset-password`를 직접
+가리킨다. 유효기간은 Supabase 설정값을 따르며 기본은 1시간이다.
+
+`redirectTo`는 `/auth/callback`이 아니라 `/auth/reset-password`를 가리켜야
+한다. 콜백 화면은 세션이 수립되면 곧바로 `/app`으로 이동시키므로, 콜백을
 경유하면 비밀번호를 변경할 화면에 도달하지 못한다.
+
+### 3단계 — `/auth/reset-password`
+
+진입 직후 URL 해시의 토큰으로 세션을 수립하는 동안 기존 `auth-spinner`를
+표시한다. 결과에 따라 세 갈래로 나뉜다.
+
+**(a) 세션 수립 성공 — 입력 폼**
+
+- 새 비밀번호 / 비밀번호 확인 두 칸과 `[비밀번호 변경]`
+- 규칙 미달이면 공용 모듈의 문구, 두 값이 다르면 "비밀번호가 일치하지
+  않습니다."
+
+**(b) 토큰 없음 또는 만료**
+
+- "링크가 만료되었어요 / 재설정 링크는 발급 후 일정 시간이 지나면 사용할 수
+  없습니다."
+- `[다시 요청하기]` → `/auth/forgot-password`
+- 이미 한 번 사용한 링크도 같은 화면으로 처리한다.
+
+**(c) 변경 성공**
+
+- `supabase.auth.updateUser({ password })` 성공 직후
+  `supabase.auth.signOut({ scope: "others" })`를 호출해 다른 기기의 세션을
+  끊는다. 비밀번호 유출을 의심해 재설정하는 경우 기존 세션이 살아 있으면
+  재설정의 의미가 없다.
+- "비밀번호가 변경되었습니다 / `[머니북 시작하기]`" → `/app`
+- 복구 세션이 이미 로그인 상태이므로 다시 로그인할 필요가 없다.
 
 ## 구현 시 주의할 점
 
@@ -92,13 +164,8 @@ Supabase 기본 SMTP를 그대로 사용한다. 과거 가입 인증 메일이 �
 화면 밖으로 튕겨난다. 로그인 화면의 `useEffect` 패턴을 그대로 복사하면 이
 문제가 발생한다.
 
-**만료·재사용 링크 처리.** 세션 수립에 실패하면 에러 문구와 함께
-`/auth/forgot-password` 재요청 링크를 보여준다.
-
 **Proxy 설정은 수정하지 않는다.** `src/proxy.ts`의 matcher는
 `/app/:path*`뿐이므로 새 `/auth/*` 경로는 별도 조치 없이 공개된다.
-
-**비밀번호 규칙은 가입 화면과 동일하게 맞춘다.**
 
 ## 레이아웃
 
@@ -117,31 +184,50 @@ auth-page > auth-shell > auth-card-shell
 
 기존 `src/app/auth/signup` 구조를 따른다.
 
+신규
+
 - `src/app/auth/forgot-password/page.tsx`
 - `src/app/auth/forgot-password/layout.tsx` (metadata, `robots: index false`)
 - `src/app/auth/forgot-password/page.test.tsx`
 - `src/app/auth/reset-password/page.tsx`
 - `src/app/auth/reset-password/layout.tsx`
 - `src/app/auth/reset-password/page.test.tsx`
+- `src/lib/auth/password.ts`
+- `src/lib/auth/password.test.ts`
+
+수정
+
 - `src/lib/supabase/auth-url.ts` — `getResetPasswordUrl()` 추가
-- `src/app/auth/login/page.tsx` — 링크 및 안내 문구 수정
+- `src/app/auth/login/page.tsx` — 링크 및 안내 문구
+- `src/app/auth/signup/page.tsx` — 공용 규칙 검증, alert 제거
 
 ## 테스트
 
 기존 `signup/page.test.tsx`, `consent/page.test.tsx` 패턴을 따라
 `@/lib/supabase/client`를 모킹한다.
 
+**password 모듈**
+
+- 8자 미만, 영문만, 숫자만인 값을 거부한다
+- 영문과 숫자를 포함한 8자 이상 값을 통과시킨다
+
 **forgot-password**
 
 - 이메일 미입력 시 `resetPasswordForEmail`을 호출하지 않는다
 - 제출 시 입력한 이메일과 `redirectTo`로 호출한다
-- 오류가 반환되어도 성공과 동일한 문구를 표시한다
+- 오류가 반환되어도 성공과 동일한 완료 문구를 표시한다
 
 **reset-password**
 
 - 해시 세션이 없으면 만료 안내와 재요청 링크를 표시한다
-- 비밀번호와 확인 값이 다르면 `updateUser`를 호출하지 않는다
-- 정상 입력 시 `updateUser`를 새 비밀번호로 호출한다
+- 규칙 미달 또는 두 값 불일치 시 `updateUser`를 호출하지 않는다
+- 정상 입력 시 `updateUser`를 새 비밀번호로 호출하고, 이어서
+  `signOut({ scope: "others" })`를 호출한다
+
+**signup (기존 테스트 보강)**
+
+- 규칙 미달 비밀번호로 제출하면 `signUp`을 호출하지 않고 인라인 오류를
+  표시한다
 
 ## 검증
 
