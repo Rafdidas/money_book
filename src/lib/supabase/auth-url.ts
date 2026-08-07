@@ -55,3 +55,11 @@ export const getAuthCallbackUrl = () => {
 
   return new URL("/auth/callback", origin).toString();
 };
+
+export const getResetPasswordUrl = () => {
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+
+  return new URL("/auth/reset-password", origin).toString();
+};

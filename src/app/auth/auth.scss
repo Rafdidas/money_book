@@ -343,6 +343,13 @@
   }
 }
 
+.auth-submit--link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .auth-submit--signup {
   margin-bottom: 0;
 }
