@@ -157,6 +157,7 @@ export default function LoginPage() {
                       }
                     }}
                   />
+                  <p className="auth-field__hint">가입하신 이메일이 아이디입니다.</p>
                   {emailError ? <p className="auth-error-text">{emailError}</p> : null}
                 </div>
 
@@ -190,7 +191,9 @@ export default function LoginPage() {
                   >
                     로그인 유지
                   </Checkbox>
-                  {/* <span className="auth-muted-action">비밀번호 찾기</span> */}
+                  <Link href="/auth/forgot-password" className="auth-muted-action">
+                    비밀번호 찾기
+                  </Link>
                 </div>
 
                 <button type="submit" className="auth-submit" disabled={isSubmitting}>
