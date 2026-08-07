@@ -51,11 +51,14 @@ function ResetPasswordShell({ children }: { children: ReactNode }) {
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [initialCode] = useState(() => searchParams.get("code"));
   const [status, setStatus] = useState<RecoveryStatus>("verifying");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [errorField, setErrorField] = useState<"password" | "confirm" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [otherSessionsRevoked, setOtherSessionsRevoked] = useState(true);
 
   useEffect(() => {
     let isCancelled = false;
@@ -64,31 +67,39 @@ function ResetPasswordContent() {
     // detectSessionInUrl이 켜져 있어 SDK가 이미 소비했을 수도 있다.
     // 그래서 각 호출의 성공 여부가 아니라 최종 세션 존재 여부로 판단한다.
     const establishSession = async () => {
-      const code = searchParams.get("code");
-
-      if (code) {
-        try {
-          await supabase.auth.exchangeCodeForSession(code);
-        } catch {
-          // 이미 소비된 코드일 수 있다. 아래 getSession으로 판단한다.
+      try {
+        if (initialCode) {
+          try {
+            await supabase.auth.exchangeCodeForSession(initialCode);
+          } catch {
+            // 이미 소비된 코드일 수 있다. 아래 getSession으로 판단한다.
+          }
+        } else {
+          try {
+            await consumeAuthHashSession();
+          } catch {
+            // 만료되었거나 이미 사용된 링크. 아래 getSession으로 판단한다.
+          }
         }
-      } else {
-        try {
-          await consumeAuthHashSession();
-        } catch {
-          // 만료되었거나 이미 사용된 링크. 아래 getSession으로 판단한다.
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (isCancelled) {
+          return;
         }
+
+        // 완료(done) 상태는 종단 상태다. 세션 재확인 결과로 덮어써서는 안 된다.
+        setStatus((prev) => (prev === "done" ? prev : session ? "ready" : "expired"));
+      } catch {
+        // getSession 자체가 실패해도 사용자를 스피너에 가둬서는 안 된다.
+        if (isCancelled) {
+          return;
+        }
+
+        setStatus((prev) => (prev === "done" ? prev : "expired"));
       }
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (isCancelled) {
-        return;
-      }
-
-      setStatus(session ? "ready" : "expired");
     };
 
     establishSession();
@@ -96,13 +107,7 @@ function ResetPasswordContent() {
     return () => {
       isCancelled = true;
     };
-    // 세션 확인은 링크 진입 시 한 번만 수행한다. next/navigation의 실제
-    // useSearchParams는 렌더마다 안정적인 참조를 반환하지만, 테스트 더블 등
-    // 매 렌더마다 새 인스턴스를 주는 환경에서 searchParams를 의존성에 넣으면
-    // 비밀번호 변경 성공 후에도 세션 재확인이 재실행되어 상태가 "ready"로
-    // 되돌아갈 수 있다. 최초 진입 시점의 code 파라미터만 필요하므로 한 번만 실행한다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialCode]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -110,17 +115,20 @@ function ResetPasswordContent() {
     const ruleError = getPasswordError(password);
 
     if (ruleError) {
+      setErrorField("password");
       setPasswordError(ruleError);
       return;
     }
 
     if (password !== confirmPassword) {
+      setErrorField("confirm");
       setPasswordError(PASSWORD_MISMATCH_MESSAGE);
       return;
     }
 
     try {
       setPasswordError("");
+      setErrorField(null);
       setIsSubmitting(true);
 
       const { error } = await supabase.auth.updateUser({ password });
@@ -130,11 +138,25 @@ function ResetPasswordContent() {
         return;
       }
 
-      // 유출을 의심해 재설정하는 경우 다른 기기 세션이 살아 있으면 의미가 없다.
-      await supabase.auth.signOut({ scope: "others" });
-
       setPassword("");
       setConfirmPassword("");
+
+      // 유출을 의심해 재설정하는 경우 다른 기기 세션이 살아 있으면 의미가 없다.
+      // 다만 이 호출이 실패해도 비밀번호 변경 자체는 이미 완료된 것이므로
+      // 실패로 보고해서는 안 되고, 완료 화면에서 안내만 다르게 한다.
+      let revoked = true;
+
+      try {
+        const { error: signOutError } = await supabase.auth.signOut({ scope: "others" });
+
+        if (signOutError) {
+          revoked = false;
+        }
+      } catch {
+        revoked = false;
+      }
+
+      setOtherSessionsRevoked(revoked);
       setStatus("done");
     } catch {
       setPasswordError("비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.");
@@ -181,7 +203,9 @@ function ResetPasswordContent() {
           비밀번호가 변경되었습니다
         </h1>
         <p className="auth-subtitle">
-          다른 기기에 남아 있던 로그인은 모두 해제했습니다.
+          {otherSessionsRevoked
+            ? "다른 기기에 남아 있던 로그인은 모두 해제했습니다."
+            : "다른 기기에 남아 있던 로그인이 아직 해제되지 않았을 수 있습니다."}
         </p>
         <button
           type="button"
@@ -214,12 +238,14 @@ function ResetPasswordContent() {
             placeholder="영문과 숫자를 포함해 8자 이상"
             value={password}
             autoComplete="new-password"
-            aria-invalid={Boolean(passwordError)}
+            aria-invalid={errorField === "password"}
+            aria-describedby={passwordError ? "reset-password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => {
               setPassword(event.target.value);
               if (passwordError) {
                 setPasswordError("");
+                setErrorField(null);
               }
             }}
           />
@@ -235,16 +261,22 @@ function ResetPasswordContent() {
             placeholder="비밀번호를 한번 더 입력해주세요"
             value={confirmPassword}
             autoComplete="new-password"
-            aria-invalid={Boolean(passwordError)}
+            aria-invalid={errorField === "confirm"}
+            aria-describedby={passwordError ? "reset-password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => {
               setConfirmPassword(event.target.value);
               if (passwordError) {
                 setPasswordError("");
+                setErrorField(null);
               }
             }}
           />
-          {passwordError ? <p className="auth-error-text">{passwordError}</p> : null}
+          {passwordError ? (
+            <p id="reset-password-error" role="alert" className="auth-error-text">
+              {passwordError}
+            </p>
+          ) : null}
         </div>
 
         <button type="submit" className="auth-submit" disabled={isSubmitting}>
