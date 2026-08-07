@@ -12,6 +12,7 @@ import {
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
 } from "@/lib/legal/legalDocuments";
+import { PASSWORD_MISMATCH_MESSAGE, getPasswordError } from "@/lib/auth/password";
 import { getAuthCallbackUrl } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
 
@@ -41,6 +42,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
@@ -70,13 +73,26 @@ export default function SignupPage() {
   const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
-      alert("이름, 이메일, 비밀번호를 모두 입력해주세요.");
-      return;
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const nextNameError = trimmedName ? "" : "이름을 입력해주세요.";
+    const nextEmailError = trimmedEmail ? "" : "이메일을 입력해주세요.";
+    let nextPasswordError = "";
+
+    if (!password || !confirmPassword) {
+      nextPasswordError = "비밀번호를 입력해주세요.";
+    } else {
+      // 재설정 화면과 같은 순서로 판단한다. 규칙 위반이 먼저, 그다음 불일치.
+      nextPasswordError =
+        getPasswordError(password) ||
+        (password === confirmPassword ? "" : PASSWORD_MISMATCH_MESSAGE);
     }
 
-    if (password !== confirmPassword) {
-      setPasswordError("비밀번호가 일치하지 않습니다.");
+    setNameError(nextNameError);
+    setEmailError(nextEmailError);
+    setPasswordError(nextPasswordError);
+
+    if (nextNameError || nextEmailError || nextPasswordError) {
       return;
     }
 
@@ -95,19 +111,21 @@ export default function SignupPage() {
     }
 
     try {
+      setNameError("");
+      setEmailError("");
       setPasswordError("");
       setLegalConsentError("");
       setIsSubmitting(true);
 
       const { error } = await supabase.auth.signUp({
-        email,
+        email: trimmedEmail,
         password,
         options: {
           emailRedirectTo: getAuthCallbackUrl(),
           // 키 이름은 handle_new_user_profile 트리거가 읽는 이름과 반드시 같아야 한다.
           // (supabase/migrations/20260804000000_add_legal_consent.sql)
           data: {
-            name,
+            name: trimmedName,
             terms_agreed: true,
             privacy_agreed: true,
             age_confirmed: true,
@@ -174,43 +192,58 @@ export default function SignupPage() {
                 <div className="auth-field auth-field--signup">
                   <label htmlFor="signup-name">이름</label>
                   <input
-                    className="auth-input auth-input--signup"
+                    className={nameError ? "auth-input auth-input--signup is-invalid" : "auth-input auth-input--signup"}
                     id="signup-name"
                     name="name"
                     type="text"
                     placeholder="성함을 입력해주세요"
                     value={name}
                     autoComplete="name"
+                    aria-invalid={Boolean(nameError)}
                     disabled={isSubmitting}
-                    onChange={(event) => setName(event.target.value)}
+                    onChange={(event) => {
+                      setName(event.target.value);
+                      if (nameError) {
+                        setNameError("");
+                      }
+                    }}
                   />
+                  {nameError ? <p className="auth-error-text">{nameError}</p> : null}
                 </div>
 
                 <div className="auth-field auth-field--signup">
                   <label htmlFor="signup-email">이메일</label>
                   <input
-                    className="auth-input auth-input--signup"
+                    className={emailError ? "auth-input auth-input--signup is-invalid" : "auth-input auth-input--signup"}
                     id="signup-email"
                     name="email"
                     type="email"
                     placeholder="example@moneybook.com"
                     value={email}
                     autoComplete="email"
+                    aria-invalid={Boolean(emailError)}
                     disabled={isSubmitting}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      if (emailError) {
+                        setEmailError("");
+                      }
+                    }}
                   />
+                  {emailError ? <p className="auth-error-text">{emailError}</p> : null}
                 </div>
 
                 <div className="auth-field auth-field--signup">
                   <label htmlFor="signup-password">비밀번호</label>
                   <input
-                    className="auth-input auth-input--signup"
+                    className={passwordError ? "auth-input auth-input--signup is-invalid" : "auth-input auth-input--signup"}
                     id="signup-password"
                     name="password"
                     type="password"
-                    placeholder="8자 이상 입력해주세요"
+                    placeholder="영문과 숫자를 포함해 8자 이상"
                     value={password}
                     autoComplete="new-password"
+                    aria-invalid={Boolean(passwordError)}
                     disabled={isSubmitting}
                     onChange={(event) => {
                       setPassword(event.target.value);

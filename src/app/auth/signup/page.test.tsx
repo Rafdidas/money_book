@@ -99,4 +99,31 @@ describe("SignupPage legal consent validation", () => {
       }),
     );
   });
+
+  it("blocks signup and shows the Korean rule message for a weak password", () => {
+    render(<SignupPage />);
+
+    fireEvent.change(screen.getByLabelText("이름"), { target: { value: "홍길동" } });
+    fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "hong@example.com" } });
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "abcdefgh" } });
+    fireEvent.change(screen.getByLabelText("비밀번호 확인"), { target: { value: "abcdefgh" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "전체 동의" }));
+    fireEvent.click(screen.getByRole("button", { name: "회원가입" }));
+
+    expect(
+      screen.getByText("비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다."),
+    ).toBeInTheDocument();
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it("shows inline errors instead of an alert when required fields are empty", () => {
+    render(<SignupPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "회원가입" }));
+
+    expect(screen.getByText("이름을 입력해주세요.")).toBeInTheDocument();
+    expect(screen.getByText("이메일을 입력해주세요.")).toBeInTheDocument();
+    expect(screen.getByText("비밀번호를 입력해주세요.")).toBeInTheDocument();
+    expect(signUp).not.toHaveBeenCalled();
+  });
 });
