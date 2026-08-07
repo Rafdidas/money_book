@@ -116,6 +116,23 @@ describe("SignupPage legal consent validation", () => {
     expect(signUp).not.toHaveBeenCalled();
   });
 
+  it("reports the password rule violation before the mismatch when both apply", () => {
+    render(<SignupPage />);
+
+    fireEvent.change(screen.getByLabelText("이름"), { target: { value: "홍길동" } });
+    fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "hong@example.com" } });
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "abcdefgh" } });
+    fireEvent.change(screen.getByLabelText("비밀번호 확인"), { target: { value: "xyz12345" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "전체 동의" }));
+    fireEvent.click(screen.getByRole("button", { name: "회원가입" }));
+
+    expect(
+      screen.getByText("비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("비밀번호가 일치하지 않습니다.")).not.toBeInTheDocument();
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
   it("shows inline errors instead of an alert when required fields are empty", () => {
     render(<SignupPage />);
 

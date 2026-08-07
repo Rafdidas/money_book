@@ -36,6 +36,8 @@ const getSignupErrorMessage = (message: string) => {
   return message;
 };
 
+type PasswordErrorField = "password" | "confirm" | "both" | null;
+
 export default function SignupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -45,6 +47,7 @@ export default function SignupPage() {
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [passwordErrorField, setPasswordErrorField] = useState<PasswordErrorField>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
@@ -78,19 +81,28 @@ export default function SignupPage() {
     const nextNameError = trimmedName ? "" : "이름을 입력해주세요.";
     const nextEmailError = trimmedEmail ? "" : "이메일을 입력해주세요.";
     let nextPasswordError = "";
+    let nextPasswordErrorField: PasswordErrorField = null;
 
     if (!password || !confirmPassword) {
       nextPasswordError = "비밀번호를 입력해주세요.";
+      nextPasswordErrorField = "both";
     } else {
       // 재설정 화면과 같은 순서로 판단한다. 규칙 위반이 먼저, 그다음 불일치.
-      nextPasswordError =
-        getPasswordError(password) ||
-        (password === confirmPassword ? "" : PASSWORD_MISMATCH_MESSAGE);
+      const ruleError = getPasswordError(password);
+
+      if (ruleError) {
+        nextPasswordError = ruleError;
+        nextPasswordErrorField = "password";
+      } else if (password !== confirmPassword) {
+        nextPasswordError = PASSWORD_MISMATCH_MESSAGE;
+        nextPasswordErrorField = "confirm";
+      }
     }
 
     setNameError(nextNameError);
     setEmailError(nextEmailError);
     setPasswordError(nextPasswordError);
+    setPasswordErrorField(nextPasswordErrorField);
 
     if (nextNameError || nextEmailError || nextPasswordError) {
       return;
@@ -114,6 +126,7 @@ export default function SignupPage() {
       setNameError("");
       setEmailError("");
       setPasswordError("");
+      setPasswordErrorField(null);
       setLegalConsentError("");
       setIsSubmitting(true);
 
@@ -236,44 +249,73 @@ export default function SignupPage() {
                 <div className="auth-field auth-field--signup">
                   <label htmlFor="signup-password">비밀번호</label>
                   <input
-                    className={passwordError ? "auth-input auth-input--signup is-invalid" : "auth-input auth-input--signup"}
+                    className={
+                      passwordErrorField === "password" || passwordErrorField === "both"
+                        ? "auth-input auth-input--signup is-invalid"
+                        : "auth-input auth-input--signup"
+                    }
                     id="signup-password"
                     name="password"
                     type="password"
                     placeholder="영문과 숫자를 포함해 8자 이상"
                     value={password}
                     autoComplete="new-password"
-                    aria-invalid={Boolean(passwordError)}
+                    aria-invalid={passwordErrorField === "password" || passwordErrorField === "both"}
+                    aria-describedby={
+                      passwordError && (passwordErrorField === "password" || passwordErrorField === "both")
+                        ? "signup-password-error"
+                        : undefined
+                    }
                     disabled={isSubmitting}
                     onChange={(event) => {
                       setPassword(event.target.value);
                       if (passwordError) {
                         setPasswordError("");
+                        setPasswordErrorField(null);
                       }
                     }}
                   />
+                  {passwordError && (passwordErrorField === "password" || passwordErrorField === "both") ? (
+                    <p id="signup-password-error" role="alert" className="auth-error-text">
+                      {passwordError}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="auth-field auth-field--signup auth-field--confirm-password">
                   <label htmlFor="signup-confirm-password">비밀번호 확인</label>
                   <input
-                    className={passwordError ? "auth-input auth-input--signup is-invalid" : "auth-input auth-input--signup"}
+                    className={
+                      passwordErrorField === "confirm" || passwordErrorField === "both"
+                        ? "auth-input auth-input--signup is-invalid"
+                        : "auth-input auth-input--signup"
+                    }
                     id="signup-confirm-password"
                     name="confirmPassword"
                     type="password"
                     placeholder="비밀번호를 한번 더 입력해주세요"
                     value={confirmPassword}
                     autoComplete="new-password"
-                    aria-invalid={Boolean(passwordError)}
+                    aria-invalid={passwordErrorField === "confirm" || passwordErrorField === "both"}
+                    aria-describedby={
+                      passwordError && (passwordErrorField === "confirm" || passwordErrorField === "both")
+                        ? "signup-password-error"
+                        : undefined
+                    }
                     disabled={isSubmitting}
                     onChange={(event) => {
                       setConfirmPassword(event.target.value);
                       if (passwordError) {
                         setPasswordError("");
+                        setPasswordErrorField(null);
                       }
                     }}
                   />
-                  {passwordError ? <p className="auth-error-text">{passwordError}</p> : null}
+                  {passwordError && passwordErrorField === "confirm" ? (
+                    <p id="signup-password-error" role="alert" className="auth-error-text">
+                      {passwordError}
+                    </p>
+                  ) : null}
                 </div>
 
                 <fieldset className="auth-consent-field" aria-describedby={legalConsentError ? "signup-legal-consent-error" : undefined}>
