@@ -1,3 +1,4 @@
+import { AuthSessionMissingError } from "@supabase/supabase-js";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,6 +9,7 @@ const {
   signOut,
   exchangeCodeForSession,
   consumeAuthHashSession,
+  disableDemoMode,
   mockSearchParams,
 } = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -16,6 +18,7 @@ const {
   signOut: vi.fn(),
   exchangeCodeForSession: vi.fn(),
   consumeAuthHashSession: vi.fn(),
+  disableDemoMode: vi.fn(),
   mockSearchParams: { current: new URLSearchParams("") },
 }));
 
@@ -24,6 +27,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace }),
   useSearchParams: () => mockSearchParams.current,
 }));
+vi.mock("@/lib/demo", () => ({ disableDemoMode }));
 vi.mock("@/lib/supabase/auth-url", () => ({ consumeAuthHashSession }));
 vi.mock("@/lib/supabase/client", () => ({
   supabase: { auth: { getSession, updateUser, signOut, exchangeCodeForSession } },
@@ -198,5 +202,66 @@ describe("ResetPasswordPage", () => {
 
     // 세션 확인(getSession)이 정확히 한 번만 일어났는지 확인한다.
     expect(getSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables demo mode on a successful password change", async () => {
+    // 데모 체험 후 비밀번호를 재설정하면 완료 화면 다음에 데모 데이터가
+    // 아닌 본인 데이터를 봐야 한다. 로그인/회원가입과 동일하게 처리한다.
+    withSession();
+    render(<ResetPasswordPage />);
+
+    fireEvent.change(await screen.findByLabelText("새 비밀번호"), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText("새 비밀번호 확인"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "비밀번호 변경" }));
+
+    expect(await screen.findByText("비밀번호가 변경되었습니다")).toBeInTheDocument();
+    expect(disableDemoMode).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the expired screen when updateUser fails with a missing session", async () => {
+    // 폼이 열려 있는 동안 복구 세션이 만료되는 경우가 대표적인 트리거다.
+    // 재시도해도 성공할 수 없으므로 다시 요청하기 링크가 있는 만료 화면으로 보낸다.
+    withSession();
+    updateUser.mockResolvedValue({ error: new AuthSessionMissingError() });
+    render(<ResetPasswordPage />);
+
+    fireEvent.change(await screen.findByLabelText("새 비밀번호"), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText("새 비밀번호 확인"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "비밀번호 변경" }));
+
+    expect(await screen.findByText("링크가 만료되었어요")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "다시 요청하기" })).toHaveAttribute(
+      "href",
+      "/auth/forgot-password",
+    );
+    expect(disableDemoMode).not.toHaveBeenCalled();
+  });
+
+  it("keeps a login escape link when updateUser fails for another reason", async () => {
+    // 세션 만료가 아닌 다른 오류는 폼에 남지만, 로그인으로 돌아갈 길은 있어야 한다.
+    withSession();
+    updateUser.mockResolvedValue({ error: new Error("unexpected") });
+    render(<ResetPasswordPage />);
+
+    fireEvent.change(await screen.findByLabelText("새 비밀번호"), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText("새 비밀번호 확인"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "비밀번호 변경" }));
+
+    expect(
+      await screen.findByText("비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해주세요."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/auth/login");
   });
 });

@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
                     메일을 보냈습니다
                   </h1>
                   <p className="auth-subtitle">
-                    {sentEmail}로 재설정 링크를 보냈습니다. 도착하지 않으면 스팸함을
+                    {sentEmail} 주소로 재설정 링크를 보냈습니다. 도착하지 않으면 스팸함을
                     확인해주세요.
                   </p>
                   <Link href="/auth/login" className="auth-submit auth-submit--link">

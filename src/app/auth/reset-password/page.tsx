@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, ReactNode, Suspense, useEffect, useState } from "react";
 
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
+
 import safe from "@/assets/img/renewal/safe.svg";
 import {
   PASSWORD_MISMATCH_MESSAGE,
   getPasswordError,
 } from "@/lib/auth/password";
+import { disableDemoMode } from "@/lib/demo";
 import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
 
@@ -137,9 +140,21 @@ function ResetPasswordContent() {
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
+        // 복구 세션이 폼이 열려 있는 동안 만료된 경우가 대표적인 트리거다.
+        // 이때는 재시도해도 성공할 수 없으므로 만료 화면(다시 요청하기 링크)으로 보낸다.
+        if (isAuthSessionMissingError(error)) {
+          setStatus("expired");
+          return;
+        }
+
         setPasswordError("비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.");
         return;
       }
+
+      // 로그인/회원가입과 동일하게, 재설정 성공 이후에는 데모 모드로 남아
+      // 있으면 안 된다. 그렇지 않으면 성공 화면 다음에 본인 데이터 대신
+      // 데모 사용자의 가짜 내역을 보게 된다.
+      disableDemoMode();
 
       // 유출을 의심해 재설정하는 경우 다른 기기 세션이 살아 있으면 의미가 없다.
       // 다만 이 호출이 실패해도 비밀번호 변경 자체는 이미 완료된 것이므로
@@ -160,8 +175,12 @@ function ResetPasswordContent() {
       setConfirmPassword("");
       setOtherSessionsRevoked(revoked);
       setStatus("done");
-    } catch {
-      setPasswordError("비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.");
+    } catch (err) {
+      if (isAuthSessionMissingError(err)) {
+        setStatus("expired");
+      } else {
+        setPasswordError("비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -186,7 +205,8 @@ function ResetPasswordContent() {
           링크가 만료되었어요
         </h1>
         <p className="auth-subtitle">
-          재설정 링크는 발급 후 일정 시간이 지나면 사용할 수 없습니다. 다시 요청해주세요.
+          재설정 링크는 발급 후 일정 시간이 지나면 사용할 수 없습니다. 다시 요청해주세요. 요청한
+          기기와 같은 브라우저에서 링크를 열어주세요.
         </p>
         <Link href="/auth/forgot-password" className="auth-submit auth-submit--link">
           다시 요청하기
@@ -295,6 +315,12 @@ function ResetPasswordContent() {
         <button type="submit" className="auth-submit" disabled={isSubmitting}>
           {isSubmitting ? "변경 중..." : "비밀번호 변경"}
         </button>
+
+        {passwordError && errorField === null ? (
+          <p className="auth-bottom-link">
+            비밀번호가 기억나셨나요? <Link href="/auth/login">로그인</Link>
+          </p>
+        ) : null}
       </form>
     </ResetPasswordShell>
   );
