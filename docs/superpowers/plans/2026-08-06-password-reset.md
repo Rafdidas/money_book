@@ -645,7 +645,7 @@ Expected: FAIL — `Failed to resolve import "./page"`
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, ReactNode, Suspense, useEffect, useState } from "react";
 
 import safe from "@/assets/img/renewal/safe.svg";
 import {
@@ -657,7 +657,7 @@ import { supabase } from "@/lib/supabase/client";
 
 type RecoveryStatus = "verifying" | "ready" | "expired" | "done";
 
-function ResetPasswordShell({ children }: { children: React.ReactNode }) {
+function ResetPasswordShell({ children }: { children: ReactNode }) {
   return (
     <div className="auth-page auth-page--login">
       <main className="auth-shell" aria-labelledby="reset-password-title">
@@ -1045,10 +1045,11 @@ import { PASSWORD_MISMATCH_MESSAGE, getPasswordError } from "@/lib/auth/password
 
     if (!password || !confirmPassword) {
       nextPasswordError = "비밀번호를 입력해주세요.";
-    } else if (getPasswordError(password)) {
-      nextPasswordError = getPasswordError(password);
-    } else if (password !== confirmPassword) {
-      nextPasswordError = PASSWORD_MISMATCH_MESSAGE;
+    } else {
+      // 재설정 화면과 같은 순서로 판단한다. 규칙 위반이 먼저, 그다음 불일치.
+      nextPasswordError =
+        getPasswordError(password) ||
+        (password === confirmPassword ? "" : PASSWORD_MISMATCH_MESSAGE);
     }
 
     setNameError(nextNameError);
