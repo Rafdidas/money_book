@@ -176,10 +176,13 @@ describe("ResetPasswordPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps the success screen and never re-derives status once done", async () => {
-    // "done" 상태는 종단 상태여야 한다. 마운트 이펙트는 링크 진입 시 한 번만
-    // 세션을 확인하며(getSession 1회 호출), 이후 어떤 이유로든 다시 평가되더라도
-    // setStatus의 함수형 업데이트 가드가 "done"을 덮어쓰지 않아야 한다.
+  it("consumes the recovery link exactly once even though the effect could rerun", async () => {
+    // 이 테스트가 실제로 검증하는 것: 마운트 이펙트는 링크 진입 시 세션을
+    // 딱 한 번만 확인한다(getSession 1회 호출). initialCode가 useState
+    // 초기값으로 고정되어 있어 이펙트는 재실행되지 않으므로, 이 테스트는
+    // setStatus의 함수형 업데이트 가드 자체를 검증하지는 못한다(그 가드가
+    // 평범한 setStatus(...)로 바뀌어도 이 어서션들은 여전히 통과한다).
+    // 가드에 대한 근거는 page.tsx의 주석을 참고.
     withSession();
     render(<ResetPasswordPage />);
 
@@ -193,14 +196,7 @@ describe("ResetPasswordPage", () => {
 
     expect(await screen.findByText("비밀번호가 변경되었습니다")).toBeInTheDocument();
 
-    // 마운트 이펙트가 딱 한 번만 세션을 확인했는지, 그리고 그 이후로도
-    // 완료 화면이 유지되는지 확인한다.
+    // 세션 확인(getSession)이 정확히 한 번만 일어났는지 확인한다.
     expect(getSession).toHaveBeenCalledTimes(1);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(screen.getByText("비밀번호가 변경되었습니다")).toBeInTheDocument();
-    expect(screen.queryByText("링크가 만료되었어요")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("새 비밀번호")).not.toBeInTheDocument();
   });
 });

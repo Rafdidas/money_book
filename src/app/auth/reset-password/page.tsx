@@ -91,6 +91,9 @@ function ResetPasswordContent() {
         }
 
         // 완료(done) 상태는 종단 상태다. 세션 재확인 결과로 덮어써서는 안 된다.
+        // 참고: initialCode가 useState 초기값으로 고정되어 있어 이 이펙트는 마운트 시
+        // 한 번만 실행되므로 현재 의존성 배열로는 이 가드가 실제로 발동하지 않는다.
+        // 향후 의존성이 늘어나 이펙트가 재실행되는 상황에 대비한 방어적 코드다.
         setStatus((prev) => (prev === "done" ? prev : session ? "ready" : "expired"));
       } catch {
         // getSession 자체가 실패해도 사용자를 스피너에 가둬서는 안 된다.
@@ -138,9 +141,6 @@ function ResetPasswordContent() {
         return;
       }
 
-      setPassword("");
-      setConfirmPassword("");
-
       // 유출을 의심해 재설정하는 경우 다른 기기 세션이 살아 있으면 의미가 없다.
       // 다만 이 호출이 실패해도 비밀번호 변경 자체는 이미 완료된 것이므로
       // 실패로 보고해서는 안 되고, 완료 화면에서 안내만 다르게 한다.
@@ -156,6 +156,8 @@ function ResetPasswordContent() {
         revoked = false;
       }
 
+      setPassword("");
+      setConfirmPassword("");
       setOtherSessionsRevoked(revoked);
       setStatus("done");
     } catch {
@@ -231,7 +233,7 @@ function ResetPasswordContent() {
         <div className="auth-field">
           <label htmlFor="reset-password-new">새 비밀번호</label>
           <input
-            className={passwordError ? "auth-input is-invalid" : "auth-input"}
+            className={errorField === "password" ? "auth-input is-invalid" : "auth-input"}
             id="reset-password-new"
             name="password"
             type="password"
@@ -239,7 +241,7 @@ function ResetPasswordContent() {
             value={password}
             autoComplete="new-password"
             aria-invalid={errorField === "password"}
-            aria-describedby={passwordError ? "reset-password-error" : undefined}
+            aria-describedby={passwordError && errorField === "password" ? "reset-password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => {
               setPassword(event.target.value);
@@ -249,12 +251,17 @@ function ResetPasswordContent() {
               }
             }}
           />
+          {passwordError && errorField === "password" ? (
+            <p id="reset-password-error" role="alert" className="auth-error-text">
+              {passwordError}
+            </p>
+          ) : null}
         </div>
 
         <div className="auth-field">
           <label htmlFor="reset-password-confirm">새 비밀번호 확인</label>
           <input
-            className={passwordError ? "auth-input is-invalid" : "auth-input"}
+            className={errorField === "confirm" ? "auth-input is-invalid" : "auth-input"}
             id="reset-password-confirm"
             name="confirmPassword"
             type="password"
@@ -262,7 +269,7 @@ function ResetPasswordContent() {
             value={confirmPassword}
             autoComplete="new-password"
             aria-invalid={errorField === "confirm"}
-            aria-describedby={passwordError ? "reset-password-error" : undefined}
+            aria-describedby={passwordError && errorField === "confirm" ? "reset-password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => {
               setConfirmPassword(event.target.value);
@@ -272,12 +279,18 @@ function ResetPasswordContent() {
               }
             }}
           />
-          {passwordError ? (
+          {passwordError && errorField === "confirm" ? (
             <p id="reset-password-error" role="alert" className="auth-error-text">
               {passwordError}
             </p>
           ) : null}
         </div>
+
+        {passwordError && errorField === null ? (
+          <p id="reset-password-error" role="alert" className="auth-error-text">
+            {passwordError}
+          </p>
+        ) : null}
 
         <button type="submit" className="auth-submit" disabled={isSubmitting}>
           {isSubmitting ? "변경 중..." : "비밀번호 변경"}
@@ -292,7 +305,9 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <ResetPasswordShell>
-          <h1 className="auth-title">확인 중</h1>
+          <h1 id="reset-password-title" className="auth-title">
+            확인 중
+          </h1>
           <p className="auth-subtitle">잠시만 기다려주세요.</p>
           <div className="auth-spinner" aria-label="링크 확인 중" />
         </ResetPasswordShell>
