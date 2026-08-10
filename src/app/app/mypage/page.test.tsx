@@ -5,6 +5,9 @@ const { useAppData } = vi.hoisted(() => ({ useAppData: vi.fn() }));
 
 vi.mock("@/app/providers", () => ({ useAppData }));
 vi.mock("@/components/common/SideMenu", () => ({ default: () => null }));
+vi.mock("@/lib/api/account", () => ({
+  getAccountOverview: () => Promise.reject(new Error("not needed in shell tests")),
+}));
 
 import MyPage from "./page";
 
