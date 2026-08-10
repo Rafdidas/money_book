@@ -299,6 +299,13 @@
   line-height: 1.4;
 }
 
+.auth-field__hint {
+  margin: -8px 0 12px;
+  color: var(--auth-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .auth-login-options {
   display: flex;
   align-items: center;
@@ -341,6 +348,13 @@
   &:hover:not(:disabled) {
     background: var(--auth-brand-hover);
   }
+}
+
+.auth-submit--link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .auth-submit--signup {

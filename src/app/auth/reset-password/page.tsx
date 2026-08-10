@@ -1,0 +1,345 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, ReactNode, Suspense, useEffect, useState } from "react";
+
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
+
+import safe from "@/assets/img/renewal/safe.svg";
+import {
+  PASSWORD_MISMATCH_MESSAGE,
+  getPasswordError,
+} from "@/lib/auth/password";
+import { disableDemoMode } from "@/lib/demo";
+import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
+import { supabase } from "@/lib/supabase/client";
+
+type RecoveryStatus = "verifying" | "ready" | "expired" | "done";
+
+function ResetPasswordShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="auth-page auth-page--login">
+      <main className="auth-shell" aria-labelledby="reset-password-title">
+        <div className="auth-card-shell">
+          <aside className="auth-side" aria-label="머니북가계부 소개">
+            <div className="auth-side__orb auth-side__orb--top" aria-hidden="true" />
+            <div className="auth-side__orb auth-side__orb--bottom" aria-hidden="true" />
+            <Link href="/" className="auth-side__brand" aria-label="머니북가계부 홈">
+              <span className="auth-side__mark">M</span>
+              <span>머니북가계부</span>
+            </Link>
+            <div className="auth-side__content">
+              <h2>
+                새 비밀번호를
+                <br />
+                설정해요
+              </h2>
+              <p>변경하면 다른 기기에 남아 있던 로그인은 모두 해제됩니다.</p>
+              <Image src={safe} width={340} height={314} alt="" priority />
+            </div>
+            <p className="auth-side__foot">개인 가계부 서비스</p>
+          </aside>
+
+          <section className="auth-panel">
+            <div className="auth-form-wrap auth-form-wrap--login">{children}</div>
+          </section>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function ResetPasswordContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [initialCode] = useState(() => searchParams.get("code"));
+  const [status, setStatus] = useState<RecoveryStatus>("verifying");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [errorField, setErrorField] = useState<"password" | "confirm" | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [otherSessionsRevoked, setOtherSessionsRevoked] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    // 링크는 해시(#access_token)로도, 쿼리(?code)로도 도착할 수 있고,
+    // detectSessionInUrl이 켜져 있어 SDK가 이미 소비했을 수도 있다.
+    // 그래서 각 호출의 성공 여부가 아니라 최종 세션 존재 여부로 판단한다.
+    const establishSession = async () => {
+      try {
+        if (initialCode) {
+          try {
+            await supabase.auth.exchangeCodeForSession(initialCode);
+          } catch {
+            // 이미 소비된 코드일 수 있다. 아래 getSession으로 판단한다.
+          }
+        } else {
+          try {
+            await consumeAuthHashSession();
+          } catch {
+            // 만료되었거나 이미 사용된 링크. 아래 getSession으로 판단한다.
+          }
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (isCancelled) {
+          return;
+        }
+
+        // 완료(done) 상태는 종단 상태다. 세션 재확인 결과로 덮어써서는 안 된다.
+        // 참고: initialCode가 useState 초기값으로 고정되어 있어 이 이펙트는 마운트 시
+        // 한 번만 실행되므로 현재 의존성 배열로는 이 가드가 실제로 발동하지 않는다.
+        // 향후 의존성이 늘어나 이펙트가 재실행되는 상황에 대비한 방어적 코드다.
+        setStatus((prev) => (prev === "done" ? prev : session ? "ready" : "expired"));
+      } catch {
+        // getSession 자체가 실패해도 사용자를 스피너에 가둬서는 안 된다.
+        if (isCancelled) {
+          return;
+        }
+
+        setStatus((prev) => (prev === "done" ? prev : "expired"));
+      }
+    };
+
+    establishSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [initialCode]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const ruleError = getPasswordError(password);
+
+    if (ruleError) {
+      setErrorField("password");
+      setPasswordError(ruleError);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorField("confirm");
+      setPasswordError(PASSWORD_MISMATCH_MESSAGE);
+      return;
+    }
+
+    try {
+      setPasswordError("");
+      setErrorField(null);
+      setIsSubmitting(true);
+
+      const { error } = await supabase.auth.updateUser({ password });
+
+      if (error) {
+        // 복구 세션이 폼이 열려 있는 동안 만료된 경우가 대표적인 트리거다.
+        // 이때는 재시도해도 성공할 수 없으므로 만료 화면(다시 요청하기 링크)으로 보낸다.
+        if (isAuthSessionMissingError(error)) {
+          setStatus("expired");
+          return;
+        }
+
+        setPasswordError("비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.");
+        return;
+      }
+
+      // 로그인/회원가입과 동일하게, 재설정 성공 이후에는 데모 모드로 남아
+      // 있으면 안 된다. 그렇지 않으면 성공 화면 다음에 본인 데이터 대신
+      // 데모 사용자의 가짜 내역을 보게 된다.
+      disableDemoMode();
+
+      // 유출을 의심해 재설정하는 경우 다른 기기 세션이 살아 있으면 의미가 없다.
+      // 다만 이 호출이 실패해도 비밀번호 변경 자체는 이미 완료된 것이므로
+      // 실패로 보고해서는 안 되고, 완료 화면에서 안내만 다르게 한다.
+      let revoked = true;
+
+      try {
+        const { error: signOutError } = await supabase.auth.signOut({ scope: "others" });
+
+        if (signOutError) {
+          revoked = false;
+        }
+      } catch {
+        revoked = false;
+      }
+
+      setPassword("");
+      setConfirmPassword("");
+      setOtherSessionsRevoked(revoked);
+      setStatus("done");
+    } catch (err) {
+      if (isAuthSessionMissingError(err)) {
+        setStatus("expired");
+      } else {
+        setPasswordError("비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (status === "verifying") {
+    return (
+      <ResetPasswordShell>
+        <h1 id="reset-password-title" className="auth-title">
+          확인 중
+        </h1>
+        <p className="auth-subtitle">잠시만 기다려주세요.</p>
+        <div className="auth-spinner" aria-label="링크 확인 중" />
+      </ResetPasswordShell>
+    );
+  }
+
+  if (status === "expired") {
+    return (
+      <ResetPasswordShell>
+        <h1 id="reset-password-title" className="auth-title">
+          링크가 만료되었어요
+        </h1>
+        <p className="auth-subtitle">
+          재설정 링크는 발급 후 일정 시간이 지나면 사용할 수 없습니다. 다시 요청해주세요. 요청한
+          기기와 같은 브라우저에서 링크를 열어주세요.
+        </p>
+        <Link href="/auth/forgot-password" className="auth-submit auth-submit--link">
+          다시 요청하기
+        </Link>
+        <p className="auth-bottom-link">
+          비밀번호가 기억나셨나요? <Link href="/auth/login">로그인</Link>
+        </p>
+      </ResetPasswordShell>
+    );
+  }
+
+  if (status === "done") {
+    return (
+      <ResetPasswordShell>
+        <h1 id="reset-password-title" className="auth-title">
+          비밀번호가 변경되었습니다
+        </h1>
+        <p className="auth-subtitle">
+          {otherSessionsRevoked
+            ? "다른 기기에 남아 있던 로그인은 모두 해제했습니다."
+            : "다른 기기에 남아 있던 로그인이 아직 해제되지 않았을 수 있습니다."}
+        </p>
+        <button
+          type="button"
+          className="auth-submit"
+          onClick={() => {
+            router.replace("/app");
+          }}
+        >
+          머니북 시작하기
+        </button>
+      </ResetPasswordShell>
+    );
+  }
+
+  return (
+    <ResetPasswordShell>
+      <h1 id="reset-password-title" className="auth-title">
+        새 비밀번호 설정
+      </h1>
+      <p className="auth-subtitle">앞으로 사용할 비밀번호를 입력해주세요</p>
+
+      <form className="auth-form" noValidate onSubmit={handleSubmit}>
+        <div className="auth-field">
+          <label htmlFor="reset-password-new">새 비밀번호</label>
+          <input
+            className={errorField === "password" ? "auth-input is-invalid" : "auth-input"}
+            id="reset-password-new"
+            name="password"
+            type="password"
+            placeholder="영문과 숫자를 포함해 8자 이상"
+            value={password}
+            autoComplete="new-password"
+            aria-invalid={errorField === "password"}
+            aria-describedby={passwordError && errorField === "password" ? "reset-password-error" : undefined}
+            disabled={isSubmitting}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              if (passwordError) {
+                setPasswordError("");
+                setErrorField(null);
+              }
+            }}
+          />
+          {passwordError && errorField === "password" ? (
+            <p id="reset-password-error" role="alert" className="auth-error-text">
+              {passwordError}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="auth-field">
+          <label htmlFor="reset-password-confirm">새 비밀번호 확인</label>
+          <input
+            className={errorField === "confirm" ? "auth-input is-invalid" : "auth-input"}
+            id="reset-password-confirm"
+            name="confirmPassword"
+            type="password"
+            placeholder="비밀번호를 한번 더 입력해주세요"
+            value={confirmPassword}
+            autoComplete="new-password"
+            aria-invalid={errorField === "confirm"}
+            aria-describedby={passwordError && errorField === "confirm" ? "reset-password-error" : undefined}
+            disabled={isSubmitting}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
+              if (passwordError) {
+                setPasswordError("");
+                setErrorField(null);
+              }
+            }}
+          />
+          {passwordError && errorField === "confirm" ? (
+            <p id="reset-password-error" role="alert" className="auth-error-text">
+              {passwordError}
+            </p>
+          ) : null}
+        </div>
+
+        {passwordError && errorField === null ? (
+          <p id="reset-password-error" role="alert" className="auth-error-text">
+            {passwordError}
+          </p>
+        ) : null}
+
+        <button type="submit" className="auth-submit" disabled={isSubmitting}>
+          {isSubmitting ? "변경 중..." : "비밀번호 변경"}
+        </button>
+
+        {passwordError && errorField === null ? (
+          <p className="auth-bottom-link">
+            비밀번호가 기억나셨나요? <Link href="/auth/login">로그인</Link>
+          </p>
+        ) : null}
+      </form>
+    </ResetPasswordShell>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <ResetPasswordShell>
+          <h1 id="reset-password-title" className="auth-title">
+            확인 중
+          </h1>
+          <p className="auth-subtitle">잠시만 기다려주세요.</p>
+          <div className="auth-spinner" aria-label="링크 확인 중" />
+        </ResetPasswordShell>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}

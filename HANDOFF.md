@@ -1,3 +1,22 @@
+# 2026-08-06 비밀번호 재설정
+
+- `/auth/forgot-password`, `/auth/reset-password` 두 화면을 추가하고 로그인 화면에서 연결했습니다.
+- `src/lib/auth/password.ts`로 비밀번호 규칙(8자 이상, 영문·숫자 포함, 72바이트 이하)을 분리해 회원가입과 재설정이 공유합니다.
+- 회원가입 화면의 `alert` 검증을 인라인 오류로 교체했습니다. 오류 문구는 어느 필드가 문제인지 구체적으로 짚어줍니다.
+- `/auth/reset-password`는 링크가 해시, `?code=`, 또는 이미 Supabase SDK가 소비한 세션 등 여러 형태로 도착할 수 있어, 링크 유효성을 오직 사후 `getSession()` 확인 결과로만 판단합니다(교환/소비 호출 자체의 성공 여부로는 판단하지 않음).
+- 비밀번호 변경 성공 후 `signOut({ scope: "others" })`로 다른 기기 세션을 끊습니다. 이 세션 해제가 실패해도 사용자에게는 비밀번호 변경이 성공했다고 안내하며, 다른 기기는 여전히 로그인 상태일 수 있다는 안내를 덧붙입니다.
+- 로그인 화면의 "비밀번호 찾기" 자리를 `/auth/forgot-password` 링크로 채우고, 이메일 필드 아래에 "가입하신 이메일이 아이디입니다." 안내를 추가했습니다.
+- 아이디 찾기는 만들지 않았습니다. 근거는 `docs/superpowers/specs/2026-08-06-password-reset-design.md`에 기록했습니다.
+- 프로덕션 DB/데이터 변경: 없음.
+- 남은 작업(수동):
+  - Supabase 대시보드 Auth 비밀번호 정책을 최소 8자, 영문+숫자 필수로 맞춰야 화면과 서버 규칙이 일치합니다.
+  - Supabase 대시보드 Authentication > URL Configuration의 Redirect URLs에 `/auth/reset-password`가 허용되어 있는지 확인해야 합니다.
+- 검증:
+  - `npm run lint`: 통과
+  - `npm run test`: 통과
+  - `npm run build`: 통과
+  - 데스크톱 1280px, 모바일 375px 확인 완료
+
 # 2026-07-14 main merge verification
 
 - Added `.worktrees/**` exclusions to ESLint and Vitest so the root checkout does not recursively lint or collect tests from an active isolated worktree.
@@ -1072,3 +1091,24 @@ with a simpler monthly cash-flow summary.
 - **SQL은 실행 검증하지 못했습니다.** 이 환경에 Docker와 psql이 없어 `supabase start`로 로컬 DB를 띄울 수 없습니다(`supabase/config.toml`도 없음). 문법·모호성·멱등성은 정적으로 점검했으나, 실제 적용은 로컬 Supabase가 있는 환경에서 확인해야 합니다. 확인 항목은 설계 문서 검증 기준 3~8번입니다.
 - **배포 순서(중요):** 코드를 먼저 배포하고 그다음 마이그레이션을 적용해야 합니다. 현재 운영 트리거는 `raw_user_meta_data`를 읽지 않으므로 새 코드가 추가 메타데이터를 보내도 무시합니다. 반대로 마이그레이션을 먼저 적용하면 구 프론트엔드가 동의 메타데이터를 보내지 않아 그 사이 가입이 전부 실패합니다.
 - 재동의 게이트는 여전히 `NEXT_PUBLIC_LEGAL_CONSENT_GATE` 미설정으로 꺼져 있습니다. 마이그레이션을 적용해도 기존 27명은 영향받지 않으며, 재동의를 받을지는 별도 결정입니다.
+
+# 2026-08-06 마이그레이션 운영 적용 및 검증
+
+- 운영 Supabase에 `20260804000000_add_legal_consent.sql`을 대시보드 SQL Editor로 적용했습니다(사용자 직접 수행). 오류 없이 완료.
+- 이전 기록의 "SQL 실행 검증 못 함" 항목은 아래까지 해소되었습니다.
+  - `profiles`에 `terms_version`, `terms_agreed_at`, `privacy_version`, `privacy_agreed_at`, `age_confirmed_at` 5개 열 생성 확인.
+  - 함수 3개 확인. `record_current_legal_consent`는 `p_terms_version text, p_privacy_version text` 시그니처 하나만 존재하며, 구 0-인자 버전이 제거되어 PostgREST 오버로드 문제가 없습니다.
+  - `record_current_legal_consent` RPC를 `request.jwt.claims`로 사용자를 가장해 트랜잭션 안에서 호출한 뒤 롤백했습니다. 오류 없이 반환되어 `profiles` UPDATE와 `user_legal_consents` INSERT 경로가 정상 동작함을 확인했습니다. 우려했던 변수·컬럼 모호성 오류는 없습니다.
+- **아직 검증되지 않은 것: `handle_new_user_profile` 트리거의 INSERT 분기.** 실제 신규 가입이 있어야 실행됩니다. 함수 생성 성공은 문법 검사만 통과했다는 뜻이며 런타임 정확성을 보장하지 않습니다.
+- 기존 사용자 3명 조회 결과 동의 열이 모두 NULL입니다. 예상된 상태이며, `NEXT_PUBLIC_LEGAL_CONSENT_GATE`가 꺼져 있는 한 로그인에 영향이 없습니다. 이 플래그를 켜면 기존 사용자 전원이 재동의 화면으로 갑니다.
+- **주의: 마이그레이션이 적용된 시점부터 트리거가 동의 메타데이터를 요구합니다.** 새 프론트엔드(커밋 b9ae0b4)가 배포되어 있지 않으면 신규 가입이 실패합니다. 배포 완료 여부 확인이 필요합니다.
+
+# 2026-08-06 신규 가입 트리거 검증 완료
+
+- `test@test.com`으로 실제 신규 가입을 수행해 `handle_new_user_profile` 트리거의 INSERT 분기를 검증했습니다.
+- 결과: `terms_version` `2026-08-04`, `privacy_version` `2026-08-04`, `terms_agreed_at`/`age_confirmed_at` 모두 `2026-08-06 07:26:40.220445+00`.
+  - 버전은 문서 버전(`legalDocuments.ts` 상수)이고 시각은 서버 시각으로, 버전과 시각의 출처를 분리한 설계가 의도대로 동작합니다.
+  - 세 시각이 동일한 것은 트리거가 단일 `consented_at` 변수를 쓰기 때문으로 정상입니다.
+- 가입이 성공했다는 사실 자체가 새 프론트엔드(b9ae0b4)가 배포되어 동의 메타데이터를 전송하고 있음을 확인해 줍니다. 구 번들이었다면 트리거가 거부했을 것입니다.
+- 이로써 이전 기록의 "SQL 실행 검증 못 함" 항목은 완전히 해소되었습니다. 열 생성, 함수 시그니처, RPC 본문, 트리거 INSERT 분기까지 모두 운영 환경에서 확인했습니다.
+- 정리 필요: 검증용 `test@test.com` 계정은 운영 데이터이므로 삭제하는 것이 좋습니다. `profiles`와 `user_legal_consents`는 `auth.users`에 `on delete cascade`로 연결되어 있어 대시보드에서 사용자를 삭제하면 함께 제거됩니다.
