@@ -46,4 +46,19 @@ describe("MyPage shell", () => {
       screen.queryByText("마이페이지는 로그인 후 이용할 수 있습니다."),
     ).not.toBeInTheDocument();
   });
+
+  it("renders nothing while auth state has not resolved yet", () => {
+    useAppData.mockReturnValue({
+      displayName: "홍길동",
+      displayEmail: "hong@example.com",
+      isDemoMode: false,
+      isAuthResolved: false,
+    });
+
+    render(<MyPage />);
+
+    expect(
+      screen.queryByRole("heading", { name: "마이페이지" }),
+    ).not.toBeInTheDocument();
+  });
 });
