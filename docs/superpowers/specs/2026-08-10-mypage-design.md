@@ -72,21 +72,43 @@
 
 인증 없이 호출하면 401을 반환한다.
 
-### 선행 확인 사항
+### expenses 외래키 추가 (선행 작업)
 
-사용자 데이터 테이블은 대부분 `auth.users`를 `on delete cascade`로 참조하므로
-`deleteUser()` 한 번으로 함께 지워진다. 확인된 테이블은 `profiles`,
-`savings_accounts`, `savings_payments`, `fixed_expense_rules`,
-`fixed_expense_payments`, `investment_stocks`, `investment_account_limits`,
+운영 DB에서 `auth.users`를 참조하는 제약을 조회한 결과, 사용자 데이터 테이블은 모두
+`on delete cascade`로 걸려 있어 `deleteUser()` 한 번으로 함께 지워진다. 확인된
+테이블은 `profiles`, `savings_accounts`, `savings_payments`,
+`fixed_expense_rules`, `fixed_expense_payments`, `investment_stocks`,
+`investment_account_limits`, `stock_quote_rate_limits`,
 `user_custom_categories`, `user_legal_consents`, `inquiries`다.
+`inquiries.answered_by`만 `set null`인데, 답변한 관리자가 탈퇴해도 문의 글은 남아야
+하므로 의도된 설정이다.
 
-**`expenses` 테이블은 마이그레이션 파일이 없어 제약 조건을 확인할 수 없다.**
-대시보드에서 직접 만든 것으로 보인다. `user_id`에 `on delete cascade`가 걸려 있지
-않으면 삭제가 외래키 위반으로 실패한다.
+**`expenses`는 `user_id`에 외래키 제약이 아예 없다.** 마이그레이션 파일 없이
+대시보드에서 만들어진 테이블이다.
 
-구현 전에 대시보드에서 확인하고, 걸려 있지 않으면 제약 조건을 교체하는 마이그레이션을
-추가한다. 이 확인은 탈퇴 기능의 선행 조건이며, 나머지 세 카드는 이와 무관하게 진행할
-수 있다.
+이 상태에서 계정을 삭제하면 실패하지는 않는다. 위반할 제약이 없으므로
+`deleteUser()`는 성공한다. 대신 **가계부 기록이 주인 없이 그대로 남는다.** 계정은
+사라졌는데 수입·지출 데이터는 DB에 계속 존재하는 상태이며, 개인정보 처리방침의
+"지체 없이 파기"와 어긋난다. 실패보다 알아채기 어려워 더 위험하다.
+
+따라서 외래키를 추가하는 마이그레이션을 탈퇴 기능보다 먼저 넣는다. 라우트에서
+`expenses`를 따로 지우는 방법도 있지만, 제약으로 걸어두면 앞으로 어떤 경로로 계정이
+지워져도 자동으로 따라온다.
+
+```sql
+alter table public.expenses
+  add constraint expenses_user_id_fkey
+  foreign key (user_id) references auth.users(id) on delete cascade;
+```
+
+적용 전 상태를 운영 DB에서 확인했다(2026-08-10 기준).
+
+- `user_id`가 비어 있는 행: 0건
+- 존재하지 않는 사용자를 가리키는 행: 0건
+- 전체: 3,404건
+- RLS: 활성
+
+주인 없는 행이 없으므로 제약을 그대로 추가할 수 있다.
 
 ## 비밀번호 변경
 
@@ -133,6 +155,7 @@ Supabase에는 현재 비밀번호를 검증하는 API가 없다. 현재 이메�
 
 **신규**
 
+- `supabase/migrations/20260810000000_add_expenses_user_fk.sql`
 - `src/app/app/mypage/page.tsx`
 - `src/app/app/mypage/layout.tsx` (metadata, `robots: index false`)
 - `src/app/app/mypage/page.test.tsx`
