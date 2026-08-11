@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import ConsentCard from "@/components/mypage/ConsentCard";
+import PasswordCard from "@/components/mypage/PasswordCard";
 import ProfileCard from "@/components/mypage/ProfileCard";
 import { useAppData } from "@/app/providers";
 import { getAccountOverview, type AccountOverview } from "@/lib/api/account";
@@ -78,6 +79,7 @@ export default function MyPage() {
             {overview ? (
               <>
                 <ProfileCard overview={overview} onNameSaved={setName} />
+                <PasswordCard email={overview.email} />
                 <ConsentCard overview={overview} />
               </>
             ) : null}
