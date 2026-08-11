@@ -7,6 +7,7 @@ import SideMenu from "@/components/common/SideMenu";
 import ConsentCard from "@/components/mypage/ConsentCard";
 import PasswordCard from "@/components/mypage/PasswordCard";
 import ProfileCard from "@/components/mypage/ProfileCard";
+import WithdrawCard from "@/components/mypage/WithdrawCard";
 import { useAppData } from "@/app/providers";
 import { getAccountOverview, type AccountOverview } from "@/lib/api/account";
 import "./mypage.scss";
@@ -81,6 +82,7 @@ export default function MyPage() {
                 <ProfileCard overview={overview} onNameSaved={setName} />
                 <PasswordCard email={overview.email} />
                 <ConsentCard overview={overview} />
+                <WithdrawCard email={overview.email} />
               </>
             ) : null}
           </div>

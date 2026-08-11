@@ -41,6 +41,20 @@
     color: #db2c40;
   }
 
+  .mypage-withdraw {
+    &--warning {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--on-surface);
+      }
+    }
+  }
+
   .mypage-demo {
     margin-top: 20px;
   }
