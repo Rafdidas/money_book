@@ -87,4 +87,18 @@ describe("WithdrawCard", () => {
 
     expect(screen.getByRole("button", { name: "처리 중..." })).toBeDisabled();
   });
+
+  it("shows only a plain toggle when collapsed, and the card heading once opened", () => {
+    // 접힌 상태에서는 카드 제목까지 보이면 비밀번호 변경과 같은 무게로 읽힌다.
+    // 평생 한 번 쓸까 말까 한 기능이라 접힌 동안에는 버튼 하나만 남긴다.
+    render(<WithdrawCard email="hong@example.com" />);
+
+    expect(screen.queryByRole("heading", { name: "회원 탈퇴" })).not.toBeInTheDocument();
+    expect(screen.queryByText("계정과 기록을 모두 삭제합니다.")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "회원 탈퇴" }));
+
+    expect(screen.getByRole("heading", { name: "회원 탈퇴" })).toBeInTheDocument();
+    expect(screen.getByText("계정과 기록을 모두 삭제합니다.")).toBeInTheDocument();
+  });
 });

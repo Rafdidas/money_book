@@ -50,6 +50,19 @@
   }
 
   .mypage-withdraw {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--outline);
+
+    &--toggle {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--on-surface);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
     &--warning {
       display: flex;
       flex-direction: column;
