@@ -23,6 +23,14 @@
     gap: 16px;
     // 카드마다 높이가 달라 stretch되면 빈 공간이 늘어난다.
     align-items: start;
+
+    // 비밀번호 변경 카드(2번째 자식)는 오른쪽 열 전체를 세로로 차지하게 고정한다.
+    // 자동 배치에 맡기면 1행 높이가 내 정보/비밀번호 변경 카드 중 큰 쪽을 따라가고,
+    // 비밀번호 변경 카드에 성공/오류 문구가 붙어 높이가 바뀔 때마다 약관 동의 카드가
+    // 오른쪽 카드 아래로 흔들리며 밀린다.
+    > :nth-child(2) {
+      grid-row: 1 / span 2;
+    }
   }
 
   .mypage-card {
@@ -54,6 +62,12 @@
     padding-top: 20px;
     border-top: 1px solid var(--outline);
 
+    // 탈퇴 영역 자체는 전체 너비를 쓰지만, 펼쳐진 확인 폼까지 그만큼 넓어지면
+    // 비밀번호 입력창 하나가 화면 전체 폭으로 늘어나 다른 카드들과 비례가 어긋난다.
+    .mypage-card {
+      max-width: 640px;
+    }
+
     &--toggle {
       padding: 0;
       border: 0;
@@ -83,6 +97,12 @@
   @media (max-width: 1040px) {
     .mypage-grid {
       grid-template-columns: 1fr;
+
+      // 1열에서는 DOM 순서(내 정보 → 비밀번호 변경 → 약관 동의)대로 쌓여야 하므로
+      // 데스크톱 전용 행 강제 지정을 해제한다.
+      > :nth-child(2) {
+        grid-row: auto;
+      }
     }
   }
 }
