@@ -71,7 +71,7 @@ export default function MyPage() {
             </p>
           </section>
         ) : (
-          <div className="mypage-layout column-group column-group--gap-16">
+          <div className="mypage-layout">
             {loadError ? (
               <p className="caption--md mypage-error" role="alert">
                 {loadError}
@@ -79,9 +79,13 @@ export default function MyPage() {
             ) : null}
             {overview ? (
               <>
-                <ProfileCard overview={overview} onNameSaved={setName} />
-                <PasswordCard email={overview.email} />
-                <ConsentCard overview={overview} />
+                {/* DOM 순서가 곧 모바일 순서다. 2열에서는 자동 배치로
+                    왼쪽에 내 정보·약관 동의, 오른쪽에 비밀번호 변경이 놓인다. */}
+                <div className="mypage-grid">
+                  <ProfileCard overview={overview} onNameSaved={setName} />
+                  <PasswordCard email={overview.email} />
+                  <ConsentCard overview={overview} />
+                </div>
                 <WithdrawCard email={overview.email} />
               </>
             ) : null}
