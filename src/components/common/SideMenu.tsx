@@ -44,6 +44,12 @@ const navItems = [
     label: "문의하기",
     isActive: (pathname: string) => pathname.startsWith("/app/inquiries"),
   },
+  {
+    href: "/app/mypage",
+    icon: "account_circle",
+    label: "마이페이지",
+    isActive: (pathname: string) => pathname.startsWith("/app/mypage"),
+  },
 ] satisfies Array<{
   href: string;
   icon: AppIconName;
