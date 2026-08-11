@@ -26,6 +26,9 @@ export default function WithdrawCard({ email }: { email: string }) {
 
       await deleteAccount({ email, password });
 
+      // 성공 후에는 isSubmitting을 되돌리지 않는다. router.replace가 실제로
+      // 반영되기 전에 버튼이 다시 활성화되면, 이미 삭제된 계정으로 중복 제출이
+      // 발생해 혼란스러운 오류 메시지를 보여줄 수 있다.
       router.replace("/");
     } catch (caught) {
       setError(
@@ -33,7 +36,6 @@ export default function WithdrawCard({ email }: { email: string }) {
           ? caught.message
           : "탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.",
       );
-    } finally {
       setIsSubmitting(false);
     }
   };

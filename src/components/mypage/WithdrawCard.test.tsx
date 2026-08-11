@@ -71,4 +71,20 @@ describe("WithdrawCard", () => {
     });
     expect(replace).toHaveBeenCalledWith("/");
   });
+
+  it("keeps the submit button disabled after a successful delete instead of re-enabling it", async () => {
+    // 성공 이후 router.replace가 실제로 반영되기 전에 버튼이 다시 활성화되면,
+    // 이미 삭제된 계정으로 중복 제출이 발생할 수 있다.
+    render(<WithdrawCard email="hong@example.com" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "회원 탈퇴" }));
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "password123" } });
+    fireEvent.click(screen.getByRole("button", { name: "탈퇴하기" }));
+
+    await waitFor(() => {
+      expect(deleteAccount).toHaveBeenCalled();
+    });
+
+    expect(screen.getByRole("button", { name: "처리 중..." })).toBeDisabled();
+  });
 });

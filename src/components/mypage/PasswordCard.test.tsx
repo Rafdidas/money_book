@@ -29,6 +29,12 @@ describe("PasswordCard", () => {
       screen.getByText("비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다."),
     ).toBeInTheDocument();
     expect(changePassword).not.toHaveBeenCalled();
+
+    const newPasswordInput = screen.getByLabelText("새 비밀번호");
+    expect(newPasswordInput).toHaveAttribute("aria-invalid", "true");
+    expect(newPasswordInput).toHaveAttribute("aria-describedby", "mypage-password-error");
+    expect(screen.getByLabelText("현재 비밀번호")).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByLabelText("새 비밀번호 확인")).toHaveAttribute("aria-invalid", "false");
   });
 
   it("rejects mismatched confirmation", () => {
@@ -39,6 +45,12 @@ describe("PasswordCard", () => {
 
     expect(screen.getByText("비밀번호가 일치하지 않습니다.")).toBeInTheDocument();
     expect(changePassword).not.toHaveBeenCalled();
+
+    const confirmInput = screen.getByLabelText("새 비밀번호 확인");
+    expect(confirmInput).toHaveAttribute("aria-invalid", "true");
+    expect(confirmInput).toHaveAttribute("aria-describedby", "mypage-password-error");
+    expect(screen.getByLabelText("현재 비밀번호")).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByLabelText("새 비밀번호")).toHaveAttribute("aria-invalid", "false");
   });
 
   it("requires the current password", () => {
@@ -49,6 +61,10 @@ describe("PasswordCard", () => {
 
     expect(screen.getByText("현재 비밀번호를 입력해주세요.")).toBeInTheDocument();
     expect(changePassword).not.toHaveBeenCalled();
+
+    const currentInput = screen.getByLabelText("현재 비밀번호");
+    expect(currentInput).toHaveAttribute("aria-invalid", "true");
+    expect(currentInput).toHaveAttribute("aria-describedby", "mypage-password-error");
   });
 
   it("surfaces a wrong current password", async () => {
@@ -59,6 +75,7 @@ describe("PasswordCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "비밀번호 변경" }));
 
     expect(await screen.findByText("현재 비밀번호가 올바르지 않습니다.")).toBeInTheDocument();
+    expect(screen.getByLabelText("현재 비밀번호")).toHaveAttribute("aria-invalid", "true");
   });
 
   it("changes the password and reports other devices were signed out", async () => {

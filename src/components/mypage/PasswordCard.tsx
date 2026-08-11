@@ -10,11 +10,15 @@ export default function PasswordCard({ email }: { email: string }) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<"current" | "new" | "confirm" | null>(null);
   const [notice, setNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const clearMessages = () => {
-    if (error) setError("");
+    if (error) {
+      setError("");
+      setErrorField(null);
+    }
     if (notice) setNotice("");
   };
 
@@ -24,22 +28,24 @@ export default function PasswordCard({ email }: { email: string }) {
     if (!currentPassword) {
       setNotice("");
       setError("현재 비밀번호를 입력해주세요.");
+      setErrorField("current");
       return;
     }
 
     // 재설정 화면과 같은 순서로 판단한다. 규칙 위반이 먼저, 그다음 불일치.
-    const ruleError =
-      getPasswordError(newPassword) ||
-      (newPassword === confirmPassword ? "" : PASSWORD_MISMATCH_MESSAGE);
+    const ruleError = getPasswordError(newPassword);
+    const mismatchError = newPassword === confirmPassword ? "" : PASSWORD_MISMATCH_MESSAGE;
 
-    if (ruleError) {
+    if (ruleError || mismatchError) {
       setNotice("");
-      setError(ruleError);
+      setError(ruleError || mismatchError);
+      setErrorField(ruleError ? "new" : "confirm");
       return;
     }
 
     try {
       setError("");
+      setErrorField(null);
       setNotice("");
       setIsSubmitting(true);
 
@@ -63,6 +69,8 @@ export default function PasswordCard({ email }: { email: string }) {
           ? caught.message
           : "비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.",
       );
+      // 현재 비밀번호 관련 실패로 간주한다(예: 비밀번호가 올바르지 않음).
+      setErrorField("current");
     } finally {
       setIsSubmitting(false);
     }
@@ -88,12 +96,19 @@ export default function PasswordCard({ email }: { email: string }) {
             type="password"
             value={currentPassword}
             autoComplete="current-password"
+            aria-invalid={errorField === "current"}
+            aria-describedby={errorField === "current" ? "mypage-password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => {
               setCurrentPassword(event.target.value);
               clearMessages();
             }}
           />
+          {errorField === "current" ? (
+            <p id="mypage-password-error" className="caption--md mypage-error" role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
 
         <div className="mypage-field">
@@ -107,12 +122,19 @@ export default function PasswordCard({ email }: { email: string }) {
             placeholder="영문과 숫자를 포함해 8자 이상"
             value={newPassword}
             autoComplete="new-password"
+            aria-invalid={errorField === "new"}
+            aria-describedby={errorField === "new" ? "mypage-password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => {
               setNewPassword(event.target.value);
               clearMessages();
             }}
           />
+          {errorField === "new" ? (
+            <p id="mypage-password-error" className="caption--md mypage-error" role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
 
         <div className="mypage-field">
@@ -125,15 +147,15 @@ export default function PasswordCard({ email }: { email: string }) {
             type="password"
             value={confirmPassword}
             autoComplete="new-password"
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? "mypage-password-error" : undefined}
+            aria-invalid={errorField === "confirm"}
+            aria-describedby={errorField === "confirm" ? "mypage-password-error" : undefined}
             disabled={isSubmitting}
             onChange={(event) => {
               setConfirmPassword(event.target.value);
               clearMessages();
             }}
           />
-          {error ? (
+          {errorField === "confirm" ? (
             <p id="mypage-password-error" className="caption--md mypage-error" role="alert">
               {error}
             </p>
