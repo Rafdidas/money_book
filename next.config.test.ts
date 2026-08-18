@@ -13,4 +13,14 @@ describe("security headers", () => {
     expect(policy).toContain("report-uri /api/csp-reports");
     expect(policy).toContain("report-to csp-endpoint");
   });
+
+  it("allows WebAssembly without allowing JavaScript eval", async () => {
+    const headers = await nextConfig.headers?.();
+    const policy = headers?.[0]?.headers.find(
+      (header) => header.key === "Content-Security-Policy-Report-Only",
+    )?.value;
+
+    expect(policy).toContain("'wasm-unsafe-eval'");
+    expect(policy).not.toContain("'unsafe-eval'");
+  });
 });

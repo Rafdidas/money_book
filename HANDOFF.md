@@ -1138,3 +1138,9 @@ with a simpler monthly cash-flow summary.
 - 가입이 성공했다는 사실 자체가 새 프론트엔드(b9ae0b4)가 배포되어 동의 메타데이터를 전송하고 있음을 확인해 줍니다. 구 번들이었다면 트리거가 거부했을 것입니다.
 - 이로써 이전 기록의 "SQL 실행 검증 못 함" 항목은 완전히 해소되었습니다. 열 생성, 함수 시그니처, RPC 본문, 트리거 INSERT 분기까지 모두 운영 환경에서 확인했습니다.
 - 정리 필요: 검증용 `test@test.com` 계정은 운영 데이터이므로 삭제하는 것이 좋습니다. `profiles`와 `user_legal_consents`는 `auth.users`에 `on delete cascade`로 연결되어 있어 대시보드에서 사용자를 삭제하면 함께 제거됩니다.
+
+# 2026-08-18 CSP 30일 관찰 보완
+
+- 30일 관찰 데이터 153건 중 150건이 WebAssembly 관련으로 판단되는 `script-src` 보고였고, `unsafe-eval` 대신 WebAssembly 전용 `'wasm-unsafe-eval'`을 Report-Only 정책에 추가했습니다.
+- 운영 코드·HTML에서 재현되지 않은 `fonts.gstatic.com` 보고 1건과 Vercel Preview의 `manifest-src` 2건은 허용 목록에 추가하지 않았습니다.
+- 차단 CSP 전환은 하지 않았으며, 변경 후 7일간 Report-Only 보고를 추가 관찰합니다.
