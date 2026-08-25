@@ -71,10 +71,16 @@ import { formatIntegerInput, parseFormattedNumber } from "@/utils/numberInput";
 import CategoryPieChart from "./charts/CategoryPieChart";
 import DashboardScheduleCard from "./DashboardScheduleCard";
 import DashboardSummaryCards from "./DashboardSummaryCards";
+import DetailBulkActionBar from "./DetailBulkActionBar";
 import {
   getDashboardMonthlySummary,
   getDashboardScheduleSummary,
 } from "./dashboardSummary";
+import {
+  getDetailBulkSelectionSummary,
+  getSelectableDetailIds,
+  pruneSelectedDetailIds,
+} from "./detailBulkDelete";
 import {
   getRecentCategoriesForType,
   loadRecentCustomCategories,
@@ -310,6 +316,8 @@ export default function HomeClient() {
   const [isFixedExpenseSkipping, setIsFixedExpenseSkipping] = useState(false);
   const [openFixedExpensePauseMenuId, setOpenFixedExpensePauseMenuId] = useState("");
   const [detailSort, setDetailSort] = useState<DetailSort>(null);
+  const [selectedDetailIds, setSelectedDetailIds] = useState<Set<string>>(() => new Set());
+  const [isDetailBulkDeleting, setIsDetailBulkDeleting] = useState(false);
 
   const selectedDateKey = formatDate(selectedDate);
   const todayKey = formatDate(today);
@@ -796,6 +804,28 @@ export default function HomeClient() {
     },
     [detailSort, displayMonthlyExpenses],
   );
+  const selectableDetailIds = useMemo(
+    () => new Set(getSelectableDetailIds(detailItems, monthlyEditableExpenses)),
+    [detailItems, monthlyEditableExpenses],
+  );
+  const detailBulkSummary = useMemo(
+    () => getDetailBulkSelectionSummary(detailItems, selectedDetailIds),
+    [detailItems, selectedDetailIds],
+  );
+  const allSelectableDetailsSelected =
+    selectableDetailIds.size > 0 &&
+    [...selectableDetailIds].every((id) => selectedDetailIds.has(id));
+  const someSelectableDetailsSelected =
+    !allSelectableDetailsSelected &&
+    [...selectableDetailIds].some((id) => selectedDetailIds.has(id));
+
+  useEffect(() => {
+    setSelectedDetailIds((current) => {
+      const next = pruneSelectedDetailIds(current, selectableDetailIds);
+      return next.size === current.size ? current : next;
+    });
+  }, [selectableDetailIds]);
+
   const handleDetailSort = (key: DetailSortKey) => {
     setDetailSort((prev) => {
       if (!prev || prev.key !== key) return { key, direction: "asc" };
@@ -803,6 +833,20 @@ export default function HomeClient() {
       return null;
     });
   };
+  const handleDetailSelectionChange = (id: string, checked: boolean) => {
+    if (!selectableDetailIds.has(id)) return;
+
+    setSelectedDetailIds((current) => {
+      const next = new Set(current);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+  const handleAllDetailSelectionChange = (checked: boolean) => {
+    setSelectedDetailIds(checked ? new Set(selectableDetailIds) : new Set());
+  };
+
   const selectedInlineExpense =
     inlineEditItems.find((item) => item.id === inlineEditingId) ?? null;
   const dayMap = displayMonthlyExpenses.reduce<Record<string, number>>((acc, item) => {
@@ -1225,6 +1269,47 @@ export default function HomeClient() {
       setInlineEditingId("");
       setInlineFormMode("create");
       resetInlineCreateForm();
+    }
+  };
+  const handleBulkDetailDelete = async () => {
+    const selectedItems = detailItems.filter(
+      (item) => selectedDetailIds.has(item.id) && selectableDetailIds.has(item.id),
+    );
+    if (!selectedItems.length) return;
+
+    const ids = selectedItems.map((item) => item.id);
+    const deletedIds = new Set(ids);
+    const summary = getDetailBulkSelectionSummary(selectedItems, deletedIds);
+    const confirmed = await confirm(`선택한 내역 ${summary.count}건을 삭제할까요?`, {
+      description: `합계 ${formatCurrency(summary.total)}의 내역이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`,
+      confirmText: "삭제",
+      cancelText: "취소",
+    });
+    if (!confirmed) return;
+
+    setIsDetailBulkDeleting(true);
+    try {
+      if (isDemoMode) {
+        const nextExpenses = expenses.filter((item) => !deletedIds.has(item.id));
+        writeDemoExpenses(nextExpenses);
+        setExpenses(nextExpenses);
+      } else {
+        await deleteExpenses(ids);
+        setExpenses((current) => current.filter((item) => !deletedIds.has(item.id)));
+      }
+
+      if (inlineEditingId && deletedIds.has(inlineEditingId)) {
+        setInlineEditingId("");
+        setInlineFormMode("create");
+        resetInlineCreateForm();
+      }
+      setSelectedDetailIds(new Set());
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "선택한 내역을 삭제하지 못했습니다.";
+      alert(message);
+    } finally {
+      setIsDetailBulkDeleting(false);
     }
   };
   const handleOverviewMonthChange = (offset: number) => {
@@ -3294,14 +3379,27 @@ export default function HomeClient() {
               <div className="table--wrap">
                 <table className="table detail-table">
                   <colgroup>
-                    <col style={{ width: "15%" }} />
-                    <col style={{ width: "15%" }} />
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "30%" }} />
-                    <col style={{ width: "20%" }} />
+                    <col style={{ width: "48px" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "19%" }} />
+                    <col style={{ width: "29%" }} />
+                    <col style={{ width: "19%" }} />
                   </colgroup>
                   <thead>
                     <tr>
+                      <th className="detail-table__selection">
+                        <Checkbox
+                          checked={allSelectableDetailsSelected}
+                          indeterminate={someSelectableDetailsSelected}
+                          disabled={selectableDetailIds.size === 0 || isDetailBulkDeleting}
+                          onChange={handleAllDetailSelectionChange}
+                          className="checkbox--compact"
+                        >
+                          <span className="detail-table__a11y-label">삭제 가능한 내역 전체 선택</span>
+                        </Checkbox>
+                      </th>
+
                       <th>
                         <div className="row-group row-group--center row-group--gap-4">
                           카테고리
@@ -3376,8 +3474,24 @@ export default function HomeClient() {
                         const isSavings = isSavingsItem(item);
                         const isInvestment = isInvestmentItem(item);
                         const isPaused = item.status === "cancelled";
+                        const isSelectable = selectableDetailIds.has(item.id);
                         return (
                           <tr key={item.id}>
+                            <td className="detail-table__selection">
+                              <Checkbox
+                                checked={selectedDetailIds.has(item.id)}
+                                disabled={!isSelectable || isDetailBulkDeleting}
+                                onChange={(checked) => handleDetailSelectionChange(item.id, checked)}
+                                className="checkbox--compact"
+                              >
+                                <span className="detail-table__a11y-label">
+                                  {isSelectable
+                                    ? `${item.category} ${formatDetailDate(item.date)} 내역 선택`
+                                    : "정기 항목은 해당 관리 메뉴에서 변경해주세요"}
+                                </span>
+                              </Checkbox>
+                            </td>
+
                             <td>{item.category}</td>
                             <td>
                               <span
@@ -3411,7 +3525,7 @@ export default function HomeClient() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={5}>이번 달 내역이 없습니다.</td>
+                        <td colSpan={6}>이번 달 내역이 없습니다.</td>
                       </tr>
                     )}
                   </tbody>
@@ -3421,6 +3535,16 @@ export default function HomeClient() {
                 <div className="empty title--lg">데이터 추가 예정</div>
               </div> */}
             </div>
+            {detailBulkSummary.count > 0 ? (
+              <DetailBulkActionBar
+                count={detailBulkSummary.count}
+                total={detailBulkSummary.total}
+                isDeleting={isDetailBulkDeleting}
+                onClear={() => setSelectedDetailIds(new Set())}
+                onDelete={handleBulkDetailDelete}
+              />
+            ) : null}
+
           </div>
         </section>
       </main>
