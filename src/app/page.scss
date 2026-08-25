@@ -527,10 +527,18 @@
       }
 
       .detail-table__selection {
-        width: 48px;
-        min-width: 48px;
-        padding-inline: 8px;
+        width: 52px;
+        min-width: 52px;
+        padding: 0 !important;
         text-align: center;
+
+        .checkbox.checkbox--compact {
+          width: 44px;
+          min-width: 44px;
+          height: 44px;
+          min-height: 44px;
+          justify-content: center;
+        }
       }
 
       .detail-table__a11y-label {
