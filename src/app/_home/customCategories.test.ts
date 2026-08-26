@@ -12,7 +12,7 @@ const category = (
   type: CustomCategory["type"],
   name: string,
   lastUsedAt: string,
-): CustomCategory => ({ id, type, name, lastUsedAt });
+): CustomCategory => ({ id, type, name, lastUsedAt, isFavorite: false });
 
 describe("custom category list helpers", () => {
   it("keeps five newest categories for one type without affecting another type", () => {

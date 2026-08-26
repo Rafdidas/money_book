@@ -10,11 +10,13 @@ import {
 import Calendar from "react-calendar";
 import type { Value } from "react-calendar/dist/shared/types.js";
 import Modal from "@/components/common/Modal";
+import CategoryManager from "@/components/CategoryManager";
 import AppIcon from "@/components/common/AppIcon";
 import Checkbox from "@/components/common/Checkbox";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
 import { useAppData } from "@/app/providers";
+import { useCustomCategories } from "@/lib/hooks/useCustomCategories";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import {
   DEMO_USER_ID,
@@ -270,8 +272,10 @@ export default function HomeClient() {
     isAuthResolved,
   } = useAppData();
   const { alert, confirm } = useAppAlert();
+  const categoryState = useCustomCategories(isDemoMode, isAuthResolved);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [storedSavingsAccounts, setStoredSavingsAccounts] = useState<StoredSavingsAccount[]>([]);
   const [storedSavingsPayments, setStoredSavingsPayments] = useState<SavingsPayment[]>([]);
   const [storedFixedExpenseRules, setStoredFixedExpenseRules] = useState<FixedExpenseRule[]>([]);
@@ -2297,6 +2301,7 @@ export default function HomeClient() {
               type: inlineType,
               name: category,
               lastUsedAt: new Date().toISOString(),
+              isFavorite: false,
             };
             const nextCategories = upsertRecentCategory(customCategories, savedCategory);
             writeDemoCustomCategories(nextCategories);
@@ -2631,6 +2636,13 @@ export default function HomeClient() {
                         />
                       </label>
                     </div>
+                    <button
+                      type="button"
+                      className="button button--sm button--outline"
+                      onClick={() => setIsCategoryManagerOpen(true)}
+                    >
+                      카테고리 관리
+                    </button>
                     {inlineCategory === customCategoryValue ? (
                       <div className="main-overview--field">
                         <label
@@ -3591,6 +3603,22 @@ export default function HomeClient() {
               </button>
               <span className="body--sm">{selectedDateKey}</span>
             </div>
+          </div>
+        </Modal>
+      ) : null}
+      {isCategoryManagerOpen ? (
+        <Modal onClose={() => setIsCategoryManagerOpen(false)}>
+          <div className="card">
+            <h2 className="title--md">내 카테고리 관리</h2>
+            <CategoryManager
+              categories={categoryState.categories}
+              onAdd={categoryState.addCategory}
+              onDelete={categoryState.deleteCategory}
+              onToggleFavorite={categoryState.toggleFavorite}
+            />
+            <button type="button" className="button button--sm button--outline" onClick={() => setIsCategoryManagerOpen(false)}>
+              닫기
+            </button>
           </div>
         </Modal>
       ) : null}

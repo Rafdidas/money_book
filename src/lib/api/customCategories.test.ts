@@ -10,9 +10,14 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 import {
+  createCustomCategory,
   deleteCustomCategory,
+  getCustomCategories,
   getRecentCustomCategories,
+  renameCustomCategory,
   saveCustomCategory,
+  setCustomCategoryFavorite,
+  touchCustomCategory,
   type CustomCategoryType,
 } from "./customCategories";
 
@@ -91,7 +96,7 @@ describe("custom category API", () => {
       })),
     }));
 
-    await expect(getRecentCustomCategories()).resolves.toEqual(
+    await expect(getRecentCustomCategories()).resolves.toMatchObject(
       categoryTypes.map((type) => ({
         id: `${type}-newest`,
         type,
@@ -173,5 +178,35 @@ describe("custom category API", () => {
       })),
     }));
     await expect(getRecentCustomCategories()).rejects.toThrow("조회 실패");
+  });
+
+  it("manages custom category favorites", async () => {
+    const lastOrder = vi.fn().mockResolvedValue({ data: [{ id: "category-1", entry_type: "expense", name: "반려동물", last_used_at: "2026-08-25T00:00:00.000Z", is_favorite: true }], error: null });
+    const favoriteOrder = vi.fn(() => ({ order: lastOrder }));
+    const typeOrder = vi.fn(() => ({ order: favoriteOrder }));
+    from.mockReturnValue({ select: vi.fn(() => ({ eq: vi.fn(() => ({ order: typeOrder })) })) });
+    await expect(getCustomCategories()).resolves.toMatchObject([{ type: "expense", isFavorite: true }]);
+
+    const single = vi.fn().mockResolvedValue({ data: { id: "category-2", entry_type: "income", name: "부수입", last_used_at: "2026-08-25T00:00:00.000Z", is_favorite: false }, error: null });
+    const insert = vi.fn(() => ({ select: vi.fn(() => ({ single })) }));
+    from.mockReturnValue({ insert });
+    await expect(createCustomCategory("income", " 부수입 ")).resolves.toMatchObject({ isFavorite: false });
+    expect(insert).toHaveBeenCalledWith({ user_id: "user-1", entry_type: "income", name: "부수입", is_favorite: false });
+
+    const upsert = vi.fn(() => ({ select: vi.fn(() => ({ single })) }));
+    from.mockReturnValue({ upsert });
+    await expect(touchCustomCategory("savings", "비상금")).resolves.toMatchObject({ isFavorite: false });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ last_used_at: expect.any(String) }), { onConflict: "user_id,entry_type,normalized_name" });
+
+    const select = vi.fn(() => ({ single }));
+    const secondEq = vi.fn(() => ({ select }));
+    const firstEq = vi.fn(() => ({ eq: secondEq }));
+    const update = vi.fn(() => ({ eq: firstEq }));
+    from.mockReturnValue({ update });
+    await expect(renameCustomCategory("category-2", " 건강 ")).resolves.toMatchObject({ name: "부수입" });
+    expect(update).toHaveBeenLastCalledWith({ name: "건강" });
+    await expect(setCustomCategoryFavorite("category-2", true)).resolves.toMatchObject({ isFavorite: false });
+    expect(update).toHaveBeenLastCalledWith({ is_favorite: true });
+    expect(secondEq).toHaveBeenLastCalledWith("user_id", "user-1");
   });
 });

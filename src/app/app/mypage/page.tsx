@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import AppIcon from "@/components/common/AppIcon";
+import CategoryManager from "@/components/CategoryManager";
 import SideMenu from "@/components/common/SideMenu";
 import ConsentCard from "@/components/mypage/ConsentCard";
 import PasswordCard from "@/components/mypage/PasswordCard";
@@ -10,6 +11,7 @@ import ProfileCard from "@/components/mypage/ProfileCard";
 import WithdrawCard from "@/components/mypage/WithdrawCard";
 import { useAppData } from "@/app/providers";
 import { getAccountOverview, type AccountOverview } from "@/lib/api/account";
+import { useCustomCategories } from "@/lib/hooks/useCustomCategories";
 import "./mypage.scss";
 
 export default function MyPage() {
@@ -17,6 +19,7 @@ export default function MyPage() {
   const [overview, setOverview] = useState<AccountOverview | null>(null);
   const [loadError, setLoadError] = useState("");
   const [name, setName] = useState(displayName);
+  const categoryState = useCustomCategories(isDemoMode, isAuthResolved);
 
   useEffect(() => {
     if (!isAuthResolved || isDemoMode) {
@@ -85,6 +88,13 @@ export default function MyPage() {
                   <ProfileCard overview={overview} onNameSaved={setName} />
                   <PasswordCard email={overview.email} />
                   <ConsentCard overview={overview} />
+                  <section className="card mypage-card column-group column-group--gap-16">
+                    <div>
+                      <h3 className="title--sm mypage-card--title">내 카테고리</h3>
+                      <p className="caption--md mypage-card--description">자주 쓰는 카테고리를 관리합니다.</p>
+                    </div>
+                    <CategoryManager categories={categoryState.categories} onAdd={categoryState.addCategory} onDelete={categoryState.deleteCategory} onToggleFavorite={categoryState.toggleFavorite} />
+                  </section>
                 </div>
                 <WithdrawCard email={overview.email} />
               </>
