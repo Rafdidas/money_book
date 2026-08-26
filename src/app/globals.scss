@@ -10,6 +10,7 @@
 @use "../components/expense/expense-list";
 @use "../components/calendar/calendar-view";
 @use "../components/chart/expense-pie-chart";
+@use "../components/category-manager";
 @use "../styles/typography";
 @use "../styles/input";
 @use "../styles/autocomplete";

@@ -18,20 +18,8 @@ import Loading from "@/components/loading/Loading";
 import { useAppData } from "@/app/providers";
 import { useCustomCategories } from "@/lib/hooks/useCustomCategories";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
-import {
-  DEMO_USER_ID,
-  readDemoCustomCategories,
-  readDemoExpenses,
-  writeDemoCustomCategories,
-  writeDemoExpenses,
-} from "@/lib/demo";
+import { DEMO_USER_ID, readDemoExpenses, writeDemoExpenses } from "@/lib/demo";
 import "@/lib/chart";
-import {
-  deleteCustomCategory,
-  getRecentCustomCategories,
-  saveCustomCategory,
-  type CustomCategory,
-} from "@/lib/api/customCategories";
 import {
   createExpense,
   createExpenses,
@@ -83,23 +71,16 @@ import {
   getSelectableDetailIds,
   pruneSelectedDetailIds,
 } from "./detailBulkDelete";
-import {
-  getRecentCategoriesForType,
-  loadRecentCustomCategories,
-  removeCustomCategory,
-  upsertRecentCategory,
-} from "./customCategories";
+import { getRecentCategoriesForType } from "./customCategories";
 import {
   categoryChartColors,
   categoryOptions,
   customCategoryValue,
+  defaultCategoryOptionsByType,
   fixedExpenseMetaPattern,
-  incomeCategoryOptions,
-  investmentCategoryOptions,
   recurringPauseMarker,
   recurringPausePattern,
   savingsCategory,
-  savingsCategoryOptions,
   savingsMetaPattern,
   weekdayLabels,
 } from "./constants";
@@ -133,12 +114,7 @@ import {
   parseSavingsMemo,
 } from "./utils";
 
-const getInlineCategoryOptions = (type: InlineEntryType) => {
-  if (type === "income") return incomeCategoryOptions;
-  if (type === "savings") return savingsCategoryOptions;
-  if (type === "investment") return investmentCategoryOptions;
-  return categoryOptions;
-};
+const getInlineCategoryOptions = (type: InlineEntryType) => defaultCategoryOptionsByType[type];
 
 const getInlineEntryType = (expense: Expense): InlineEntryType => {
   if (expense.entry_type) return expense.entry_type;
@@ -272,9 +248,12 @@ export default function HomeClient() {
     isAuthResolved,
   } = useAppData();
   const { alert, confirm } = useAppAlert();
-  const categoryState = useCustomCategories(isDemoMode, isAuthResolved);
+  const categoryState = useCustomCategories({
+    isDemoMode,
+    enabled: isAuthResolved,
+    defaultOptionsByType: defaultCategoryOptionsByType,
+  });
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [storedSavingsAccounts, setStoredSavingsAccounts] = useState<StoredSavingsAccount[]>([]);
   const [storedSavingsPayments, setStoredSavingsPayments] = useState<SavingsPayment[]>([]);
@@ -382,7 +361,6 @@ export default function HomeClient() {
     if (isDemoMode) {
       window.queueMicrotask(() => {
         setExpenses(readDemoExpenses());
-        setCustomCategories(readDemoCustomCategories());
         setStoredSavingsAccounts([]);
         setStoredSavingsPayments([]);
         setStoredFixedExpenseRules([]);
@@ -403,7 +381,6 @@ export default function HomeClient() {
           payments,
           fixedRules,
           fixedPayments,
-          categories,
         ] = await Promise.all([
           getExpensesByRange(dashboardRange.from, dashboardRange.to),
           getSavingsAccounts(),
@@ -414,11 +391,9 @@ export default function HomeClient() {
           getFixedExpensePaymentsByRange(dashboardRange.from, dashboardRange.to, {
             includeCancelled: true,
           }),
-          loadRecentCustomCategories(getRecentCustomCategories),
         ]);
         if (!isCancelled) {
           setExpenses(data || []);
-          setCustomCategories(categories);
           setStoredSavingsAccounts(accounts);
           setStoredSavingsPayments(payments);
           setStoredFixedExpenseRules(fixedRules);
@@ -427,7 +402,6 @@ export default function HomeClient() {
       } catch {
         if (!isCancelled) {
           setExpenses([]);
-          setCustomCategories([]);
           setStoredSavingsAccounts([]);
           setStoredSavingsPayments([]);
           setStoredFixedExpenseRules([]);
@@ -860,8 +834,8 @@ export default function HomeClient() {
   const calendarDays = getCalendarDays(selectedDate);
   const activeCategoryOptions = getInlineCategoryOptions(inlineType);
   const recentCustomCategories = useMemo(
-    () => getRecentCategoriesForType(customCategories, inlineType),
-    [customCategories, inlineType],
+    () => getRecentCategoriesForType(categoryState.categories, inlineType),
+    [categoryState.categories, inlineType],
   );
   const activeInlineTabType =
     inlineFormMode === "edit" ? inlineEditListType : inlineType;
@@ -1351,22 +1325,11 @@ export default function HomeClient() {
     setInlineCategory(nextCategoryOptions[0]);
     setInlineCustomCategory("");
   };
-  const handleCustomCategoryDelete = async (id: string) => {
-    try {
-      if (isDemoMode) {
-        const nextCategories = removeCustomCategory(customCategories, id);
-        writeDemoCustomCategories(nextCategories);
-        setCustomCategories(nextCategories);
-        return;
-      }
-
-      await deleteCustomCategory(id);
-      setCustomCategories((previousCategories) =>
-        removeCustomCategory(previousCategories, id),
-      );
-    } catch {
-      alert("최근 카테고리를 삭제하지 못했습니다.");
-    }
+  const handleUseCustomCategory = (category: { type: InlineEntryType; name: string }) => {
+    handleInlineClassificationChange(category.type);
+    setInlineCategory(customCategoryValue);
+    setInlineCustomCategory(category.name);
+    setIsCategoryManagerOpen(false);
   };
   const handleSavingsModeChange = (mode: InlineFormMode) => {
     setSavingsFormMode(mode);
@@ -2295,23 +2258,7 @@ export default function HomeClient() {
       }
       if (inlineCategory === customCategoryValue) {
         try {
-          if (isDemoMode) {
-            const savedCategory: CustomCategory = {
-              id: `demo-custom-category-${Date.now()}`,
-              type: inlineType,
-              name: category,
-              lastUsedAt: new Date().toISOString(),
-              isFavorite: false,
-            };
-            const nextCategories = upsertRecentCategory(customCategories, savedCategory);
-            writeDemoCustomCategories(nextCategories);
-            setCustomCategories(nextCategories);
-          } else {
-            const savedCategory = await saveCustomCategory(inlineType, category);
-            setCustomCategories((previousCategories) =>
-              upsertRecentCategory(previousCategories, savedCategory),
-            );
-          }
+          await categoryState.recordUsedCategory(inlineType, category);
         } catch {
           alert("최근 카테고리를 저장하지 못했습니다.");
         }
@@ -2671,7 +2618,7 @@ export default function HomeClient() {
                                 <button
                                   type="button"
                                   aria-label={`${customCategory.name} 최근 카테고리 삭제`}
-                                  onClick={() => handleCustomCategoryDelete(customCategory.id)}
+                                  onClick={() => void categoryState.deleteCategory(customCategory)}
                                 >
                                   <AppIcon name="close" />
                                 </button>
@@ -3607,14 +3554,24 @@ export default function HomeClient() {
         </Modal>
       ) : null}
       {isCategoryManagerOpen ? (
-        <Modal onClose={() => setIsCategoryManagerOpen(false)}>
+        <Modal onClose={() => setIsCategoryManagerOpen(false)} ariaLabelledBy="home-category-manager-title">
           <div className="card">
-            <h2 className="title--md">내 카테고리 관리</h2>
             <CategoryManager
+              headingId="home-category-manager-title"
+              heading="내 카테고리 관리"
               categories={categoryState.categories}
+              selectedType={inlineType}
+              isLoading={categoryState.isLoading}
+              loadError={categoryState.loadError}
+              mutationError={categoryState.mutationError}
+              busyKey={categoryState.busyKey}
+              onTypeChange={handleInlineClassificationChange}
+              onRetry={() => void categoryState.reload()}
               onAdd={categoryState.addCategory}
+              onRename={categoryState.renameCategory}
               onDelete={categoryState.deleteCategory}
               onToggleFavorite={categoryState.toggleFavorite}
+              onUse={handleUseCustomCategory}
             />
             <button type="button" className="button button--sm button--outline" onClick={() => setIsCategoryManagerOpen(false)}>
               닫기

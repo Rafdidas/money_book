@@ -1,19 +1,21 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { useAppData } = vi.hoisted(() => ({ useAppData: vi.fn() }));
+const { useAppData, useCustomCategories } = vi.hoisted(() => ({ useAppData: vi.fn(), useCustomCategories: vi.fn() }));
 
 vi.mock("@/app/providers", () => ({ useAppData }));
 vi.mock("@/components/common/SideMenu", () => ({ default: () => null }));
 vi.mock("@/lib/api/account", () => ({
   getAccountOverview: () => Promise.reject(new Error("not needed in shell tests")),
 }));
+vi.mock("@/lib/hooks/useCustomCategories", () => ({ useCustomCategories }));
 
 import MyPage from "./page";
 
 describe("MyPage shell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useCustomCategories.mockReturnValue({ categories: [], isLoading: false, loadError: "", mutationError: "", busyKey: "", reload: vi.fn() });
   });
 
   it("shows the demo notice instead of account controls", () => {

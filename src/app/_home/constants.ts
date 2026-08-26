@@ -3,6 +3,12 @@ export const incomeCategoryOptions = ["💵월급", "💸보너스", "📩용돈
 export const savingsCategory = "📩저축";
 export const savingsCategoryOptions = [savingsCategory];
 export const investmentCategoryOptions = ["📈주식"];
+export const defaultCategoryOptionsByType = {
+  expense: categoryOptions,
+  income: incomeCategoryOptions,
+  savings: savingsCategoryOptions,
+  investment: investmentCategoryOptions,
+};
 export const savingsMetaPrefix = "[[savings:";
 export const savingsMetaPattern = /\s*\[\[savings:([^\]]+)\]\]\s*$/;
 export const fixedExpenseMetaPrefix = "[[fixed-expense:";

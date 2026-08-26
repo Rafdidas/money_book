@@ -12,6 +12,8 @@ import WithdrawCard from "@/components/mypage/WithdrawCard";
 import { useAppData } from "@/app/providers";
 import { getAccountOverview, type AccountOverview } from "@/lib/api/account";
 import { useCustomCategories } from "@/lib/hooks/useCustomCategories";
+import { defaultCategoryOptionsByType } from "@/app/_home/constants";
+import type { CustomCategoryType } from "@/lib/api/customCategories";
 import "./mypage.scss";
 
 export default function MyPage() {
@@ -19,7 +21,12 @@ export default function MyPage() {
   const [overview, setOverview] = useState<AccountOverview | null>(null);
   const [loadError, setLoadError] = useState("");
   const [name, setName] = useState(displayName);
-  const categoryState = useCustomCategories(isDemoMode, isAuthResolved);
+  const categoryState = useCustomCategories({
+    isDemoMode,
+    enabled: isAuthResolved,
+    defaultOptionsByType: defaultCategoryOptionsByType,
+  });
+  const [categoryType, setCategoryType] = useState<CustomCategoryType>("expense");
 
   useEffect(() => {
     if (!isAuthResolved || isDemoMode) {
@@ -89,11 +96,21 @@ export default function MyPage() {
                   <PasswordCard email={overview.email} />
                   <ConsentCard overview={overview} />
                   <section className="card mypage-card column-group column-group--gap-16">
-                    <div>
-                      <h3 className="title--sm mypage-card--title">내 카테고리</h3>
-                      <p className="caption--md mypage-card--description">자주 쓰는 카테고리를 관리합니다.</p>
-                    </div>
-                    <CategoryManager categories={categoryState.categories} onAdd={categoryState.addCategory} onDelete={categoryState.deleteCategory} onToggleFavorite={categoryState.toggleFavorite} />
+                    <CategoryManager
+                      heading="내 카테고리"
+                      categories={categoryState.categories}
+                      selectedType={categoryType}
+                      isLoading={categoryState.isLoading}
+                      loadError={categoryState.loadError}
+                      mutationError={categoryState.mutationError}
+                      busyKey={categoryState.busyKey}
+                      onTypeChange={setCategoryType}
+                      onRetry={() => void categoryState.reload()}
+                      onAdd={categoryState.addCategory}
+                      onRename={categoryState.renameCategory}
+                      onDelete={categoryState.deleteCategory}
+                      onToggleFavorite={categoryState.toggleFavorite}
+                    />
                   </section>
                 </div>
                 <WithdrawCard email={overview.email} />

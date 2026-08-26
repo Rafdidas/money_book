@@ -37,6 +37,13 @@ describe("custom category list helpers", () => {
     expect(getRecentCategoriesForType(categories, "income")).toEqual([incomeCategory]);
   });
 
+  it("places favorite categories ahead of newer non-favorites", () => {
+    const favorite = { ...category("favorite", "expense", "반려동물", "2026-07-19T10:00:00.000Z"), isFavorite: true };
+    const recent = category("recent", "expense", "운동", "2026-07-20T10:00:00.000Z");
+
+    expect(getRecentCategoriesForType([recent, favorite], "expense")).toEqual([favorite, recent]);
+  });
+
   it("moves a reused normalized category to the front without duplicating it", () => {
     const categories = [
       category("income", "income", "급여", "2026-07-20T10:00:00.000Z"),
