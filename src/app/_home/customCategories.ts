@@ -8,7 +8,10 @@ export const getRecentCategoriesForType = (
 ): CustomCategory[] =>
   categories
     .filter((category) => category.type === type)
-    .toSorted((left, right) => right.lastUsedAt.localeCompare(left.lastUsedAt))
+    .toSorted((left, right) => {
+      if (left.isFavorite !== right.isFavorite) return Number(right.isFavorite) - Number(left.isFavorite);
+      return right.lastUsedAt.localeCompare(left.lastUsedAt);
+    })
     .slice(0, 5);
 
 export const upsertRecentCategory = (

@@ -7,7 +7,8 @@ export const DEMO_DATA_VERSION_STORAGE_KEY = "money-book:demo-data-version";
 export const DEMO_INVESTMENT_OWNER_KEY = "demo";
 export const DEMO_STOCK_HOLDINGS_STORAGE_KEY = "money-book:stock-holdings:demo";
 export const DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY = "money-book:demo-stock-holdings-version";
-export const DEMO_CUSTOM_CATEGORIES_STORAGE_KEY = "mb-demo-custom-categories:v1";
+export const DEMO_CUSTOM_CATEGORIES_STORAGE_KEY = "mb-demo-custom-categories:v2";
+const LEGACY_DEMO_CUSTOM_CATEGORIES_STORAGE_KEY = "mb-demo-custom-categories:v1";
 export const DEMO_MODE_COOKIE_KEY = "money-book-demo-mode";
 export const DEMO_USER_ID = "demo-user";
 
@@ -38,7 +39,8 @@ const isDemoCustomCategory = (value: unknown): value is CustomCategory => {
     typeof category.name === "string" &&
     category.name.trim().length > 0 &&
     typeof category.lastUsedAt === "string" &&
-    isParseableIsoTimestamp(category.lastUsedAt)
+    isParseableIsoTimestamp(category.lastUsedAt) &&
+    (category.isFavorite === undefined || typeof category.isFavorite === "boolean")
   );
 };
 
@@ -381,14 +383,19 @@ export const writeDemoExpenses = (expenses: Expense[]) => {
 export const readDemoCustomCategories = (): CustomCategory[] => {
   if (typeof window === "undefined") return [];
 
-  const storedCategories = window.localStorage.getItem(DEMO_CUSTOM_CATEGORIES_STORAGE_KEY);
+  const storedCategories = window.localStorage.getItem(DEMO_CUSTOM_CATEGORIES_STORAGE_KEY)
+    ?? window.localStorage.getItem(LEGACY_DEMO_CUSTOM_CATEGORIES_STORAGE_KEY);
   if (!storedCategories) return [];
 
   try {
     const parsedCategories: unknown = JSON.parse(storedCategories);
     if (!Array.isArray(parsedCategories)) return [];
 
-    return parsedCategories.filter(isDemoCustomCategory);
+    const categories = parsedCategories.filter(isDemoCustomCategory)
+      .map((category) => ({ ...category, isFavorite: category.isFavorite ?? false }));
+    window.localStorage.setItem(DEMO_CUSTOM_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+    window.localStorage.removeItem(LEGACY_DEMO_CUSTOM_CATEGORIES_STORAGE_KEY);
+    return categories;
   } catch {
     return [];
   }
@@ -414,6 +421,7 @@ export const clearDemoMode = () => {
   window.localStorage.removeItem(DEMO_STOCK_HOLDINGS_STORAGE_KEY);
   window.localStorage.removeItem(DEMO_STOCK_HOLDINGS_VERSION_STORAGE_KEY);
   window.localStorage.removeItem(DEMO_CUSTOM_CATEGORIES_STORAGE_KEY);
+  window.localStorage.removeItem(LEGACY_DEMO_CUSTOM_CATEGORIES_STORAGE_KEY);
   window.document.cookie = `${DEMO_MODE_COOKIE_KEY}=; Path=/; Max-Age=0; SameSite=Lax`;
 };
 

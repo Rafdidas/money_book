@@ -35,7 +35,13 @@ describe("demo custom category storage", () => {
       ]),
     );
 
-    expect(readDemoCustomCategories()).toEqual([category]);
+    expect(readDemoCustomCategories()).toEqual([{ ...category, isFavorite: false }]);
+  });
+
+  it("migrates legacy categories with a non-favorite default", () => {
+    window.localStorage.setItem("mb-demo-custom-categories:v1", JSON.stringify([category]));
+
+    expect(readDemoCustomCategories()).toEqual([{ ...category, isFavorite: false }]);
   });
 
   it("writes categories and clears them with demo reset", () => {

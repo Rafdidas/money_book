@@ -1154,3 +1154,14 @@ with a simpler monthly cash-flow summary.
 - 30일 관찰 데이터 153건 중 150건이 WebAssembly 관련으로 판단되는 `script-src` 보고였고, `unsafe-eval` 대신 WebAssembly 전용 `'wasm-unsafe-eval'`을 Report-Only 정책에 추가했습니다.
 - 운영 코드·HTML에서 재현되지 않은 `fonts.gstatic.com` 보고 1건과 Vercel Preview의 `manifest-src` 2건은 허용 목록에 추가하지 않았습니다.
 - 차단 CSP 전환은 하지 않았으며, 변경 후 7일간 Report-Only 보고를 추가 관찰합니다.
+
+# 2026-08-26 사용자 카테고리·즐겨찾기 관리 (진행 중)
+
+- 브랜치: `codex/custom-category-management`; 변경 사항은 아직 커밋되지 않았습니다.
+- 작성됨: 즐겨찾기 API/마이그레이션, 데모 v1→v2 보정, 마이페이지 관리 카드, 홈 관리 모달 진입, 즐겨찾기 우선 추천 정렬.
+- 운영 DB에는 `20260825000000_add_custom_category_favorites.sql`을 아직 적용하지 않았습니다.
+- 미완성: 관리 패널 전용 CSS 클래스 연결, 홈 추천 상태와 관리 상태 단일화, 삭제 확인/5개 제한 오류/이름 수정 UI, 화면 테스트.
+- 현재 카드 목표: 내 정보·비밀번호 변경 / 약관 동의·내 카테고리 2×2 배치.
+- 확인된 테스트: API 8개, demo 4개, 홈 헬퍼 4개 통과.
+- `npm run build`는 2026-08-25에 통과했으나, 이후 후속 UI 수정은 재검증 필요.
+- 재개 시: `git diff`, `npm run lint`, `npm run build`를 먼저 실행하고 미완성 UI를 정리합니다.
