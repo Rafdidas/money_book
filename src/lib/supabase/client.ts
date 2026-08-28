@@ -1,5 +1,9 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { clearLegacyAuthStorage } from "@/lib/supabase/auth-storage";
+import {
+  AUTH_STORAGE_KEY,
+  authStorage,
+  clearLegacyAuthStorage,
+} from "@/lib/supabase/auth-storage";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey =
@@ -8,6 +12,12 @@ const supabaseKey =
 
 clearLegacyAuthStorage();
 
-export const createClient = () => createBrowserClient(supabaseUrl, supabaseKey);
+export const createClient = () =>
+  createBrowserClient(supabaseUrl, supabaseKey, {
+    auth: {
+      storage: authStorage,
+      storageKey: AUTH_STORAGE_KEY,
+    },
+  });
 
 export const supabase = createClient();

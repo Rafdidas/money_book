@@ -1176,3 +1176,12 @@ with a simpler monthly cash-flow summary.
 - 자동 검증: `npm run lint` 통과, `npm test` 40개 파일 173개 통과, `npm run build` 통과. 새 관리 패널·상태 훅·즐겨찾기 정렬·모달 테스트 및 데모 E2E 테스트를 포함합니다.
 - 화면 검증: 별도 프로덕션 서버(3100)에서 데모로 카테고리 추가→즐겨찾기 지정까지 데스크톱 1280px·모바일 393px에서 확인했고, 두 화면 모두 가로 오버플로가 없었습니다. 로컬에서 Vercel Analytics/Speed Insights 스크립트만 404이며 앱 오류는 없었습니다.
 - 운영 DB에는 `20260825000000_add_custom_category_favorites.sql`을 아직 적용하지 않았습니다. 코드 배포 후 이 마이그레이션을 적용해야 실제 계정의 즐겨찾기가 작동합니다.
+
+# 2026-08-28 투자관리 진입 JWT 오류 수정
+
+- 원인: `src/lib/supabase/client.ts`가 `authStorage`와 `AUTH_STORAGE_KEY`를 전달하지 않아 Supabase 기본 저장소의 오래된 토큰을 사용했습니다. 투자관리 진입 시 `getUser()`가 이를 검증하며 `JWT issued at future` 오류가 사용자에게 노출됐습니다.
+- 수정: 브라우저 Supabase 클라이언트에 앱의 로그인 유지/세션 분리 저장소와 전용 저장소 키를 연결했습니다.
+- 회귀 테스트: `src/lib/supabase/client.test.ts`가 해당 저장소 설정 전달을 검증합니다. 환경변수가 없는 단위 테스트에서도 저장소 설정만 정확히 검증하도록 URL·키 기대값을 `undefined`로 고정했습니다.
+- 검증: 대상 테스트 통과, `npm run lint` 통과, `npm run build` 통과.
+- 참고: 전체 `npm test`는 새 미구현 FAQ 테스트(`src/app/_intro/IntroPage.test.tsx`) 1건이 `자주 묻는 질문` heading을 찾지 못해 실패합니다. 이번 인증 변경과 무관합니다.
+- 화면 자동 확인: 브라우저 제어 런타임이 시작 직후 종료되어 로그인한 `/app → /app/invest` 전환을 자동으로 재현하지 못했습니다.
