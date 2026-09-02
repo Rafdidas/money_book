@@ -1,3 +1,10 @@
+# 2026-09-03 로그인 세션 쿠키 회귀 수정
+
+- 원인: `422429d`가 Supabase SSR 브라우저 클라이언트의 기본 쿠키 저장소를 `localStorage`/`sessionStorage` 전용 저장소로 덮어썼습니다. 그 결과 비밀번호 로그인 직후 `/app` 프록시가 세션 쿠키를 받지 못해 `/auth/login`으로 되돌렸습니다.
+- 수정: `src/lib/supabase/client.ts`에서 해당 저장소 재정의를 제거해 Supabase SSR의 기본 쿠키 기반 세션 동기화를 복구했습니다.
+- 회귀 테스트: `src/lib/supabase/client.test.ts`가 서버 보호 경로를 위한 기본 쿠키 저장소를 유지하는지 확인합니다. 수정 전 실패, 수정 후 `npm test -- src/lib/supabase/client.test.ts` 통과.
+- 검증: `npm test -- src/lib/supabase/client.test.ts`, `npm run lint`, `npm run build` 통과. `git diff --check` 통과.
+
 # 2026-08-26 사용자 카테고리 관리 — 현재 상태와 복구 원칙
 
 - 작업 브랜치: `codex/custom-category-management`.
