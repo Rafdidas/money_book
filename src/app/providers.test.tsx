@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -22,12 +22,13 @@ vi.mock("@/lib/supabase/auth-url", () => ({ consumeAuthHashSession }));
 vi.mock("@lottiefiles/dotlottie-react", () => ({ setWasmUrl: vi.fn() }));
 vi.mock("@/components/app-alert/AppAlertProvider", () => ({ default: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock("@/components/common/ThemeProvider", () => ({ default: ({ children }: { children: React.ReactNode }) => children }));
+const router = { replace };
 vi.mock("next/navigation", () => ({
   usePathname: () => "/app",
-  useRouter: () => ({ replace }),
+  useRouter: () => router,
 }));
 
-import Providers, { getAuthenticatedDestination } from "./providers";
+import Providers, { getAuthenticatedDestination, useAppData } from "./providers";
 
 const legacyProfile = {
   terms_version: "2026-01-01",
@@ -65,6 +66,24 @@ describe("getAuthenticatedDestination", () => {
 
   it("routes a signed-out user to login", async () => {
     await expect(getAuthenticatedDestination()).resolves.toBe("/auth/login");
+  });
+
+  it("reuses a freshly authenticated user while still checking consent", async () => {
+    getCurrentUserLegalConsent.mockResolvedValue(legacyProfile);
+    await expect(getAuthenticatedDestination(authenticatedUser)).resolves.toBe("/auth/consent");
+    expect(getUser).not.toHaveBeenCalled();
+  });
+
+  it("resolves the app identity with one user request", async () => {
+    delete process.env.NEXT_PUBLIC_LEGAL_CONSENT_GATE;
+    getUser.mockResolvedValue({ data: { user: authenticatedUser } });
+    function Identity() {
+      const { isAuthResolved, displayEmail } = useAppData();
+      return <span>{isAuthResolved ? displayEmail : "loading"}</span>;
+    }
+    render(<Providers><Identity /></Providers>);
+    expect(await screen.findByText(authenticatedUser.email)).toBeInTheDocument();
+    expect(getUser).toHaveBeenCalledTimes(1);
   });
 
   it("routes a user with legacy consent to consent", async () => {

@@ -18,6 +18,7 @@ import { needsCurrentLegalConsent } from "@/lib/legal/consentStatus";
 import { consumeAuthHashSession } from "@/lib/supabase/auth-url";
 import { supabase } from "@/lib/supabase/client";
 import type { ReactNode } from "react";
+import type { User } from "@supabase/supabase-js";
 
 setWasmUrl("/dotlottie-player.wasm");
 
@@ -33,14 +34,19 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 
 export type AuthenticatedDestination = "/app" | "/auth/consent" | "/auth/login";
 
-export const getAuthenticatedDestination = async (): Promise<AuthenticatedDestination> => {
+// 로그인 응답 또는 getUser()로 방금 검증한 사용자만 전달한다.
+export const getAuthenticatedDestination = async (
+  authenticatedUser?: Pick<User, "id"> | null,
+): Promise<AuthenticatedDestination> => {
   if (isDemoModeEnabled()) {
     return "/app";
   }
 
-  const { data: userData } = await supabase.auth.getUser();
+  const user = authenticatedUser === undefined
+    ? (await supabase.auth.getUser()).data.user
+    : authenticatedUser;
 
-  if (!userData.user) {
+  if (!user) {
     return "/auth/login";
   }
 
@@ -49,7 +55,7 @@ export const getAuthenticatedDestination = async (): Promise<AuthenticatedDestin
   }
 
   try {
-    const profile = await getCurrentUserLegalConsent(userData.user.id);
+    const profile = await getCurrentUserLegalConsent(user.id);
     return needsCurrentLegalConsent(profile) ? "/auth/consent" : "/app";
   } catch {
     // 동의 조회 실패로 이미 인증된 사용자의 접근을 막지 않는다.
@@ -143,7 +149,12 @@ export default function Providers({ children }: { children: ReactNode }) {
       }
 
       try {
-        const destination = await getAuthenticatedDestination();
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData.user;
+
+        if (isCancelled) return;
+
+        const destination = await getAuthenticatedDestination(user);
 
         if (isCancelled) return;
 
@@ -151,11 +162,6 @@ export default function Providers({ children }: { children: ReactNode }) {
           router.replace(destination);
           return;
         }
-
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData.user;
-
-        if (isCancelled) return;
 
         if (!user) {
           router.replace("/auth/login");

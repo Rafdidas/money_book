@@ -361,6 +361,50 @@
   margin-bottom: 0;
 }
 
+.auth-submit--login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  &:disabled {
+    cursor: wait;
+    opacity: 1;
+  }
+}
+
+.auth-button-spinner {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: authButtonSpin 0.8s linear infinite;
+}
+
+@keyframes authButtonSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-button-spinner { animation: none; }
+}
+
+.auth-login-status {
+  min-height: 40px;
+  margin: 10px 0 0;
+  color: var(--auth-text2);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.auth-login-status + .auth-bottom-link {
+  margin-top: 8px;
+}
+
 .auth-demo-button {
   background: var(--auth-blue50);
   color: var(--auth-brand);

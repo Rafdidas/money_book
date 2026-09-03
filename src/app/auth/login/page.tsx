@@ -14,13 +14,22 @@ import { supabase } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
+  const hasStartedLogin = useRef(false);
+  const loginInFlight = useRef(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "authenticating" | "navigating">("idle");
+  const isSubmitting = phase !== "idle";
+  const [isSlow, setIsSlow] = useState(false);
   const [rememberLogin, setRememberLoginState] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  useEffect(() => {
+    if (!isSubmitting) return;
+    const timer = window.setTimeout(() => setIsSlow(true), 8000);
+    return () => window.clearTimeout(timer);
+  }, [isSubmitting]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -29,11 +38,13 @@ export default function LoginPage() {
       try {
         const destination = await getAuthenticatedDestination();
 
-        if (!isCancelled && destination !== "/auth/login") {
+        if (!isCancelled && !hasStartedLogin.current && destination !== "/auth/login") {
+          loginInFlight.current = true;
+          setPhase("navigating");
           router.replace(destination);
         }
       } catch {
-        if (!isCancelled) {
+        if (!isCancelled && !hasStartedLogin.current) {
           setPasswordError("로그인 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
         }
       }
@@ -48,6 +59,7 @@ export default function LoginPage() {
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (loginInFlight.current) return;
 
     const trimmedEmail = email.trim();
     let nextEmailError = "";
@@ -69,42 +81,46 @@ export default function LoginPage() {
     }
 
     try {
-      setIsSubmitting(true);
+      hasStartedLogin.current = true;
+      loginInFlight.current = true;
+      setIsSlow(false);
+      setPhase("authenticating");
       setRememberLogin(rememberLogin);
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
 
       if (error) {
         setRememberLogin(false);
-        formRef.current?.reset();
-        setEmail("");
-        setPassword("");
         setPasswordError("이메일 또는 비밀번호를 확인해주세요.");
-        alert(`로그인 실패: ${error.message}`);
+        loginInFlight.current = false;
+        setPhase("idle");
         return;
       }
 
+      if (!data.user) throw new Error("Missing authenticated user");
       disableDemoMode();
-      formRef.current?.reset();
-      setEmail("");
-      setPassword("");
-      router.replace(await getAuthenticatedDestination());
-      router.refresh();
+      setPhase("navigating");
+      const destination = await getAuthenticatedDestination(data.user);
+      if (destination === "/auth/login") throw new Error("Missing destination");
+      router.replace(destination);
     } catch {
-      setPasswordError("로그인 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
-      router.replace("/auth/login");
-    } finally {
-      setIsSubmitting(false);
+      setPasswordError("로그인을 완료하지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해주세요.");
+      loginInFlight.current = false;
+      setPhase("idle");
     }
   };
 
   const handleDemoLogin = () => {
+    if (loginInFlight.current) return;
+    hasStartedLogin.current = true;
+    loginInFlight.current = true;
+    setIsSlow(false);
+    setPhase("navigating");
     enableDemoMode();
     router.replace("/app");
-    router.refresh();
   };
 
   return (
@@ -137,7 +153,7 @@ export default function LoginPage() {
               </h1>
               <p className="auth-subtitle">머니북 계정으로 로그인해요</p>
 
-              <form ref={formRef} className="auth-form" onSubmit={handleLogin}>
+              <form className="auth-form" onSubmit={handleLogin}>
                 <div className="auth-field">
                   <label htmlFor="login-email">이메일</label>
                   <input
@@ -180,7 +196,7 @@ export default function LoginPage() {
                       }
                     }}
                   />
-                  {passwordError ? <p className="auth-error-text">{passwordError}</p> : null}
+                  {passwordError ? <p className="auth-error-text" role="alert">{passwordError}</p> : null}
                 </div>
 
                 <div className="auth-login-options">
@@ -196,8 +212,9 @@ export default function LoginPage() {
                   </Link>
                 </div>
 
-                <button type="submit" className="auth-submit" disabled={isSubmitting}>
-                  {isSubmitting ? "로그인 중..." : "로그인"}
+                <button type="submit" className="auth-submit auth-submit--login" disabled={isSubmitting} aria-busy={isSubmitting}>
+                  {isSubmitting ? <span className="auth-button-spinner" aria-hidden="true" /> : null}
+                  {phase === "navigating" ? "화면 이동 중..." : isSubmitting ? "로그인 중..." : "로그인"}
                 </button>
                 <button
                   type="button"
@@ -207,6 +224,15 @@ export default function LoginPage() {
                 >
                   데모 체험하기
                 </button>
+                <p className="auth-login-status" role="status" aria-live="polite" aria-atomic="true">
+                  {isSubmitting
+                    ? isSlow
+                      ? "평소보다 시간이 걸리고 있어요. 잠시만 기다려주세요."
+                      : phase === "navigating"
+                        ? "화면을 준비하고 있어요. 잠시만 기다려주세요."
+                        : "로그인 정보를 확인하고 있어요."
+                    : ""}
+                </p>
                 <p className="auth-bottom-link">
                   아직 계정이 없으신가요? <Link href="/auth/signup">회원가입</Link>
                 </p>
