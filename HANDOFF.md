@@ -1192,3 +1192,11 @@ with a simpler monthly cash-flow summary.
 - 검증: 대상 테스트 통과, `npm run lint` 통과, `npm run build` 통과.
 - 참고: 전체 `npm test`는 새 미구현 FAQ 테스트(`src/app/_intro/IntroPage.test.tsx`) 1건이 `자주 묻는 질문` heading을 찾지 못해 실패합니다. 이번 인증 변경과 무관합니다.
 - 화면 자동 확인: 브라우저 제어 런타임이 시작 직후 종료되어 로그인한 `/app → /app/invest` 전환을 자동으로 재현하지 못했습니다.
+
+# 2026-09-03 문의 메뉴 읽음 배지
+
+- `inquiries.answer_read_at` 읽음 시각과 `mark_inquiry_answer_as_read(uuid)` 보안 정의 RPC를 추가하는 `20260903000000_add_inquiry_answer_read_state.sql` 마이그레이션을 작성했습니다. **운영 Supabase에는 아직 적용하지 않았습니다.**
+- 일반 사용자는 읽지 않은 답변 완료 문의 수를, 운영자는 답변 대기 문의 수를 사이드바·모바일 드로어·하단 메뉴에서 확인합니다. 운영자 메뉴 라벨은 `문의 관리`로 표시됩니다.
+- 사용자가 답변 완료 문의의 상세 내용을 열면 읽음 시각을 저장하고, 메뉴 알림 갱신 이벤트로 배지 수를 즉시 새로 고칩니다. 답변을 수정·저장하면 읽음 시각은 다시 비웁니다.
+- 검증: `src/lib/inquiryMenu.test.ts` 5개 통과, `npm run lint` 통과, `npm run build` 통과. 요청에 따라 미구현 FAQ를 검사하던 `src/app/_intro/IntroPage.test.tsx`를 제거한 뒤 전체 `npm test`도 43개 파일·180개 테스트 모두 통과했습니다.
+- 화면 확인: `http://localhost:3001/app` 데모에서 데스크톱 및 390px 모바일 메뉴 렌더링·상호작용을 확인했습니다. 데모 모드는 실제 문의 데이터를 조회하지 않으므로 답변/대기 배지의 실데이터 표시와 읽음 RPC는 마이그레이션 적용 후 실계정에서 확인이 필요합니다.

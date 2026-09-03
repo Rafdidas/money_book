@@ -101,7 +101,7 @@
 
     > span {
       color: var(--on-surface-higher);
-      font-size: 19px;
+      // font-size: 19px;
     }
 
     > .app-icon {
@@ -128,6 +128,28 @@
       > .app-icon {
         fill: var(--primary-higher);
       }
+    }
+  }
+
+  &--item-label {
+    min-width: 0;
+  }
+
+  &--inquiry-badge {
+    margin-left: auto;
+    padding: 2px 6px;
+    border-radius: 999px;
+    color: var(--on-primary);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+
+    &.is-answer {
+      background: var(--primary);
+    }
+
+    &.is-pending {
+      background: var(--error);
     }
   }
 
@@ -374,6 +396,34 @@
     transition:
       transform 220ms ease,
       opacity 220ms ease;
+
+    &--item {
+      position: relative;
+    }
+
+    &--inquiry-badge {
+      position: absolute;
+      top: 3px;
+      right: 12px;
+      display: grid;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      color: var(--on-primary);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 16px;
+      place-items: center;
+
+      &.is-answer {
+        background: var(--primary);
+      }
+
+      &.is-pending {
+        background: var(--error);
+      }
+    }
 
     &.is-compact {
       opacity: 0.92;

@@ -11,7 +11,13 @@ import LegalLinks from "@/components/common/LegalLinks";
 // 다크모드 토글: 로고 완성 후 주석 해제하고 배포 예정
 // import { useTheme } from "@/components/common/ThemeProvider";
 import { disableDemoMode } from "@/lib/demo";
+import { getInquiryMenuNotification } from "@/lib/api/inquiries";
+import {
+  getInquiryMenuBadge,
+  INQUIRY_MENU_NOTIFICATION_UPDATED_EVENT,
+} from "@/lib/inquiryMenu";
 import { supabase } from "@/lib/supabase/client";
+import type { ProfileRole } from "@/types/inquiry";
 
 type SideMenuProps = {
   displayName: string;
@@ -68,8 +74,41 @@ export default function SideMenu({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
   const [isBottomNavCompact, setIsBottomNavCompact] = useState(false);
+  const [inquiryRole, setInquiryRole] = useState<ProfileRole | null>(null);
+  const [inquiryCount, setInquiryCount] = useState(0);
   const lastScrollY = useRef(0);
   const isMobileMenuOpen = mobileMenuPath === pathname;
+  const inquiryBadge = inquiryRole ? getInquiryMenuBadge(inquiryRole, inquiryCount) : null;
+
+  const getMenuLabel = (href: string, label: string) =>
+    href === "/app/inquiries" && inquiryRole === "ADMIN" ? "문의 관리" : label;
+
+  useEffect(() => {
+    if (isDemoMode) return;
+
+    let isCurrent = true;
+
+    const loadInquiryNotification = () => {
+      void getInquiryMenuNotification()
+        .then(({ role, count }) => {
+          if (!isCurrent) return;
+
+          setInquiryRole(role);
+          setInquiryCount(count);
+        })
+        .catch(() => {
+          // 메뉴 알림을 불러오지 못해도 기본 메뉴는 계속 이용할 수 있다.
+        });
+    };
+
+    loadInquiryNotification();
+    window.addEventListener(INQUIRY_MENU_NOTIFICATION_UPDATED_EVENT, loadInquiryNotification);
+
+    return () => {
+      isCurrent = false;
+      window.removeEventListener(INQUIRY_MENU_NOTIFICATION_UPDATED_EVENT, loadInquiryNotification);
+    };
+  }, [isDemoMode]);
 
   useEffect(() => {
     if (!isMobileMenuOpen) return;
@@ -193,7 +232,12 @@ export default function SideMenu({
                     className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${item.isActive(pathname) ? "is-active" : ""}`}
                   >
                     <AppIcon name={item.icon} />
-                    {item.label}
+                    <span className="side-menu--item-label">{getMenuLabel(item.href, item.label)}</span>
+                    {item.href === "/app/inquiries" && inquiryBadge ? (
+                      <span className={`side-menu--inquiry-badge is-${inquiryBadge.tone}`}>
+                        {inquiryBadge.label}
+                      </span>
+                    ) : null}
                   </Link>
                 </li>
               ))}
@@ -286,7 +330,12 @@ export default function SideMenu({
                     className={`side-menu--item row-group row-group--center row-group--gap-4 label--lg ${item.isActive(pathname) ? "is-active" : ""}`}
                   >
                     <AppIcon name={item.icon} />
-                    {item.label}
+                    <span className="side-menu--item-label">{getMenuLabel(item.href, item.label)}</span>
+                    {item.href === "/app/inquiries" && inquiryBadge ? (
+                      <span className={`side-menu--inquiry-badge is-${inquiryBadge.tone}`}>
+                        {inquiryBadge.label}
+                      </span>
+                    ) : null}
                   </Link>
                 </li>
               ))}
@@ -328,7 +377,12 @@ export default function SideMenu({
             aria-current={item.isActive(pathname) ? "page" : undefined}
           >
             <AppIcon name={item.icon} />
-            <span>{item.label}</span>
+            <span>{getMenuLabel(item.href, item.label)}</span>
+            {item.href === "/app/inquiries" && inquiryBadge ? (
+              <span className={`mobile-bottom-nav--inquiry-badge is-${inquiryBadge.tone}`}>
+                {inquiryCount}
+              </span>
+            ) : null}
           </Link>
         ))}
       </nav>

@@ -12,6 +12,7 @@ export type Inquiry = {
   answer_content: string | null;
   answered_by: string | null;
   answered_at: string | null;
+  answer_read_at: string | null;
   created_at: string;
   updated_at: string;
 };

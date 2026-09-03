@@ -10,8 +10,10 @@ import {
   createInquiry,
   getCurrentProfileRole,
   getInquiries,
+  markInquiryAnswerAsRead,
 } from "@/lib/api/inquiries";
 import type { InquiryCursor } from "@/lib/api/inquiries";
+import { INQUIRY_MENU_NOTIFICATION_UPDATED_EVENT } from "@/lib/inquiryMenu";
 import type { Inquiry, InquiryStatus, ProfileRole } from "@/types/inquiry";
 import "./inquiries.scss";
 
@@ -124,6 +126,32 @@ export default function InquiriesPage() {
     if (!selectedInquiry || !isAdmin) return;
     setAnswerTitle(selectedInquiry.answer_title || "");
     setAnswerContent(selectedInquiry.answer_content || "");
+  }, [isAdmin, selectedInquiry]);
+
+  useEffect(() => {
+    if (
+      isAdmin ||
+      !selectedInquiry ||
+      selectedInquiry.status !== "ANSWERED" ||
+      selectedInquiry.answer_read_at
+    ) {
+      return;
+    }
+
+    void markInquiryAnswerAsRead(selectedInquiry.id)
+      .then(() => {
+        setInquiries((current) =>
+          current.map((item) =>
+            item.id === selectedInquiry.id
+              ? { ...item, answer_read_at: new Date().toISOString() }
+              : item,
+          ),
+        );
+        window.dispatchEvent(new Event(INQUIRY_MENU_NOTIFICATION_UPDATED_EVENT));
+      })
+      .catch(() => {
+        // 읽음 처리 실패 시 다음 상세 확인 때 다시 시도한다.
+      });
   }, [isAdmin, selectedInquiry]);
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {

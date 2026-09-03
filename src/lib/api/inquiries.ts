@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import { getInquiryNotificationFilter } from "@/lib/inquiryMenu";
 import type { Inquiry, ProfileRole } from "@/types/inquiry";
 
 const getCurrentUser = async () => {
@@ -22,6 +23,29 @@ export const getCurrentProfileRole = async (): Promise<ProfileRole> => {
   if (error) throw new Error(error.message);
 
   return data.role as ProfileRole;
+};
+
+export const getInquiryMenuNotification = async (): Promise<{
+  role: ProfileRole;
+  count: number;
+}> => {
+  const user = await getCurrentUser();
+  const role = await getCurrentProfileRole();
+  const filter = getInquiryNotificationFilter(role, user.id);
+
+  let query = supabase
+    .from("inquiries")
+    .select("id", { count: "exact", head: true })
+    .eq("status", filter.status);
+
+  if (filter.userId) query = query.eq("user_id", filter.userId);
+  if (filter.requiresUnreadAnswer) query = query.is("answer_read_at", null);
+
+  const { count, error } = await query;
+
+  if (error) throw new Error(error.message);
+
+  return { role, count: count ?? 0 };
 };
 
 export const INQUIRIES_PAGE_SIZE = 20;
@@ -98,6 +122,7 @@ export const answerInquiry = async (
       answer_content: payload.answerContent.trim(),
       answered_by: user.id,
       answered_at: new Date().toISOString(),
+      answer_read_at: null,
     })
     .eq("id", inquiryId)
     .select()
@@ -106,4 +131,12 @@ export const answerInquiry = async (
   if (error) throw new Error(error.message);
 
   return data as Inquiry;
+};
+
+export const markInquiryAnswerAsRead = async (inquiryId: string) => {
+  const { error } = await supabase.rpc("mark_inquiry_answer_as_read", {
+    p_inquiry_id: inquiryId,
+  });
+
+  if (error) throw new Error(error.message);
 };
