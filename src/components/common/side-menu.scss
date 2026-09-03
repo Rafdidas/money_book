@@ -124,6 +124,10 @@
       > span {
         color: var(--primary-higher);
       }
+      > span.is-answer {
+        color: var(--on-surface-ultra-low);
+        font-weight: 400;
+      }
 
       > .app-icon {
         fill: var(--primary-higher);
