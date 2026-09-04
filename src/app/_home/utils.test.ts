@@ -105,4 +105,18 @@ describe("완료된 적금의 만기 월 납입 수정", () => {
       }),
     ).toBe(true);
   });
+
+  it("기존 거래 기반 적금도 만기 월에서는 납입 선택을 다시 열 수 있다", () => {
+    expect(
+      isSavingsMaturityEditable(
+        {
+          source: "legacy",
+          hasNoMaturity: false,
+          maturityDate: "2026-08-06",
+        },
+        "2026-08-01",
+        "2026-08-31",
+      ),
+    ).toBe(true);
+  });
 });

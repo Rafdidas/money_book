@@ -2964,13 +2964,11 @@ export default function HomeClient() {
                         <tbody>
                           {visibleSavingsAccounts.length ? (
                             visibleSavingsAccounts.map((account) => {
-                              const isMatured =
-                                account.source === "new"
-                                  ? account.status === "completed"
-                                  : !account.hasNoMaturity &&
-                                    account.maturityDate >= selectedMonthStartKey &&
-                                    account.maturityDate <= selectedMonthEndKey;
-                              const isMaturityEditable = isSavingsMaturityEditable(account);
+                              const isMaturityEditable = isSavingsMaturityEditable(
+                                account,
+                                selectedMonthStartKey,
+                                selectedMonthEndKey,
+                              );
                               const isPaused = isSavingsPausedForSelectedMonth(account);
 
                               return (
@@ -2993,13 +2991,11 @@ export default function HomeClient() {
                                         type="button"
                                         className="button button--xs button--secondary"
                                         onClick={() => setMaturingSavingsAccount(account)}
-                                        disabled={isSavingsDeleting || (isMatured && !isMaturityEditable)}
+                                        disabled={isSavingsDeleting}
                                       >
                                         {isMaturityEditable
                                           ? "만기 월 납입 수정"
-                                          : isMatured
-                                            ? "만기됨"
-                                            : "만기 처리"}
+                                          : "만기 처리"}
                                       </button>
                                       {isPaused ? (
                                         <span className="recurring-status badge">일시정지</span>

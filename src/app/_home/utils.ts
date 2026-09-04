@@ -230,4 +230,21 @@ export const partitionSavingsItemsForMaturity = <T extends { date: string }>(
 export const isSavingsMaturityEditable = (account: {
   source: "legacy" | "new";
   status?: string;
-}) => account.source === "new" && account.status === "completed";
+  hasNoMaturity?: boolean;
+  maturityDate?: string;
+}, selectedMonthStart?: string, selectedMonthEnd?: string) => {
+  if (account.source === "new") return account.status === "completed";
+  if (
+    account.hasNoMaturity ||
+    !selectedMonthStart ||
+    !selectedMonthEnd ||
+    !account.maturityDate
+  ) {
+    return false;
+  }
+
+  return (
+    account.maturityDate >= selectedMonthStart &&
+    account.maturityDate <= selectedMonthEnd
+  );
+};
