@@ -4,6 +4,7 @@ import {
   isFixedExpenseItem,
   isInvestmentItem,
   isSavingsItem,
+  isSavingsMaturityEditable,
   partitionSavingsItemsForMaturity,
 } from "./utils";
 
@@ -90,5 +91,18 @@ describe("적금 만기 납입 처리", () => {
       "august-payment",
     ]);
     expect(result.removedItems.map((item) => item.id)).toEqual(["september-payment"]);
+  });
+});
+
+describe("완료된 적금의 만기 월 납입 수정", () => {
+  it("완료 상태인 저장형 적금도 만기 월 납입 선택을 다시 열 수 있다", () => {
+    expect(
+      isSavingsMaturityEditable({
+        source: "new",
+        status: "completed",
+        hasNoMaturity: false,
+        maturityDate: "2026-08-06",
+      }),
+    ).toBe(true);
   });
 });

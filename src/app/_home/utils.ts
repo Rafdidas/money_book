@@ -226,3 +226,8 @@ export const partitionSavingsItemsForMaturity = <T extends { date: string }>(
     { keptItems: [], removedItems: [] },
   );
 };
+
+export const isSavingsMaturityEditable = (account: {
+  source: "legacy" | "new";
+  status?: string;
+}) => account.source === "new" && account.status === "completed";

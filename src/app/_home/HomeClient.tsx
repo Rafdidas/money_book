@@ -110,6 +110,7 @@ import {
   getVisibleMemo,
   isInvestmentItem,
   isSavingsItem,
+  isSavingsMaturityEditable,
   partitionSavingsItemsForMaturity,
   parseFixedExpenseMemo,
   parseSavingsMemo,
@@ -2969,6 +2970,7 @@ export default function HomeClient() {
                                   : !account.hasNoMaturity &&
                                     account.maturityDate >= selectedMonthStartKey &&
                                     account.maturityDate <= selectedMonthEndKey;
+                              const isMaturityEditable = isSavingsMaturityEditable(account);
                               const isPaused = isSavingsPausedForSelectedMonth(account);
 
                               return (
@@ -2991,9 +2993,13 @@ export default function HomeClient() {
                                         type="button"
                                         className="button button--xs button--secondary"
                                         onClick={() => setMaturingSavingsAccount(account)}
-                                        disabled={isSavingsDeleting || isMatured}
+                                        disabled={isSavingsDeleting || (isMatured && !isMaturityEditable)}
                                       >
-                                        {isMatured ? "만기됨" : "만기 처리"}
+                                        {isMaturityEditable
+                                          ? "만기 월 납입 수정"
+                                          : isMatured
+                                            ? "만기됨"
+                                            : "만기 처리"}
                                       </button>
                                       {isPaused ? (
                                         <span className="recurring-status badge">일시정지</span>
