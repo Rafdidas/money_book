@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Expense } from "@/types/expense";
-import { isFixedExpenseItem, isInvestmentItem, isSavingsItem } from "./utils";
+import {
+  isFixedExpenseItem,
+  isInvestmentItem,
+  isSavingsItem,
+  partitionSavingsItemsForMaturity,
+} from "./utils";
 
 const expense = (overrides: Partial<Expense> & { entry_type?: string }) =>
   ({
@@ -47,5 +52,43 @@ describe("durable expense entry classification", () => {
         }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("적금 만기 납입 처리", () => {
+  const items = [
+    expense({ id: "july-payment", date: "2026-07-06" }),
+    expense({ id: "august-payment", date: "2026-08-06" }),
+    expense({ id: "september-payment", date: "2026-09-06" }),
+  ];
+
+  it("만기 월 납입을 제외하면 해당 월과 이후 예정 납입을 제거한다", () => {
+    const result = partitionSavingsItemsForMaturity(
+      items,
+      "2026-08-01",
+      "2026-08-31",
+      false,
+    );
+
+    expect(result.keptItems.map((item) => item.id)).toEqual(["july-payment"]);
+    expect(result.removedItems.map((item) => item.id)).toEqual([
+      "august-payment",
+      "september-payment",
+    ]);
+  });
+
+  it("만기 월 납입을 포함하면 그 달 납입은 유지하고 이후 예정 납입만 제거한다", () => {
+    const result = partitionSavingsItemsForMaturity(
+      items,
+      "2026-08-01",
+      "2026-08-31",
+      true,
+    );
+
+    expect(result.keptItems.map((item) => item.id)).toEqual([
+      "july-payment",
+      "august-payment",
+    ]);
+    expect(result.removedItems.map((item) => item.id)).toEqual(["september-payment"]);
   });
 });

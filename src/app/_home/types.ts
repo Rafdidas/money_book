@@ -1,4 +1,5 @@
 import type { Expense } from "@/types/expense";
+import type { SavingsAccountStatus } from "@/types/recurring";
 
 export type ExpenseFormData = Pick<
   Expense,
@@ -18,6 +19,7 @@ export type SavingsMeta = {
 
 export type SavingsAccount = SavingsMeta & {
   source: "legacy" | "new";
+  status?: SavingsAccountStatus;
   items: Expense[];
   currentAmount: number;
   monthlyPayment: number;

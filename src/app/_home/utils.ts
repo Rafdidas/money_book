@@ -200,3 +200,29 @@ export const getSavingsPaymentDates = (
 
   return dates;
 };
+
+export const partitionSavingsItemsForMaturity = <T extends { date: string }>(
+  items: T[],
+  selectedMonthStart: string,
+  selectedMonthEnd: string,
+  includeSelectedMonthPayment: boolean,
+) => {
+  const lastKeptDate = includeSelectedMonthPayment
+    ? selectedMonthEnd
+    : selectedMonthStart;
+
+  return items.reduce<{ keptItems: T[]; removedItems: T[] }>(
+    (result, item) => {
+      if (
+        item.date < selectedMonthStart ||
+        (includeSelectedMonthPayment && item.date <= lastKeptDate)
+      ) {
+        result.keptItems.push(item);
+      } else {
+        result.removedItems.push(item);
+      }
+      return result;
+    },
+    { keptItems: [], removedItems: [] },
+  );
+};

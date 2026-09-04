@@ -110,6 +110,7 @@ import {
   getVisibleMemo,
   isInvestmentItem,
   isSavingsItem,
+  partitionSavingsItemsForMaturity,
   parseFixedExpenseMemo,
   parseSavingsMemo,
 } from "./utils";
@@ -286,6 +287,7 @@ export default function HomeClient() {
   const [isSavingsDeleting, setIsSavingsDeleting] = useState(false);
   const [isSavingsSkipping, setIsSavingsSkipping] = useState(false);
   const [openSavingsPauseMenuId, setOpenSavingsPauseMenuId] = useState("");
+  const [maturingSavingsAccount, setMaturingSavingsAccount] = useState<SavingsAccount | null>(null);
   const [fixedExpenseFormMode, setFixedExpenseFormMode] = useState<InlineFormMode>("create");
   const [fixedExpenseEditingId, setFixedExpenseEditingId] = useState("");
   const [fixedExpenseAmount, setFixedExpenseAmount] = useState("");
@@ -924,6 +926,7 @@ export default function HomeClient() {
         initialAmount: account.initial_amount,
         hasNoMaturity: account.has_no_maturity,
         source: "new",
+        status: account.status,
         items,
         currentAmount: account.initial_amount + paidAmount,
         monthlyPayment: selectedMonthPayment?.amount ?? account.monthly_amount,
@@ -2112,13 +2115,16 @@ export default function HomeClient() {
       setIsFixedExpenseDeleting(false);
     }
   };
-  const handleSavingsMaturity = async (account: SavingsAccount) => {
-    const confirmed = await confirm("만기 처리 하시겠습니까?");
-    if (!confirmed) return;
-
-    const cutoffDate = selectedMonthEndKey;
-    const keptItems = account.items.filter((item) => item.date <= cutoffDate);
-    const deletedItems = account.items.filter((item) => item.date > cutoffDate);
+  const handleSavingsMaturity = async (
+    account: SavingsAccount,
+    includeSelectedMonthPayment: boolean,
+  ) => {
+    const { keptItems, removedItems } = partitionSavingsItemsForMaturity(
+      account.items,
+      selectedMonthStartKey,
+      selectedMonthEndKey,
+      includeSelectedMonthPayment,
+    );
     const maturityDate = keptItems.at(-1)?.date;
 
     if (!maturityDate) {
@@ -2136,29 +2142,41 @@ export default function HomeClient() {
     };
     const nextMemo = encodeSavingsMemo(nextMeta);
     const keptIds = new Set(keptItems.map((item) => item.id));
-    const deletedIds = new Set(deletedItems.map((item) => item.id));
+    const removedIds = new Set(removedItems.map((item) => item.id));
 
     try {
       setIsSavingsDeleting(true);
       if (!isDemoMode && account.source === "new") {
         const futureStartDate = formatDate(new Date(currentYear, currentMonth + 1, 1));
+        const selectedMonthPaymentIds = includeSelectedMonthPayment
+          ? []
+          : removedItems
+              .filter(
+                (item) =>
+                  item.date >= selectedMonthStartKey && item.date <= selectedMonthEndKey,
+              )
+              .map((item) => item.id);
         await updateSavingsAccount(account.id, {
           maturity_date: maturityDate,
           has_no_maturity: false,
           status: "completed",
+        });
+        await updateSavingsPayments(selectedMonthPaymentIds, {
+          status: "cancelled",
+          paid_at: null,
         });
         await cancelFutureSavingsPayments(account.id, futureStartDate);
         await refreshStoredSavings();
       } else if (isDemoMode) {
         setExpenses((prev) => {
           const next = prev
-            .filter((item) => !deletedIds.has(item.id))
+            .filter((item) => !removedIds.has(item.id))
             .map((item) => (keptIds.has(item.id) ? { ...item, memo: nextMemo } : item));
           writeDemoExpenses(next);
           return next;
         });
       } else {
-        await deleteExpenses(deletedItems.map((item) => item.id));
+        await deleteExpenses(removedItems.map((item) => item.id));
         await Promise.all(
           keptItems.map((item) =>
             updateExpense(item.id, {
@@ -2173,7 +2191,7 @@ export default function HomeClient() {
         );
         setExpenses((prev) =>
           prev
-            .filter((item) => !deletedIds.has(item.id))
+            .filter((item) => !removedIds.has(item.id))
             .map((item) => (keptIds.has(item.id) ? { ...item, memo: nextMemo } : item)),
         );
       }
@@ -2946,9 +2964,11 @@ export default function HomeClient() {
                           {visibleSavingsAccounts.length ? (
                             visibleSavingsAccounts.map((account) => {
                               const isMatured =
-                                !account.hasNoMaturity &&
-                                account.maturityDate >= selectedMonthStartKey &&
-                                account.maturityDate <= selectedMonthEndKey;
+                                account.source === "new"
+                                  ? account.status === "completed"
+                                  : !account.hasNoMaturity &&
+                                    account.maturityDate >= selectedMonthStartKey &&
+                                    account.maturityDate <= selectedMonthEndKey;
                               const isPaused = isSavingsPausedForSelectedMonth(account);
 
                               return (
@@ -2970,7 +2990,7 @@ export default function HomeClient() {
                                       <button
                                         type="button"
                                         className="button button--xs button--secondary"
-                                        onClick={() => handleSavingsMaturity(account)}
+                                        onClick={() => setMaturingSavingsAccount(account)}
                                         disabled={isSavingsDeleting || isMatured}
                                       >
                                         {isMatured ? "만기됨" : "만기 처리"}
@@ -3576,6 +3596,60 @@ export default function HomeClient() {
             <button type="button" className="button button--sm button--outline" onClick={() => setIsCategoryManagerOpen(false)}>
               닫기
             </button>
+          </div>
+        </Modal>
+      ) : null}
+      {maturingSavingsAccount ? (
+        <Modal
+          onClose={() => setMaturingSavingsAccount(null)}
+          ariaLabelledBy="savings-maturity-title"
+        >
+          <div className="card column-group column-group--gap-16">
+            <div className="column-group column-group--gap-8">
+              <h2 id="savings-maturity-title" className="title--sm">
+                적금 만기 처리
+              </h2>
+              <p className="body--md">
+                {maturingSavingsAccount.name}의 {currentMonth + 1}월 납입을 저축 금액에 포함할까요?
+              </p>
+              <p className="body--sm">
+                납입 안 함을 선택하면 이번 달과 이후의 예정 납입이 취소됩니다.
+              </p>
+            </div>
+            <div className="row-group row-group--gap-8 row-group--end">
+              <button
+                type="button"
+                className="button button--sm button--outline"
+                onClick={() => setMaturingSavingsAccount(null)}
+                disabled={isSavingsDeleting}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="button button--sm button--secondary"
+                onClick={() => {
+                  const account = maturingSavingsAccount;
+                  setMaturingSavingsAccount(null);
+                  void handleSavingsMaturity(account, false);
+                }}
+                disabled={isSavingsDeleting}
+              >
+                납입 안 함
+              </button>
+              <button
+                type="button"
+                className="button button--sm button--primary"
+                onClick={() => {
+                  const account = maturingSavingsAccount;
+                  setMaturingSavingsAccount(null);
+                  void handleSavingsMaturity(account, true);
+                }}
+                disabled={isSavingsDeleting}
+              >
+                납입함
+              </button>
+            </div>
           </div>
         </Modal>
       ) : null}
