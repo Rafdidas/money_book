@@ -499,7 +499,6 @@
     .main-detail {
       .table--wrap {
         overflow: auto;
-        max-height: 400px;
       }
 
       .detail-table {
@@ -755,10 +754,6 @@
       }
 
       .main-detail {
-        .table--wrap {
-          max-height: 360px;
-        }
-
         .detail-bulk-actions {
           bottom: calc(84px + env(safe-area-inset-bottom));
           align-items: stretch;
