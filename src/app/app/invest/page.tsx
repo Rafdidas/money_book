@@ -1186,7 +1186,7 @@ export default function InvestPage() {
                     </label>
                     <button
                       type="button"
-                      className="button button--outline button--xmd"
+                      className="button button--outline button--sm"
                       onClick={() => handleAccountLimitSave(limit.accountType)}
                     >
                       저장

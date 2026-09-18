@@ -1,3 +1,20 @@
+# 2026-09-18 Task 2: 기존 컨트롤 스타일을 토큰에 연결
+
+**Task 2 완료:**
+- 기존 버튼·입력·배지·달력 높이를 공통 스케일 토큰에 연결했습니다.
+  - `_button.scss`: 기본(md), `--lg`(lg), `--md`(md), `--sm`(sm), `--xs`(badge) 높이를 각각 토큰으로 변경
+  - `_input.scss`: sm/md/lg 변형의 높이와 패딩을 토큰으로 변경
+  - `_badge.scss`: 높이를 `--badge-height` 토큰으로 변경
+  - `_calendar-picker.scss`: 네비게이션 라벨과 화살표 높이를 `--control-height-md` 토큰으로 변경
+- `--xmd`(36px) 정의를 제거하고 유일한 사용처(`src/app/app/invest/page.tsx:1189`)를 `--sm`으로 교체했습니다.
+- TDD 검증:
+  - e2e 테스트 추가 후 실패 확인 (usesScale false)
+  - 구현 후 통과 확인 (usesScale true, button--sm 높이 32px)
+  - `npm run lint` ✓, `npm run build` ✓
+  - `npx playwright test e2e/control-alignment.spec.ts --project=desktop-chromium` 2 passed ✓
+  - 전체 e2e 스펙 14 passed (1 flaky timeout 제외, 구현과 무관)
+- 남은 일: 컴포넌트 이관은 Task 4부터 시작합니다.
+
 # 2026-09-18 공통 컨트롤 높이 토큰 도입
 
 - `src/styles/_control-tokens.scss`에 sm 32 / md 40 / lg 48 높이 스케일과 패딩·반경·배지 높이 토큰을 정의했습니다.

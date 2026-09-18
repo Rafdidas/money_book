@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  height: 24px;
+  height: var(--badge-height);
   border-radius: 6px;
   border: 1px solid var(--outline);
   padding: 0 8px;

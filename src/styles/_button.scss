@@ -16,7 +16,7 @@
   --button-icon-size: 20px;
   --button-font-size: 14px;
   --button-font-weight: 400;
-  --button-height: 40px;
+  --button-height: var(--control-height-md);
   --button-radius: 6px;
 
   display: inline-flex;
@@ -48,7 +48,7 @@
   
 
   &--lg {
-    --button-height: 48px;
+    --button-height: var(--control-height-lg);
     --button-padding-inline: 16px;
     --button-gap: 8px;
     --button-icon-size: 24px;
@@ -58,7 +58,7 @@
   }
 
   &--md {
-    --button-height: 40px;
+    --button-height: var(--control-height-md);
     --button-padding-inline: 14px;
     --button-gap: 4px;
     --button-icon-size: 20px;
@@ -67,18 +67,8 @@
     --button-radius: 6px;
   }
 
-  &--xmd {
-    --button-height: 36px;
-    --button-padding-inline: 10px;
-    --button-gap: 4px;
-    --button-icon-size: 20px;
-    --button-font-size: 14px;
-    --button-font-weight: 400;
-    --button-radius: 6px;
-  }
-
   &--sm {
-    --button-height: 32px;
+    --button-height: var(--control-height-sm);
     --button-padding-inline: 10px;
     --button-gap: 4px;
     --button-icon-size: 20px;
@@ -88,7 +78,7 @@
   }
 
   &--xs {
-    --button-height: 24px;
+    --button-height: var(--badge-height);
     --button-padding-inline: 6px;
     --button-gap: 4px;
     --button-icon-size: 16px;
