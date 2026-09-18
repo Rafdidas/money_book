@@ -1368,3 +1368,10 @@ with a simpler monthly cash-flow summary.
 - 이 두 파일의 톤 매핑은 모호하지 않습니다(blue→info, green→success, red→danger, violet→violet, teal→teal — 이미 확정된 매핑과 동일). 다음 세션에서 이 두 파일도 함께 이전한 뒤 `_badge.scss`를 삭제하고 Step 7 검증(`rg 'className="badge|badge--' src` 결과 없음)과 `npm test && npm run lint && npm run build`, 화면 육안 확인을 마무리해야 합니다.
 - 검증: `npm test`(52개 파일·214개), `npm run lint`, `npm run build` 모두 통과(단, `_badge.scss`는 아직 존재하는 상태).
 - 커밋: `41223e3` — Badge tone 확장 및 3개 화면 이전만 포함, 스타일 삭제는 포함하지 않음.
+
+# 2026-09-18 Task 5: Badge 통합 완료 (DashboardScheduleCard/HomeClient 이전 + legacy 스타일 삭제)
+
+- 이전 세션에서 보류했던 `src/app/_home/DashboardScheduleCard.tsx`(2곳)와 `src/app/_home/HomeClient.tsx`(6곳)의 legacy `.badge`/`badge--*` 사용처를 `Badge` 컴포넌트로 이전했습니다. 톤 매핑은 이미 확정된 규칙을 그대로 적용했습니다: teal→teal, green→success, red→danger, blue→info, violet→violet. 일시정지 상태 배지(`recurring-status badge`)는 `<Badge className="recurring-status">`로 이전해 기존 `margin-left` 오버라이드를 유지했습니다.
+- `src/styles/_badge.scss`를 삭제하고 `src/app/globals.scss`의 `@use "../styles/badge";`를 제거했습니다.
+- 검증: `rg 'className="badge|badge--' src` 결과 없음(남은 매치는 `ui-badge--*`뿐이며 이는 Badge 컴포넌트 자체 클래스임). `npm test`(52개 파일·214개), `npm run lint`, `npm run build` 모두 통과.
+- 남은 일: 화면 육안 확인(데스크톱/모바일)은 이번 세션에서 진행하지 않았습니다. 다음 세션에서 대시보드 일정 카드, 캘린더 내역, 적금/고정지출 표, 상세 표의 tone별 배지 색상을 데스크톱·모바일 폭에서 확인하는 것을 권장합니다.

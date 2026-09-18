@@ -2439,16 +2439,16 @@ export default function HomeClient() {
                             className="calendar-content--item row-group row-group--center row-group--gap-16"
                           >
                             <p className="calendar-content--sort">
-                              <span
-                                className={`badge ${
+                              <Badge
+                                tone={
                                   isInvestment
-                                    ? "badge--violet"
+                                    ? "violet"
                                     : isSavings
-                                      ? "badge--blue"
+                                      ? "info"
                                       : isIncome
-                                        ? "badge--green"
-                                        : "badge--red"
-                                }`}
+                                        ? "success"
+                                        : "danger"
+                                }
                               >
                                 {isInvestment
                                   ? "투자"
@@ -2457,7 +2457,7 @@ export default function HomeClient() {
                                     : isIncome
                                       ? "수입"
                                       : "지출"}
-                              </span>
+                              </Badge>
                               {isPaused ? <Badge>일시정지</Badge> : null}
                             </p>
                             <div className="row-group row-group--center row-group--gap-8">
@@ -2939,7 +2939,7 @@ export default function HomeClient() {
                               return (
                                 <tr key={account.id}>
                                   <td>
-                                    <span className="badge badge--blue">적금</span>
+                                    <Badge tone="info">적금</Badge>
                                   </td>
                                   <td>{account.name}</td>
                                   <td>{formatCompactWon(account.monthlyPayment)}</td>
@@ -2963,7 +2963,7 @@ export default function HomeClient() {
                                           : "만기 처리"}
                                       </button>
                                       {isPaused ? (
-                                        <span className="recurring-status badge">일시정지</span>
+                                        <Badge className="recurring-status">일시정지</Badge>
                                       ) : null}
                                     </div>
                                   </td>
@@ -3223,7 +3223,7 @@ export default function HomeClient() {
                                     ? "기한 없음"
                                     : formatDetailDate(account.endDate)}
                                   {isPaused ? (
-                                    <span className="recurring-status badge">일시정지</span>
+                                    <Badge className="recurring-status">일시정지</Badge>
                                   ) : null}
                                 </td>
                                 <td>
@@ -3424,16 +3424,16 @@ export default function HomeClient() {
 
                             <td>{item.category}</td>
                             <td>
-                              <span
-                                className={`badge ${
+                              <Badge
+                                tone={
                                   isInvestment
-                                    ? "badge--violet"
+                                    ? "violet"
                                     : isSavings
-                                      ? "badge--blue"
+                                      ? "info"
                                       : isIncome
-                                        ? "badge--green"
-                                        : "badge--red"
-                                }`}
+                                        ? "success"
+                                        : "danger"
+                                }
                               >
                                 {isInvestment
                                   ? "투자"
@@ -3442,9 +3442,9 @@ export default function HomeClient() {
                                     : isIncome
                                       ? "수입"
                                       : "지출"}
-                              </span>
+                              </Badge>
                               {isPaused ? (
-                                <span className="recurring-status badge">일시정지</span>
+                                <Badge className="recurring-status">일시정지</Badge>
                               ) : null}
                             </td>
                             <td>{formatCurrency(item.amount)}</td>
