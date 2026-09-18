@@ -13,4 +13,16 @@
   --control-gap: 8px;
 
   --badge-height: 24px;
+
+  --surface-translucent: color-mix(in srgb, var(--surface-lowest) 78%, transparent);
+  --surface-translucent-strong: color-mix(in srgb, var(--surface-lowest) 88%, transparent);
+  --surface-border-translucent: color-mix(in srgb, var(--outline) 62%, transparent);
+  --surface-shadow-soft: 0 2px 8px rgba(9, 11, 17, 0.06);
+}
+
+[data-theme="dark"] {
+  --surface-translucent: color-mix(in srgb, var(--surface-lowest) 70%, transparent);
+  --surface-translucent-strong: color-mix(in srgb, var(--surface-lowest) 84%, transparent);
+  --surface-border-translucent: color-mix(in srgb, var(--outline) 70%, transparent);
+  --surface-shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.32);
 }

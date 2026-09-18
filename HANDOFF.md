@@ -1,3 +1,18 @@
+# 2026-09-18 Task 3: 반투명 표면 토큰 정의
+
+**Task 3 완료:**
+- `src/styles/_control-tokens.scss`에 반투명 표면 토큰 4개를 라이트·다크 모두 정의했습니다.
+  - `--surface-translucent`: 라이트 color-mix(in srgb, var(--surface-lowest) 78%, transparent) / 다크 70%
+  - `--surface-translucent-strong`: 라이트 88% / 다크 84%
+  - `--surface-border-translucent`: 라이트 62% / 다크 70%
+  - `--surface-shadow-soft`: 라이트 0 2px 8px rgba(9, 11, 17, 0.06) / 다크 0 2px 10px rgba(0, 0, 0, 0.32)
+  - 패턴: `src/app/color_tokens.scss`와 동일하게 `:root` + `[data-theme="dark"]` 블록
+- 테스트 주도 구현:
+  - `src/styles/control-tokens.test.ts` 신규 테스트가 반투명 토큰 부재로 실패 확인
+  - 구현 후 3개 테스트 통과 (컨트롤 높이, 반투명 토큰, backdrop-filter 불포함)
+- 검증: `npm run lint` ✓, `npm run build` ✓
+- 값은 초기값이며, Task 6의 대시보드 카드 리디자인에서 실제 대비를 보고 조정할 수 있습니다.
+
 # 2026-09-18 Task 2: 기존 컨트롤 스타일을 토큰에 연결
 
 **Task 2 완료:**
