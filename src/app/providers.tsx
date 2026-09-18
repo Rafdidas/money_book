@@ -11,6 +11,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import AppAlertProvider from "@/components/app-alert/AppAlertProvider";
 import ThemeProvider from "@/components/common/ThemeProvider";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 import { getCurrentUserLegalConsent } from "@/lib/api/legalConsent";
 import { isDemoModeEnabled } from "@/lib/demo";
 import { isLegalConsentGateEnabled } from "@/lib/legal/consentGate";
@@ -210,7 +211,9 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <AppDataContext.Provider value={value}>
       <ThemeProvider>
-        <AppAlertProvider>{children}</AppAlertProvider>
+        <ToastProvider>
+          <AppAlertProvider>{children}</AppAlertProvider>
+        </ToastProvider>
       </ThemeProvider>
     </AppDataContext.Provider>
   );

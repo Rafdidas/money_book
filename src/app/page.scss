@@ -183,7 +183,7 @@
             border-radius: 10px;
             background-color: var(--primary);
 
-            color: var(--on-primary-ultra-high);
+            color: var(--on-primary-ultra-low);
             font-weight: 700;
           }
         }
@@ -203,7 +203,7 @@
         }
         &.is-today.is-selected {
           > span.day-unit {
-            color: var(--on-primary-ultra-high);
+            color: var(--on-primary-ultra-low);
           }
         }
       }

@@ -15,6 +15,10 @@ import AppIcon from "@/components/common/AppIcon";
 import Checkbox from "@/components/common/Checkbox";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
+import { Badge } from "@/components/ui/Badge";
+import { Select, TextInput } from "@/components/ui/FormControl";
+import { Tabs } from "@/components/ui/Tabs";
+import { useToast } from "@/components/ui/ToastProvider";
 import { useAppData } from "@/app/providers";
 import { useCustomCategories } from "@/lib/hooks/useCustomCategories";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
@@ -250,6 +254,7 @@ export default function HomeClient() {
     isAuthResolved,
   } = useAppData();
   const { alert, confirm } = useAppAlert();
+  const { toast } = useToast();
   const categoryState = useCustomCategories({
     isDemoMode,
     enabled: isAuthResolved,
@@ -2283,6 +2288,9 @@ export default function HomeClient() {
         }
       }
       setSelectedDate(new Date(`${payload.date}T00:00:00`));
+      toast(inlineFormMode === "edit" ? "내역을 수정했습니다." : "내역을 추가했습니다.", {
+        tone: "success",
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "저장 중 오류가 발생했습니다.";
       alert(message);
@@ -2302,6 +2310,7 @@ export default function HomeClient() {
     try {
       setIsInlineDeleting(true);
       await handleDelete(selectedInlineExpense.id);
+      toast("내역을 삭제했습니다.", { tone: "info" });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "삭제 중 오류가 발생했습니다.";
@@ -2448,7 +2457,7 @@ export default function HomeClient() {
                                       ? "수입"
                                       : "지출"}
                               </span>
-                              {isPaused ? <span className="badge">일시정지</span> : null}
+                              {isPaused ? <Badge>일시정지</Badge> : null}
                             </p>
                             <div className="row-group row-group--center row-group--gap-8">
                               <p className="calendar-content--num label--lg">
@@ -2473,36 +2482,22 @@ export default function HomeClient() {
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">내역 추가/수정</h4>
-                    <div
-                      className="main-overview--tabs"
-                      role="tablist"
-                      aria-label="내역 입력 모드"
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={inlineFormMode === "create"}
-                        className={`main-overview--tab bodyBold--sm ${inlineFormMode === "create" ? "is-active" : ""}`}
-                        onClick={() => handleInlineModeChange("create")}
-                      >
-                        추가
-                      </button>
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={inlineFormMode === "edit"}
-                        className={`main-overview--tab bodyBold--sm ${inlineFormMode === "edit" ? "is-active" : ""}`}
-                        onClick={() => handleInlineModeChange("edit")}
-                      >
-                        수정
-                      </button>
-                    </div>
+                    <Tabs<InlineFormMode>
+                      ariaLabel="내역 입력 모드"
+                      className="main-overview--tabs bodyBold--sm"
+                      items={[
+                        { value: "create", label: "추가" },
+                        { value: "edit", label: "수정" },
+                      ]}
+                      value={inlineFormMode}
+                      onValueChange={handleInlineModeChange}
+                    />
                   </div>
                   <div className="main-overview--form">
                     {inlineFormMode === "edit" ? (
                       <label className="main-overview--field">
                         <span className="label--md">이번 달 수정할 직접 입력 내역</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={inlineEditingId}
                           onChange={(event) => setInlineEditingId(event.target.value)}
@@ -2518,39 +2513,21 @@ export default function HomeClient() {
                               </option>
                             ))
                           )}
-                        </select>
+                        </Select>
                       </label>
                     ) : null}
-                    <div className="main-overview--type-toggle main-overview--type-toggle__grid">
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "expense" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("expense")}
-                      >
-                        지출
-                      </button>
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "income" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("income")}
-                      >
-                        수입
-                      </button>
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "savings" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("savings")}
-                      >
-                        저축
-                      </button>
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "investment" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("investment")}
-                      >
-                        투자
-                      </button>
-                    </div>
+                    <Tabs<InlineEntryType>
+                      ariaLabel="내역 유형"
+                      className="main-overview--type-toggle main-overview--type-toggle__grid bodyBold--sm"
+                      items={[
+                        { value: "expense", label: "지출" },
+                        { value: "income", label: "수입" },
+                        { value: "savings", label: "저축" },
+                        { value: "investment", label: "투자" },
+                      ]}
+                      value={activeInlineTabType}
+                      onValueChange={handleInlineTypeChange}
+                    />
                     {inlineType === "investment" ? (
                       <p className="label--md invest-noti">
                         투자금은 현재 주가와 무관하게, 투자한 금액을 기록하기 위한
@@ -2560,7 +2537,7 @@ export default function HomeClient() {
                     {inlineFormMode === "edit" ? (
                       <label className="main-overview--field">
                         <span className="label--md">대카테고리 변경</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={inlineType}
                           onChange={(event) =>
@@ -2573,13 +2550,13 @@ export default function HomeClient() {
                           <option value="income">수입</option>
                           <option value="savings">저축</option>
                           <option value="investment">투자</option>
-                        </select>
+                        </Select>
                       </label>
                     ) : null}
                     <div className="main-overview--form-grid">
                       <label className="main-overview--field">
                         <span className="label--md">카테고리</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={inlineCategory}
                           onChange={(event) => setInlineCategory(event.target.value)}
@@ -2590,11 +2567,11 @@ export default function HomeClient() {
                             </option>
                           ))}
                           <option value={customCategoryValue}>직접 입력</option>
-                        </select>
+                        </Select>
                       </label>
                       <label className="main-overview--field">
                         <span className="label--md">날짜</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="date"
                           value={inlineDate}
@@ -2645,7 +2622,7 @@ export default function HomeClient() {
                             ))}
                           </div>
                         ) : null}
-                        <input
+                        <TextInput
                           id="inline-custom-category"
                           className="main-overview--control body--sm"
                           type="text"
@@ -2660,7 +2637,7 @@ export default function HomeClient() {
                     <div className="main-overview--form-grid">
                       <label className="main-overview--field">
                         <span className="label--md">금액</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           inputMode="numeric"
@@ -2673,7 +2650,7 @@ export default function HomeClient() {
                       </label>
                       <label className="main-overview--field">
                         <span className="label--md">메모</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           placeholder="간단한 메모"
@@ -2772,38 +2749,22 @@ export default function HomeClient() {
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">적금 추가/수정</h4>
-                    <div
-                      className="main-overview--tabs"
-                      role="tablist"
-                      aria-label="내역 입력 모드"
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={savingsFormMode === "create"}
-                        className={`main-overview--tab bodyBold--sm ${savingsFormMode === "create" ? "is-active" : ""}`}
-                        onClick={() => handleSavingsModeChange("create")}
-                      >
-                        추가
-                      </button>
-                      {savingsAccounts.length ? (
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={savingsFormMode === "edit"}
-                          className={`main-overview--tab bodyBold--sm ${savingsFormMode === "edit" ? "is-active" : ""}`}
-                          onClick={() => handleSavingsModeChange("edit")}
-                        >
-                          수정
-                        </button>
-                      ) : null}
-                    </div>
+                    <Tabs<InlineFormMode>
+                      ariaLabel="내역 입력 모드"
+                      className="main-overview--tabs bodyBold--sm"
+                      items={savingsAccounts.length ? [
+                        { value: "create", label: "추가" },
+                        { value: "edit", label: "수정" },
+                      ] : [{ value: "create", label: "추가" }]}
+                      value={savingsFormMode}
+                      onValueChange={handleSavingsModeChange}
+                    />
                   </div>
                   <div className="main-overview--form">
                     {savingsFormMode === "edit" ? (
                       <label className="main-overview--field">
                         <span className="form-label label--md">수정할 적금</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={savingsEditingId}
                           onChange={(event) => setSavingsEditingId(event.target.value)}
@@ -2819,7 +2780,7 @@ export default function HomeClient() {
                               </option>
                             ))
                           )}
-                        </select>
+                        </Select>
                       </label>
                     ) : null}
                     <div className="grid-col-3">
@@ -2838,7 +2799,7 @@ export default function HomeClient() {
                             </Checkbox>
                           ) : null}
                         </div>
-                        <input
+                        <TextInput
                           id="savings-payment-amount"
                           className="main-overview--control body--sm"
                           type="text"
@@ -2852,7 +2813,7 @@ export default function HomeClient() {
                       </div>
                       <label className="main-overview--field flex-fill">
                         <span className="form-label label--md">납입일</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={savingsPaymentDay}
                           onChange={(event) => setSavingsPaymentDay(event.target.value)}
@@ -2865,7 +2826,7 @@ export default function HomeClient() {
                               </option>
                             );
                           })}
-                        </select>
+                        </Select>
                       </label>
                       <div className="main-overview--field  flex-fill">
                         <div className="row-group row-group--center row-group--between">
@@ -2880,7 +2841,7 @@ export default function HomeClient() {
                             만기일 없음
                           </Checkbox>
                         </div>
-                        <input
+                        <TextInput
                           id="savings-maturity-date"
                           className="main-overview--control body--sm"
                           type="date"
@@ -2893,7 +2854,7 @@ export default function HomeClient() {
                     <div className="row-group row-group--center row-group--gap-8">
                       <label className="main-overview--field  flex-fill">
                         <span className="form-label label--md">현재 금액</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           inputMode="numeric"
@@ -2906,7 +2867,7 @@ export default function HomeClient() {
                       </label>
                       <label className="main-overview--field  flex-fill">
                         <span className="form-label label--md">적금 이름</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           placeholder="카테고리로 사용 될 이름"
@@ -3072,38 +3033,22 @@ export default function HomeClient() {
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">고정지출</h4>
-                    <div
-                      className="main-overview--tabs"
-                      role="tablist"
-                      aria-label="고정지출 입력 모드"
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={fixedExpenseFormMode === "create"}
-                        className={`main-overview--tab bodyBold--sm ${fixedExpenseFormMode === "create" ? "is-active" : ""}`}
-                        onClick={() => handleFixedExpenseModeChange("create")}
-                      >
-                        추가
-                      </button>
-                      {fixedExpenseAccounts.length ? (
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={fixedExpenseFormMode === "edit"}
-                          className={`main-overview--tab bodyBold--sm ${fixedExpenseFormMode === "edit" ? "is-active" : ""}`}
-                          onClick={() => handleFixedExpenseModeChange("edit")}
-                        >
-                          수정
-                        </button>
-                      ) : null}
-                    </div>
+                    <Tabs<InlineFormMode>
+                      ariaLabel="고정지출 입력 모드"
+                      className="main-overview--tabs bodyBold--sm"
+                      items={fixedExpenseAccounts.length ? [
+                        { value: "create", label: "추가" },
+                        { value: "edit", label: "수정" },
+                      ] : [{ value: "create", label: "추가" }]}
+                      value={fixedExpenseFormMode}
+                      onValueChange={handleFixedExpenseModeChange}
+                    />
                   </div>
                   <div className="main-overview--form">
                     {fixedExpenseFormMode === "edit" ? (
                       <label className="main-overview--field">
                         <span className="form-label label--md">수정할 고정지출</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={fixedExpenseEditingId}
                           onChange={(event) =>
@@ -3121,7 +3066,7 @@ export default function HomeClient() {
                               </option>
                             ))
                           )}
-                        </select>
+                        </Select>
                       </label>
                     ) : null}
                     <div className="grid-col-2">
@@ -3140,7 +3085,7 @@ export default function HomeClient() {
                             </Checkbox>
                           ) : null}
                         </div>
-                        <input
+                        <TextInput
                           id="fixed-expense-amount"
                           className="main-overview--control body--sm"
                           type="text"
@@ -3165,7 +3110,7 @@ export default function HomeClient() {
                             종료일 설정 안함
                           </Checkbox>
                         </div>
-                        <input
+                        <TextInput
                           id="fixed-expense-end-date"
                           className="main-overview--control body--sm"
                           type="date"
@@ -3178,7 +3123,7 @@ export default function HomeClient() {
                     <div className="grid-col-2">
                       <label className="main-overview--field flex-fill">
                         <span className="form-label label--md">지출일</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={fixedExpensePaymentDay}
                           onChange={(event) =>
@@ -3193,11 +3138,11 @@ export default function HomeClient() {
                               </option>
                             );
                           })}
-                        </select>
+                        </Select>
                       </label>
                       <label className="main-overview--field  flex-fill">
                         <span className="form-label label--md">지출명</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           placeholder="지출명"

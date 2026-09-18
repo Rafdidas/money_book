@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -29,6 +29,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import Providers, { getAuthenticatedDestination, useAppData } from "./providers";
+import { useToast } from "@/components/ui/ToastProvider";
 
 const legacyProfile = {
   terms_version: "2026-01-01",
@@ -45,6 +46,11 @@ const currentProfile = {
 };
 
 const authenticatedUser = { id: "user-1", email: "user@example.com", user_metadata: {} };
+
+function GlobalToastTrigger() {
+  const { toast } = useToast();
+  return <button type="button" onClick={() => toast("공통 알림", { tone: "info" })}>공통 알림 표시</button>;
+}
 
 describe("getAuthenticatedDestination", () => {
   beforeEach(() => {
@@ -138,5 +144,13 @@ describe("getAuthenticatedDestination", () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("provides non-blocking toast feedback throughout the app tree", () => {
+    render(<Providers><GlobalToastTrigger /></Providers>);
+
+    fireEvent.click(screen.getByRole("button", { name: "공통 알림 표시" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("공통 알림");
   });
 });
