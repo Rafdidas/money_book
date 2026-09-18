@@ -16,6 +16,7 @@ import Checkbox from "@/components/common/Checkbox";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Select, TextInput } from "@/components/ui/FormControl";
 import { Tabs } from "@/components/ui/Tabs";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -2661,9 +2662,10 @@ export default function HomeClient() {
                     </div>
                     <div className="main-overview--actions row-group row-group--center row-group--gap-8">
                       {inlineFormMode === "edit" ? (
-                        <button
-                          type="button"
-                          className="button button--outline button--md main-overview--delete"
+                        <Button
+                          variant="outline"
+                          size="md"
+                          className="main-overview--delete"
                           onClick={handleInlineDelete}
                           disabled={
                             isInlineSubmitting ||
@@ -2672,11 +2674,13 @@ export default function HomeClient() {
                           }
                         >
                           {isInlineDeleting ? "삭제 중..." : "삭제"}
-                        </button>
+                        </Button>
                       ) : null}
-                      <button
-                        type="button"
-                        className="button button--primary button--md button--full main-overview--submit"
+                      <Button
+                        variant="primary"
+                        size="md"
+                        full
+                        className="main-overview--submit"
                         onClick={handleInlineSubmit}
                         disabled={
                           isInlineSubmitting ||
@@ -2689,7 +2693,7 @@ export default function HomeClient() {
                           : inlineFormMode === "edit"
                             ? "수정 저장"
                             : "내역 추가"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>

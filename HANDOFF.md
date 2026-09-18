@@ -1,3 +1,34 @@
+# 2026-09-18 Task 4: Button 공통 컴포넌트
+
+**Task 4 완료:**
+- `src/components/ui/Button.tsx`를 추가했습니다. 기존 `.button` 클래스 체계를
+  그대로 출력하는 얇은 래퍼로, `variant`(default/primary/secondary/outline/
+  outline-primary/subtle/negative), `size`(xs/sm/md/lg), `full` prop과 나머지
+  `ButtonHTMLAttributes`를 받습니다.
+- `Badge.tsx`와 동일한 패턴으로 `motion/react`의 `motion.button`을 사용해
+  `PRESS_TRANSITION`(`src/lib/motion/tokens.ts`) 기반 누름 모션(`whileTap:
+  scale 0.98`)을 추가했고, `useReducedMotionPreference` 또는 `disabled`일 때는
+  비활성화합니다.
+- 전체 `.button` 사용처(~220곳)는 계획대로 이관하지 않았습니다. `HomeClient.tsx`의
+  인라인 입력 폼(추가/수정) 삭제·제출 버튼 2개만 `<Button>`으로 교체했습니다
+  (`main-overview--delete`, `main-overview--submit`, 2666~2692번째 줄 근처).
+  동일한 클래스 패턴을 가진 다른 2쌍(2883/2896, 3158/3171번째 줄 근처)은 브리프
+  범위 밖이라 건드리지 않았습니다.
+- 테스트 주도 구현:
+  - `src/components/ui/Button.test.tsx` 신규 테스트 6개가 `Button` 모듈 부재로
+    실패(`Failed to resolve import "./Button"`) 확인
+  - 구현 후 6개 테스트 통과 확인
+- 검증:
+  - `npm test`: 52 files, 213 tests 통과
+  - `npm run lint`: 통과
+  - `npm run build`: 통과
+  - `npx playwright test --project=desktop-chromium --project=mobile-chromium`:
+    27 passed, 3 failed — 실패 3건은 이 작업 전 `git stash`로 재현해 기존
+    결함(직접입력 저축·투자 버튼 타임아웃 2건, 모바일 컨트롤 높이 40px 기대치
+    2건 중 1건)임을 확인했습니다. Button 이관과 무관합니다.
+- 남은 일: 나머지 `.button` 사용처의 `<Button>` 이관은 이후 태스크에서 범위가
+  정해지면 진행합니다.
+
 # 2026-09-18 Task 3: 반투명 표면 토큰 정의
 
 **Task 3 완료:**
