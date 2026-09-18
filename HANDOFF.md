@@ -1,3 +1,10 @@
+# 2026-09-18 공통 컨트롤 높이 토큰 도입
+
+- `src/styles/_control-tokens.scss`에 sm 32 / md 40 / lg 48 높이 스케일과 패딩·반경·배지 높이 토큰을 정의했습니다.
+- 1차 공통 UI가 쓰던 42px 입력과 38px 타입 토글을 md(40px)로, 탭을 sm(32px)으로 맞췄습니다.
+- 검증: `e2e/control-alignment.spec.ts` 신규 테스트가 수정 전 42px로 실패하고 수정 후 통과했습니다. `npm run lint`, `npm run build`, 기존 Playwright 스펙도 통과했습니다.
+- 남은 일: 기존 `.button`·`.form-input`·`.badge`는 아직 리터럴 값을 씁니다. Task 2에서 연결합니다.
+
 # 2026-09-17 공통 모션 UI — 대시보드 강화 적용
 
 - `motion` 기반 공통 UI 레이어를 추가했습니다. `Tabs`, `Badge`, `ToastProvider`, `AnimatedNumber`는 `src/components/ui`에 두고 Sass 토큰 및 `prefers-reduced-motion`을 공유합니다.
