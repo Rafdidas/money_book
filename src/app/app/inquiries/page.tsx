@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
+import { Badge } from "@/components/ui/Badge";
 import { useAppData } from "@/app/providers";
 import {
   answerInquiry,
@@ -238,7 +239,7 @@ export default function InquiriesPage() {
             </p>
           </div>
           {isAdmin ? (
-            <span className="badge badge--teal">답변 대기 {pendingCount}건</span>
+            <Badge tone="teal">답변 대기 {pendingCount}건</Badge>
           ) : null}
         </section>
 
@@ -320,9 +321,9 @@ export default function InquiriesPage() {
                         onClick={() => setSelectedInquiryId(inquiry.id)}
                       >
                         <div className="row-group row-group--center row-group--between">
-                          <span className={`badge ${inquiry.status === "ANSWERED" ? "badge--teal" : "badge--blue"}`}>
+                          <Badge tone={inquiry.status === "ANSWERED" ? "teal" : "info"}>
                             {statusLabel[inquiry.status]}
-                          </span>
+                          </Badge>
                           <span className="caption--md color-gray">{formatDateTime(inquiry.created_at)}</span>
                         </div>
                         <strong className="label--lg">{inquiry.title}</strong>
@@ -355,9 +356,9 @@ export default function InquiriesPage() {
                 <>
                   <header className="inquiry-detail--header column-group column-group--gap-8">
                     <div className="row-group row-group--center row-group--between">
-                      <span className={`badge ${selectedInquiry.status === "ANSWERED" ? "badge--teal" : "badge--blue"}`}>
+                      <Badge tone={selectedInquiry.status === "ANSWERED" ? "teal" : "info"}>
                         {statusLabel[selectedInquiry.status]}
-                      </span>
+                      </Badge>
                       <span className="caption--md color-gray">{formatDateTime(selectedInquiry.created_at)}</span>
                     </div>
                     <h3 className="title--md">{selectedInquiry.title}</h3>

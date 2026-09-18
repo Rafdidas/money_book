@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { useAppData } from "@/app/providers";
 import {
   DEMO_INVESTMENT_OWNER_KEY,
@@ -120,15 +121,15 @@ const investmentAccountLabel: Record<InvestmentAccountType, string> = {
   ISA: "ISA",
   PENSION: "연금저축",
 };
-const limitAccountBadgeClassName: Record<LimitAccountType, string> = {
-  ISA: "badge--violet",
-  PENSION: "badge--green",
+const ACCOUNT_BADGE_TONES: Record<LimitAccountType, BadgeTone> = {
+  ISA: "violet",
+  PENSION: "success",
 };
-const allocationBadgeClassName: Record<string, string> = {
-  "종목별 비중": "badge--blue",
-  "계좌별 배분": "badge--violet",
-  "시장별 배분": "badge--green",
-  "통화별 배분": "badge--teal",
+const SECTION_BADGE_TONES: Record<string, BadgeTone> = {
+  "종목별 비중": "info",
+  "계좌별 배분": "violet",
+  "시장별 배분": "success",
+  "통화별 배분": "teal",
 };
 const limitAccountTypes: LimitAccountType[] = ["ISA", "PENSION"];
 const formatSignedPercent = (value: number) =>
@@ -1119,9 +1120,9 @@ export default function InvestPage() {
                     <h4 className="title--sm">
                       {investmentAccountLabel[limit.accountType]}
                     </h4>
-                    <span className={`badge ${limitAccountBadgeClassName[limit.accountType]}`}>
+                    <Badge tone={ACCOUNT_BADGE_TONES[limit.accountType]}>
                       {limitYear}년
-                    </span>
+                    </Badge>
                   </div>
                   <div className="invest-limit-card--numbers">
                     <div>
@@ -1210,11 +1211,9 @@ export default function InvestPage() {
                   <div className="row-group row-group--center row-group--between">
                     <h4 className="title--sm">{allocation.title}</h4>
                     {investmentTotals.isValuationReady ? (
-                      <span
-                        className={`badge ${allocationBadgeClassName[allocation.title] ?? "badge--teal"}`}
-                      >
+                      <Badge tone={SECTION_BADGE_TONES[allocation.title] ?? "teal"}>
                         {allocation.items.length.toLocaleString()}개
-                      </span>
+                      </Badge>
                     ) : null}
                   </div>
                   {investmentTotals.isValuationReady && allocation.items.length ? (
@@ -1285,9 +1284,9 @@ export default function InvestPage() {
                     </p>
                   ) : null}
                 </div>
-                <span className="badge badge--violet">
+                <Badge tone="violet">
                   {investmentSummaries.length.toLocaleString()}개 보유
-                </span>
+                </Badge>
               </div>
               <div className="table--wrap table--wrap__invest">
                 <table className="table table--invest invest-holdings--table">
@@ -1383,9 +1382,9 @@ export default function InvestPage() {
                                   {stock.symbol} · {stock.market} ·{" "}
                                   {stock.quantity.toLocaleString()}주
                                 </span>
-                                <span className="badge badge--blue caption--md">
+                                <Badge tone="info" className="caption--md">
                                   {investmentAccountLabel[stock.accountType]}
-                                </span>
+                                </Badge>
                               </div>
                             </td>
                             <td className="tr">
@@ -1450,9 +1449,9 @@ export default function InvestPage() {
                         {investmentAccountLabel[selectedSummary.accountType]}
                       </p>
                     </div>
-                    <span className="badge badge--blue">
+                    <Badge tone="info">
                       보유 기록 {selectedPurchaseRecords.length}건
-                    </span>
+                    </Badge>
                   </div>
                   <div className="invest-detail--daily">
                     <div>
@@ -1563,7 +1562,7 @@ export default function InvestPage() {
                         : "현재 보유 중인 종목을 기록합니다."}
                     </p>
                   </div>
-                  <span className="badge badge--green">KRW</span>
+                  <Badge tone="success">KRW</Badge>
                 </div>
                 {editingStockId ? (
                   <button

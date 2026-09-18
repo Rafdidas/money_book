@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { PRESS_TRANSITION } from "@/lib/motion/tokens";
 import { useReducedMotionPreference } from "@/lib/motion/useReducedMotion";
 
-export type BadgeTone = "neutral" | "info" | "success" | "danger";
+export type BadgeTone = "neutral" | "info" | "success" | "danger" | "teal" | "violet";
 
 type BadgeProps = {
   children: ReactNode;

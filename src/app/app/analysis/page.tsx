@@ -6,6 +6,7 @@ import MonthlyFlowChart from "@/components/chart/MonthlyFlowChart";
 import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
+import { Badge } from "@/components/ui/Badge";
 import { useAppData } from "@/app/providers";
 import {
   getMoneyBookEntriesByYear,
@@ -422,9 +423,9 @@ export default function AnalysisPage() {
           <section className="card analysis-month-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <h4 className="main-overview--title title--sm">월 선택</h4>
-              <span className="badge badge--teal">
+              <Badge tone="teal">
                 {monthNames[selectedMonth]} · {getMonthStateLabel(selectedMonthState)}
-              </span>
+              </Badge>
             </div>
             <label className="analysis-month-select-field">
               {/* <span className="label--md">월</span> */}
@@ -638,9 +639,9 @@ export default function AnalysisPage() {
                   >
                     <div className="analysis-month-card--header row-group row-group--center row-group--between">
                       <strong className="bodyBold--md">{item.label}</strong>
-                      <span className="badge badge--teal">
+                      <Badge tone="teal">
                         {getMonthStateLabel(item.monthState)}
-                      </span>
+                      </Badge>
                     </div>
                     <div className="analysis-month-card--highlight">
                       <span className="analysis-card--meta label--md">

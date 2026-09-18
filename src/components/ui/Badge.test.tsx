@@ -9,4 +9,12 @@ describe("Badge", () => {
 
     expect(screen.getByText("저장됨")).toHaveClass("ui-badge--success");
   });
+
+  it("teal 과 violet tone 을 지원한다", () => {
+    const { rerender } = render(<Badge tone="teal">답변 대기</Badge>);
+    expect(screen.getByText("답변 대기").className).toContain("ui-badge--teal");
+
+    rerender(<Badge tone="violet">ISA</Badge>);
+    expect(screen.getByText("ISA").className).toContain("ui-badge--violet");
+  });
 });
