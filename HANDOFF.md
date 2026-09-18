@@ -1358,3 +1358,13 @@ with a simpler monthly cash-flow summary.
 - 검증: `npm test`(48개 파일·199개), `npm run lint`, `npm run build`를 통과했습니다. Playwright의 대시보드 데모 흐름(추가/수정 탭 전환 포함)은 데스크톱 Chromium과 Pixel 5에서 8개 테스트가 모두 통과했습니다.
 - 브라우저 플러그인이 없어 Playwright로 렌더링 검증했습니다. 외부 Lottie 리소스 로드 실패 및 기존 이미지 비율 경고는 네트워크/기존 자산 관련이며, 테스트 실패는 없었습니다.
 - 남은 확장: Input, Select/Combobox, Checkbox, Radio Group, Bottom Sheet, Tooltip, Table을 같은 공통 UI 계층으로 점진 이관합니다. 배포는 하지 않았습니다.
+
+# 2026-09-18 Task 5: Badge 통합 (부분 완료 — 브리프 범위 밖 사용처 발견)
+
+- Badge의 tone을 `neutral | info | success | danger | teal | violet`으로 확장하고, `.ui-badge--teal`/`.ui-badge--violet` 스타일을 추가했습니다. `.ui-badge`의 `border-radius`를 `--control-radius-sm` 토큰에 연결했습니다(값은 기존과 동일한 6px).
+- TDD: `Badge.test.tsx`에 teal/violet 테스트를 먼저 추가했습니다. vitest는 타입을 검사하지 않아 런타임 RED는 재현되지 않았고(문자열 보간이라 타입 확장 전에도 클래스명은 만들어짐), `npm run build`의 TypeScript 검사 단계가 실질적인 타입 RED/GREEN 역할을 했습니다. 구현 후 `npx vitest run src/components/ui/Badge.test.tsx` 2개 테스트 통과.
+- `src/app/app/analysis/page.tsx`(2곳), `src/app/app/inquiries/page.tsx`(3곳), `src/app/app/invest/page.tsx`(6곳 — 브리프에 없던 소비 지점 2곳 포함: 1122번 줄 `limitAccountBadgeClassName` 소비, 1214번 줄 `allocationBadgeClassName` 소비)의 legacy `.badge` 사용처를 `Badge` 컴포넌트로 이전했습니다. invest의 색상 클래스 맵을 `ACCOUNT_BADGE_TONES`/`SECTION_BADGE_TONES` tone 맵으로 교체했습니다.
+- **미완료(Step 6/7 보류)**: `rg 'className="badge|badge--' src`로 확인한 결과 브리프에 없는 `src/app/_home/DashboardScheduleCard.tsx`(2곳)와 `src/app/_home/HomeClient.tsx`(6곳, 캘린더 내역/적금 표/상세 표 항목에서 2회 반복되는 패턴)가 여전히 legacy `.badge`/`badge--*` 클래스를 사용 중입니다. `_badge.scss`를 삭제하면 이 두 파일의 배지가 스타일을 잃습니다. 브리프의 파일 목록에 없는 화면이라 임의로 범위를 넓히지 않고 `_badge.scss` 삭제와 `globals.scss`의 `@use "../styles/badge";` 제거를 보류했습니다.
+- 이 두 파일의 톤 매핑은 모호하지 않습니다(blue→info, green→success, red→danger, violet→violet, teal→teal — 이미 확정된 매핑과 동일). 다음 세션에서 이 두 파일도 함께 이전한 뒤 `_badge.scss`를 삭제하고 Step 7 검증(`rg 'className="badge|badge--' src` 결과 없음)과 `npm test && npm run lint && npm run build`, 화면 육안 확인을 마무리해야 합니다.
+- 검증: `npm test`(52개 파일·214개), `npm run lint`, `npm run build` 모두 통과(단, `_badge.scss`는 아직 존재하는 상태).
+- 커밋: `41223e3` — Badge tone 확장 및 3개 화면 이전만 포함, 스타일 삭제는 포함하지 않음.
