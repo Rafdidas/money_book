@@ -29,4 +29,9 @@ describe("control tokens", () => {
   it("backdrop-filter 를 쓰지 않는다", () => {
     expect(source).not.toContain("backdrop-filter");
   });
+
+  it("표 셀 패딩 토큰을 정의한다", () => {
+    expect(source).toContain("--table-cell-pad-block: 5px;");
+    expect(source).toContain("--table-cell-pad-inline: 10px;");
+  });
 });

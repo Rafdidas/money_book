@@ -14,6 +14,9 @@
 
   --badge-height: 24px;
 
+  --table-cell-pad-block: 5px;
+  --table-cell-pad-inline: 10px;
+
   --surface-translucent: color-mix(in srgb, var(--surface-lowest) 78%, transparent);
   --surface-translucent-strong: color-mix(in srgb, var(--surface-lowest) 88%, transparent);
   --surface-border-translucent: color-mix(in srgb, var(--outline) 62%, transparent);

@@ -1,3 +1,23 @@
+# 2026-09-21 Task 7: 표 셀 패딩 토큰화
+
+**Task 7 완료:**
+- `src/styles/_control-tokens.scss`에 두 개의 표 셀 패딩 토큰을 추가했습니다.
+  - `--table-cell-pad-block: 5px`
+  - `--table-cell-pad-inline: 10px`
+- 기존 `src/styles/_table.scss`의 세 곳에서 `padding: 5px 10px;` 리터럴 값을 
+  `padding: var(--table-cell-pad-block) var(--table-cell-pad-inline);`로 치환했습니다
+  (정규 표 thead th 줄 28, tbody td 줄 37, 투자 표 thead th 줄 63).
+- **밀도는 값이 동일하므로 바뀌지 않았습니다** — 순수 중앙화만 수행했으며, 표 스타일 
+  시각적 변화는 없습니다. Task 2·5의 버튼·배지 스케일과는 독립적으로 작동합니다.
+- 테스트 주도 구현:
+  - `src/styles/control-tokens.test.ts`에 신규 테스트 추가 후 RED 확인
+  - 토큰 정의 및 _table.scss 수정 후 4개 테스트 모두 GREEN 확인
+- 검증:
+  - `npm run lint` ✓
+  - `npm run build` ✓
+  - `npx playwright test e2e/dashboard-detail-scroll.spec.ts --project=desktop-chromium --project=mobile-chromium`: 
+    2 passed ✓ (표 내부 세로 오버플로 0 유지, 마지막 행 가시성 확인)
+
 # 2026-09-18 Task 4: Button 공통 컴포넌트
 
 **Task 4 완료:**
