@@ -259,3 +259,9 @@ select.ui-form-control {
     width: min(420px, calc(100vw - 24px));
   }
 }
+
+.ui-date-field.ui-form-control {
+  height: var(--control-height-md);
+  min-height: var(--control-height-md);
+  padding: 0 var(--control-pad-md);
+}

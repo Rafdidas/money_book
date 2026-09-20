@@ -17,6 +17,7 @@ import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { DateField } from "@/components/ui/DateField";
 import { Select, TextInput } from "@/components/ui/FormControl";
 import { Tabs } from "@/components/ui/Tabs";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -2572,11 +2573,10 @@ export default function HomeClient() {
                       </label>
                       <label className="main-overview--field">
                         <span className="label--md">날짜</span>
-                        <TextInput
+                        <DateField
                           className="main-overview--control body--sm"
-                          type="date"
                           value={inlineDate}
-                          onChange={(event) => setInlineDate(event.target.value)}
+                          onChange={setInlineDate}
                         />
                       </label>
                     </div>
@@ -2845,12 +2845,11 @@ export default function HomeClient() {
                             만기일 없음
                           </Checkbox>
                         </div>
-                        <TextInput
+                        <DateField
                           id="savings-maturity-date"
                           className="main-overview--control body--sm"
-                          type="date"
                           value={savingsMaturityDate}
-                          onChange={(event) => setSavingsMaturityDate(event.target.value)}
+                          onChange={setSavingsMaturityDate}
                           disabled={savingsHasNoMaturity}
                         />
                       </div>
@@ -3114,12 +3113,11 @@ export default function HomeClient() {
                             종료일 설정 안함
                           </Checkbox>
                         </div>
-                        <TextInput
+                        <DateField
                           id="fixed-expense-end-date"
                           className="main-overview--control body--sm"
-                          type="date"
                           value={fixedExpenseEndDate}
-                          onChange={(event) => setFixedExpenseEndDate(event.target.value)}
+                          onChange={setFixedExpenseEndDate}
                           disabled={fixedExpenseHasNoEndDate}
                         />
                       </div>

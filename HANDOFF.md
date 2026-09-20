@@ -1404,3 +1404,12 @@ with a simpler monthly cash-flow summary.
 - TDD: Card.test.tsx로 `Failed to resolve import "./Card"` RED 확인 후 4개 통과.
 - 검증: `npm test`(53개 파일·218개), `npm run lint`, `npm run build` 통과. Playwright 30개 중 28개 통과, 실패 2개는 기존 `e2e/public-auth-demo.spec.ts:51`(저축·투자 직접입력) 타임아웃으로 두 프로젝트 모두 브랜치 기준선에서도 동일합니다.
 - 시각 확인(Playwright 스크린샷, dev 서버): 1440px·390px, 라이트/다크 모두 금액 텍스트가 읽히고 가로 오버플로 0, 모바일 개요 카드 가로 스크롤 유지. 1024px 및 창 크기 연속 변경은 이번에는 확인하지 않았습니다.
+
+# 2026-09-21 Task 8: DateField 컴포넌트
+
+- `src/components/ui/DateField.tsx`(`TextInput type="date"` 래퍼, `onChange`는 문자열)를 추가하고 `HomeClient.tsx`의 날짜 입력 3곳(인라인 추가, 적금 만기일, 고정지출 종료일)을 `DateField`로 이전했습니다. 세 곳 모두 단순 setter라 `onChange={setXxx}`로 옮겼습니다.
+- `ui.scss`에 `.ui-date-field.ui-form-control`(높이/패딩 토큰)을 추가했습니다.
+- TDD: `DateField.test.tsx`로 `Failed to resolve import "./DateField"` RED 확인 후 5개 통과.
+- 높이 실측(임시 Playwright 스크립트, 커밋하지 않음, 프로덕션 빌드): 390px와 1440px 모두 date 입력 3개가 40px(getBoundingClientRect·computed 동일). legacy `.main-overview--control` 규칙과 충돌 없음.
+- 모바일 피커 결정: 네이티브 date 피커를 그대로 유지했습니다(실제 기기 확인은 못 함).
+- 남은 일: `.calendar-picker` 팝오버를 `DateField` 안으로 통합하는 작업은 하지 않았습니다. 실제 모바일 기기에서 네이티브 피커가 어색하면 후속으로 진행하세요.
