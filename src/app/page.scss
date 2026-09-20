@@ -51,26 +51,20 @@
         .overview-card {
           overflow: hidden;
 
-          &::before {
-            position: absolute;
-            top: 0;
-            right: 0;
-            left: 0;
-            height: 3px;
-            background: var(--primary-low);
-            content: "";
+          &:nth-child(1) {
+            background-image: linear-gradient(color-mix(in srgb, var(--primary-low) 7%, transparent), transparent);
           }
 
-          &:nth-child(2)::before {
-            background: var(--red-mid);
+          &:nth-child(2) {
+            background-image: linear-gradient(color-mix(in srgb, var(--red-mid) 6%, transparent), transparent);
           }
 
-          &:nth-child(3)::before {
-            background: var(--green-mid);
+          &:nth-child(3) {
+            background-image: linear-gradient(color-mix(in srgb, var(--green-mid) 6%, transparent), transparent);
           }
 
-          &:nth-child(4)::before {
-            background: var(--blue-mid);
+          &:nth-child(4) {
+            background-image: linear-gradient(color-mix(in srgb, var(--blue-mid) 6%, transparent), transparent);
           }
         }
       }

@@ -1,5 +1,6 @@
 import AppIcon from "@/components/common/AppIcon";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
 import { formatWon } from "@/utils/money";
 import type { DashboardScheduleItem } from "./dashboardSummary";
 
@@ -32,7 +33,7 @@ export default function DashboardScheduleCard({
   const visibleItems = items.slice(0, 6);
 
   return (
-    <section className="card overview-card dashboard-schedule-card column-group column-group--gap-16">
+    <Card as="section" className="overview-card dashboard-schedule-card column-group column-group--gap-16">
       <div className="main-overview--section-header row-group row-group--center row-group--between">
         <div>
           <h4 className="main-overview--title title--sm">이번 달 남은 예정</h4>
@@ -74,6 +75,6 @@ export default function DashboardScheduleCard({
           <p className="label--md">이번 달 남은 예정 항목이 없습니다.</p>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

@@ -136,6 +136,23 @@ select.ui-form-control {
   min-height: var(--control-height-md);
 }
 
+.ui-card {
+  position: relative;
+  padding: 16px;
+  border: 1px solid var(--surface-border-translucent);
+  border-radius: var(--control-radius-md);
+  background: var(--surface-translucent);
+  box-shadow: var(--surface-shadow-soft);
+
+  &--strong {
+    background: var(--surface-translucent-strong);
+  }
+
+  &--compact {
+    padding: 12px;
+  }
+}
+
 .ui-badge {
   display: inline-flex;
   align-items: center;

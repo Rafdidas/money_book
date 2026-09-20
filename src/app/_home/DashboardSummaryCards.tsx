@@ -1,4 +1,5 @@
 import { formatWon } from "@/utils/money";
+import { Card } from "@/components/ui/Card";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import type {
   DashboardMonthlySummary,
@@ -21,7 +22,7 @@ export default function DashboardSummaryCards({
     <div className="main-overview column-group column-group--gap-16">
       <h3 className="main-common-title title--md">개요</h3>
       <div className="main-overview-card row-group row-group--stretch row-group--gap-16">
-        <article className="card overview-card column-group column-group--center column-group--gap-8">
+        <Card as="article" className="overview-card column-group column-group--center column-group--gap-8">
           <h4 className="main-overview--title title--sm">현재 남은 돈</h4>
           <p className="main-overview--num title--lg">
             <AnimatedNumber value={monthlySummary.actualRemaining} format={formatWon} />
@@ -36,8 +37,8 @@ export default function DashboardSummaryCards({
               {formatWon(monthlySummary.actualInvestment)}
             </p>
           </div>
-        </article>
-        <article className="card overview-card column-group column-group--center column-group--gap-8">
+        </Card>
+        <Card as="article" className="overview-card column-group column-group--center column-group--gap-8">
           <h4 className="main-overview--title title--sm">이번 달 수입</h4>
           <p className="main-overview--num title--lg">
             <AnimatedNumber value={monthlySummary.actualIncome} format={formatWon} />
@@ -46,8 +47,8 @@ export default function DashboardSummaryCards({
             총 {monthlySummary.incomeCount}건 · 평균{" "}
             {formatWon(monthlySummary.incomeAverage)}
           </p>
-        </article>
-        <article className="card overview-card column-group column-group--center column-group--gap-8">
+        </Card>
+        <Card as="article" className="overview-card column-group column-group--center column-group--gap-8">
           <h4 className="main-overview--title title--sm">이번 달 지출</h4>
           <p className="main-overview--num title--lg">
             <AnimatedNumber value={monthlySummary.actualExpense} format={formatWon} />
@@ -56,8 +57,8 @@ export default function DashboardSummaryCards({
             총 {monthlySummary.expenseCount}건 · 평균{" "}
             {formatWon(monthlySummary.expenseAverage)}
           </p>
-        </article>
-        <article className="card overview-card column-group column-group--center column-group--gap-8">
+        </Card>
+        <Card as="article" className="overview-card column-group column-group--center column-group--gap-8">
           <h4 className="main-overview--title title--sm">저축/투자</h4>
           <p className="main-overview--num title--lg"><AnimatedNumber value={assetMove} format={formatWon} /></p>
           <div className="column-group column-group--gap-4">
@@ -68,9 +69,9 @@ export default function DashboardSummaryCards({
               투자원금 {formatWon(monthlySummary.actualInvestment)}
             </p>
           </div>
-        </article>
+        </Card>
       </div>
-      <article className="card overview-card dashboard-expected-balance column-group column-group--gap-16">
+      <Card as="article" className="overview-card dashboard-expected-balance column-group column-group--gap-16">
         <div className="main-overview--section-header row-group row-group--center row-group--between">
           <div className="column-group column-group--gap-4">
             <h4 className="main-overview--title title--sm">
@@ -104,7 +105,7 @@ export default function DashboardSummaryCards({
             </strong>
           </div>
         </div>
-      </article>
+      </Card>
     </div>
   );
 }

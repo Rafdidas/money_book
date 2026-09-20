@@ -1375,3 +1375,12 @@ with a simpler monthly cash-flow summary.
 - `src/styles/_badge.scss`를 삭제하고 `src/app/globals.scss`의 `@use "../styles/badge";`를 제거했습니다.
 - 검증: `rg 'className="badge|badge--' src` 결과 없음(남은 매치는 `ui-badge--*`뿐이며 이는 Badge 컴포넌트 자체 클래스임). `npm test`(52개 파일·214개), `npm run lint`, `npm run build` 모두 통과.
 - 남은 일: 화면 육안 확인(데스크톱/모바일)은 이번 세션에서 진행하지 않았습니다. 다음 세션에서 대시보드 일정 카드, 캘린더 내역, 적금/고정지출 표, 상세 표의 tone별 배지 색상을 데스크톱·모바일 폭에서 확인하는 것을 권장합니다.
+
+# 2026-09-21 Task 6: Card 컴포넌트와 반투명 톤 적용
+
+- `src/components/ui/Card.tsx`(tone default|strong, padding default|compact, as div|section|article)와 `.ui-card` 스타일(`ui.scss`)을 추가하고, 대시보드 개요 카드 4개·예상 잔액 카드·일정 카드에 적용했습니다. 기존 legacy `.card` 클래스는 이 카드들에서 제거했고 `overview-card`(레이아웃 전용)는 유지했습니다.
+- `page.scss`의 개요 카드 위쪽 단색 선(`::before`)을 제거하고, 카드 4개에 6~7% 수준의 미세한 그라디언트 색감만 남겼습니다.
+- 반투명 값은 조정 없이 유지: 라이트 78%/88%, 다크 70%/84%. `backdrop-filter`는 추가하지 않았습니다.
+- TDD: Card.test.tsx로 `Failed to resolve import "./Card"` RED 확인 후 4개 통과.
+- 검증: `npm test`(53개 파일·218개), `npm run lint`, `npm run build` 통과. Playwright 30개 중 28개 통과, 실패 2개는 기존 `e2e/public-auth-demo.spec.ts:51`(저축·투자 직접입력) 타임아웃으로 두 프로젝트 모두 브랜치 기준선에서도 동일합니다.
+- 시각 확인(Playwright 스크린샷, dev 서버): 1440px·390px, 라이트/다크 모두 금액 텍스트가 읽히고 가로 오버플로 0, 모바일 개요 카드 가로 스크롤 유지. 1024px 및 창 크기 연속 변경은 이번에는 확인하지 않았습니다.
