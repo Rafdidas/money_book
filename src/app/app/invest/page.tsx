@@ -1190,7 +1190,7 @@ export default function InvestPage() {
                     </label>
                     <Button
                       type="button"
-                      variant="outline" size="sm"
+                      variant="outline" size="md"
                       onClick={() => handleAccountLimitSave(limit.accountType)}
                     >
                       저장
