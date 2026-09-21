@@ -1454,3 +1454,10 @@ with a simpler monthly cash-flow summary.
 - scss 변경 없음(겹치는 레거시 규칙 없음). 기존 vitest 수정 없이 통과.
 - 검증: npm test 230, lint, build 통과. e2e는 기존 public-auth-demo:51 2건만 실패. 데모 모드에서는 안내 카드만 렌더되어 1440/390 라이트·다크로 카드 확인, 가로 오버플로 0.
 - 한계: 실제 폼(입력/버튼/textarea)은 실계정이 필요해 렌더 높이를 측정하지 못함(토큰 규칙상 40px/48px 예상).
+
+## Task 5 공통 폼·모달·CategoryManager (beUI 3차)
+- CategoryManager: 버튼 11개 → `Button`, 입력 2개 → `TextInput`, scss 중복 선언 제거(입력 40px, 추가 버튼 md 40px, sm 32px 측정).
+- AppAlertProvider 확인/취소 버튼 → `Button`(autoFocus, role 유지). SideMenu는 전부 커스텀 클래스 버튼이라 미변경, Modal은 버튼 없음.
+- ExpenseForm/ExpenseList/CalendarView는 어디서도 import되지 않는 죽은 코드라 미변경.
+- 검증: vitest 230 통과, lint, build, e2e 28 통과(기존 실패 2건만).
+- 남은 일: alert/confirm 다이얼로그 화면 육안 미확인.
