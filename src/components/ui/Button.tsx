@@ -13,7 +13,10 @@ export type ButtonVariant =
   | "outline"
   | "outline-primary"
   | "subtle"
-  | "negative";
+  | "negative"
+  | "header-primary"
+  | "header-ghost"
+  | "banner";
 
 export type ButtonSize = "xs" | "sm" | "md" | "lg";
 
@@ -24,12 +27,16 @@ type ButtonProps = Omit<
   variant?: ButtonVariant;
   size?: ButtonSize;
   full?: boolean;
+  icon?: "left" | "right";
+  iconOnly?: boolean;
 };
 
 export function Button({
   variant = "default",
   size = "md",
   full = false,
+  icon,
+  iconOnly = false,
   className,
   type = "button",
   disabled,
@@ -42,6 +49,8 @@ export function Button({
     variant === "default" ? "" : `button--${variant}`,
     `button--${size}`,
     full ? "button--full" : "",
+    icon ? `button--icon-${icon}` : "",
+    iconOnly ? "button--icon-only" : "",
     className,
   ]
     .filter(Boolean)

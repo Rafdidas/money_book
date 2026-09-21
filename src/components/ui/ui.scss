@@ -113,6 +113,14 @@
   padding: 0 var(--control-pad-md);
 }
 
+.ui-form-control.ui-textarea {
+  height: auto;
+  min-height: var(--control-height-lg);
+  padding: 8px var(--control-pad-md);
+  line-height: 1.5;
+  resize: vertical;
+}
+
 select.ui-form-control {
   cursor: pointer;
 }

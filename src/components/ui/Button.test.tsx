@@ -42,4 +42,30 @@ describe("Button", () => {
     render(<Button>확인</Button>);
     expect(screen.getByRole("button", { name: "확인" })).toHaveAttribute("type", "button");
   });
+
+  it("header/banner variant 를 기존 클래스로 출력한다", () => {
+    render(
+      <>
+        <Button variant="header-primary">가</Button>
+        <Button variant="header-ghost">나</Button>
+        <Button variant="banner">다</Button>
+      </>,
+    );
+    expect(screen.getByRole("button", { name: "가" }).className).toContain("button--header-primary");
+    expect(screen.getByRole("button", { name: "나" }).className).toContain("button--header-ghost");
+    expect(screen.getByRole("button", { name: "다" }).className).toContain("button--banner");
+  });
+
+  it("icon 과 iconOnly 클래스를 출력한다", () => {
+    render(
+      <>
+        <Button icon="left" size="lg">왼쪽</Button>
+        <Button icon="right">오른쪽</Button>
+        <Button iconOnly aria-label="닫기" />
+      </>,
+    );
+    expect(screen.getByRole("button", { name: "왼쪽" }).className).toContain("button--icon-left");
+    expect(screen.getByRole("button", { name: "오른쪽" }).className).toContain("button--icon-right");
+    expect(screen.getByRole("button", { name: "닫기" }).className).toContain("button--icon-only");
+  });
 });

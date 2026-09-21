@@ -1428,3 +1428,9 @@ with a simpler monthly cash-flow summary.
 시각: 1440/390, 라이트/다크 모두 가로 오버플로 없음(scrollWidth==clientWidth), `.main-overview--control` 40px, `.ui-tabs__tab` 32px(type-toggle 40px), 탭 폭 148px, 다크에서 date color-scheme=dark.
 
 남은 일: 모바일 네이티브 date picker 실기기 미확인.
+
+## 3차 Task 1: 공통 부품 보강
+
+변경: `Button`에 variant `header-primary/header-ghost/banner`, prop `icon("left"|"right")`, `iconOnly` 추가(레거시 클래스 그대로 출력). `Textarea` 추가(`FormControl.tsx`, `ui-form-control ui-textarea`, invalid/has-value 동일). `.ui-form-control.ui-textarea`: height auto, min-height lg, 패딩 8px/pad-md, 세로 리사이즈.
+검증: npm test 229 통과, lint, build 통과. Playwright는 3001 포트 사용 중이라 미실행.
+남은 일: Task 2 이후 화면별 치환.
