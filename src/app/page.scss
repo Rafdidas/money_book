@@ -250,38 +250,6 @@
       }
 
       // 입력폼
-      &--tabs,
-      &--type-toggle {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 4px;
-        padding: 4px;
-        border: 1px solid var(--outline);
-        border-radius: 10px;
-        background: var(--surface-lower);
-
-        &__grid {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-      }
-
-      &--tabs {
-        width: 132px;
-      }
-
-      &--tab,
-      &--type {
-        height: 28px;
-        border-radius: 6px;
-        color: var(--on-surface);
-
-        &.is-active {
-          background: var(--surface-ultra-low);
-          color: var(--on-surface-ultra-high);
-          box-shadow: rgba(9, 11, 17, 0.06) 0 2px 8px;
-        }
-      }
-
       &--form {
         display: flex;
         flex-direction: column;
@@ -291,14 +259,6 @@
         .invest-noti {
           color: var(--on-primary-mid);
         }
-      }
-
-      &--type-toggle {
-        width: 100%;
-      }
-
-      &--type {
-        height: 32px;
       }
 
       &--form-grid {
@@ -405,6 +365,10 @@
           -webkit-appearance: none;
           -webkit-text-fill-color: currentColor;
           color-scheme: light;
+
+          :root[data-theme="dark"] & {
+            color-scheme: dark;
+          }
         }
 
         &[type="date"]::-webkit-date-and-time-value {
@@ -687,12 +651,6 @@
           .grid-col-3,.grid-col-2 {
             grid-template-columns: 1fr !important;
           }
-        }
-
-        &--control,
-        &--type,
-        &--tab {
-          min-height: 28px;
         }
 
         &--custom-category-list {

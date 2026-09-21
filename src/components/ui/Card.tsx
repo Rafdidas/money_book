@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
-type CardProps = {
+type CardProps = Omit<HTMLAttributes<HTMLElement>, "className" | "children"> & {
   children: ReactNode;
   tone?: "default" | "strong";
   padding?: "default" | "compact";
@@ -14,6 +14,7 @@ export function Card({
   padding = "default",
   as: Element = "div",
   className,
+  ...rest
 }: CardProps) {
   const classNames = [
     "ui-card",
@@ -24,5 +25,5 @@ export function Card({
     .filter(Boolean)
     .join(" ");
 
-  return <Element className={classNames}>{children}</Element>;
+  return <Element {...rest} className={classNames}>{children}</Element>;
 }

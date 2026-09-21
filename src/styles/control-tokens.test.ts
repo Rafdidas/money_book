@@ -13,21 +13,26 @@ describe("control tokens", () => {
     expect(source).toContain("--control-height-lg: 48px;");
   });
 
-  it("반투명 표면 토큰을 라이트와 다크 모두 정의한다", () => {
+  it("반투명 표면 토큰을 라이트와 [data-theme=\"dark\"] 블록 모두에서 정의한다", () => {
     const names = [
       "--surface-translucent",
       "--surface-translucent-strong",
       "--surface-border-translucent",
       "--surface-shadow-soft",
     ];
+    const darkIndex = source.indexOf('[data-theme="dark"]');
+    expect(darkIndex).toBeGreaterThan(-1);
+    const light = source.slice(0, darkIndex);
+    const dark = source.slice(darkIndex);
     for (const name of names) {
-      const occurrences = source.split(`${name}:`).length - 1;
-      expect(occurrences, `${name} 는 라이트와 다크에서 정의되어야 한다`).toBeGreaterThanOrEqual(2);
+      expect(light, `${name} 라이트 정의`).toContain(`${name}:`);
+      expect(dark, `${name} 다크 정의`).toContain(`${name}:`);
     }
   });
 
-  it("backdrop-filter 를 쓰지 않는다", () => {
-    expect(source).not.toContain("backdrop-filter");
+  it("ui.scss 는 backdrop-filter 를 쓰지 않는다", () => {
+    const uiScss = readFileSync(join(__dirname, "../components/ui/ui.scss"), "utf8");
+    expect(uiScss).not.toContain("backdrop-filter");
   });
 
   it("표 셀 패딩 토큰을 정의한다", () => {

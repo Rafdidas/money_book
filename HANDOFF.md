@@ -1413,3 +1413,18 @@ with a simpler monthly cash-flow summary.
 - 높이 실측(임시 Playwright 스크립트, 커밋하지 않음, 프로덕션 빌드): 390px와 1440px 모두 date 입력 3개가 40px(getBoundingClientRect·computed 동일). legacy `.main-overview--control` 규칙과 충돌 없음.
 - 모바일 피커 결정: 네이티브 date 피커를 그대로 유지했습니다(실제 기기 확인은 못 함).
 - 남은 일: `.calendar-picker` 팝오버를 `DateField` 안으로 통합하는 작업은 하지 않았습니다. 실제 모바일 기기에서 네이티브 피커가 어색하면 후속으로 진행하세요.
+
+## 최종 리뷰 수정 (feat/beui-common-ui-phase-two)
+
+변경:
+- Badge: motion 제거, 단순 span (SSR opacity:0/reduced-motion 문제 해소)
+- 다크 모드 date input: `color-scheme: dark` 추가 (`:root[data-theme="dark"]`)
+- page.scss의 레거시 `--tabs/--type-toggle/--tab/--type` 규칙 및 모바일 min-height 28px 항목 제거 (ui.scss가 스타일 담당, 탭 너비 148px)
+- 적금/고정지출 액션 버튼 쌍을 `<Button>`으로 이전
+- 대시보드 남은 `.card` 5곳을 `<Card>`로 전환 (Card는 HTML 속성 pass-through 지원). 패딩 18px -> 16px 수용
+- control-tokens 테스트 강화(라이트/다크 블록 분리, ui.scss backdrop-filter 검사), 죽은 `.ui-date-field.ui-form-control` 삭제
+
+검증: npm test 225 통과, lint, build 통과. Playwright 28 통과 / 기존 public-auth-demo.spec.ts:51 2건만 실패.
+시각: 1440/390, 라이트/다크 모두 가로 오버플로 없음(scrollWidth==clientWidth), `.main-overview--control` 40px, `.ui-tabs__tab` 32px(type-toggle 40px), 탭 폭 148px, 다크에서 date color-scheme=dark.
+
+남은 일: 모바일 네이티브 date picker 실기기 미확인.

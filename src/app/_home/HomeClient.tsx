@@ -17,6 +17,7 @@ import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { DateField } from "@/components/ui/DateField";
 import { Select, TextInput } from "@/components/ui/FormControl";
 import { Tabs } from "@/components/ui/Tabs";
@@ -2362,7 +2363,7 @@ export default function HomeClient() {
             <h3 className="main-common-title title--md">등록 / 수정</h3>
             <div className="row-group row-group--stretch row-group--gap-16">
               {/* 달력 */}
-              <div className="card overview-card main-overview--calendar-card column-group--center ">
+              <Card as="div" className="overview-card main-overview--calendar-card column-group--center">
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">
@@ -2478,9 +2479,9 @@ export default function HomeClient() {
                     </ul>
                   </div>
                 </div>
-              </div>
+              </Card>
               {/* 입력, 수정 */}
-              <div className="card overview-card main-overview--form-card column-group--center ">
+              <Card as="div" className="overview-card main-overview--form-card column-group--center">
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">내역 추가/수정</h4>
@@ -2697,9 +2698,9 @@ export default function HomeClient() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
               {/* 카테고리 지출 비율 */}
-              <div className="card overview-card main-overview--category-rate-card column-group column-group--gap-16">
+              <Card as="div" className="overview-card main-overview--category-rate-card column-group column-group--gap-16">
                 <div className="column-group column-group--gap-16">
                   <h4 className="main-overview--title title--sm">카테고리 지출 비율</h4>
                   <div className="graph-section">
@@ -2744,12 +2745,12 @@ export default function HomeClient() {
                     )}
                   </ul>
                 </div>
-              </div>
+              </Card>
             </div>
             <h3 className="main-common-title title--md">특수지출</h3>
             <div className="row-group row-group--stretch row-group--gap-16">
               {/* 적금 */}
-              <div className="main-overview--savings card overview-card column-group column-group--gap-8">
+              <Card as="div" className="main-overview--savings overview-card column-group column-group--gap-8">
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">적금 추가/수정</h4>
@@ -2881,9 +2882,10 @@ export default function HomeClient() {
                     </div>
                     <div className="main-overview--actions row-group row-group--center row-group--gap-8">
                       {savingsFormMode === "edit" ? (
-                        <button
-                          type="button"
-                          className="button button--outline button--md main-overview--delete"
+                        <Button
+                          variant="outline"
+                          size="md"
+                          className="main-overview--delete"
                           onClick={handleSavingsDelete}
                           disabled={
                             isSavingsSubmitting ||
@@ -2892,11 +2894,13 @@ export default function HomeClient() {
                           }
                         >
                           {isSavingsDeleting ? "삭제 중..." : "삭제"}
-                        </button>
+                        </Button>
                       ) : null}
-                      <button
-                        type="button"
-                        className="button button--primary button--md button--full main-overview--submit"
+                      <Button
+                        variant="primary"
+                        size="md"
+                        full
+                        className="main-overview--submit"
                         onClick={handleSavingsSubmit}
                         disabled={
                           isSavingsSubmitting ||
@@ -2909,7 +2913,7 @@ export default function HomeClient() {
                           : savingsFormMode === "edit"
                             ? "수정 저장"
                             : "적금 추가"}
-                      </button>
+                      </Button>
                     </div>
                     <div className="savings--list table--wrap table--wrap__invest">
                       <table className="table table--invest savings--table">
@@ -3030,9 +3034,9 @@ export default function HomeClient() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
               {/* 고정지출 */}
-              <div className="main-overview--fix card overview-card column-group column-group--top column-group--gap-8">
+              <Card as="div" className="main-overview--fix overview-card column-group column-group--top column-group--gap-8">
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">고정지출</h4>
@@ -3155,9 +3159,10 @@ export default function HomeClient() {
                     </div>
                     <div className="main-overview--actions row-group row-group--center row-group--gap-8">
                       {fixedExpenseFormMode === "edit" ? (
-                        <button
-                          type="button"
-                          className="button button--outline button--md main-overview--delete"
+                        <Button
+                          variant="outline"
+                          size="md"
+                          className="main-overview--delete"
                           onClick={handleFixedExpenseDelete}
                           disabled={
                             isFixedExpenseSubmitting ||
@@ -3166,11 +3171,13 @@ export default function HomeClient() {
                           }
                         >
                           {isFixedExpenseDeleting ? "삭제 중..." : "삭제"}
-                        </button>
+                        </Button>
                       ) : null}
-                      <button
-                        type="button"
-                        className="button button--primary button--md button--full main-overview--submit"
+                      <Button
+                        variant="primary"
+                        size="md"
+                        full
+                        className="main-overview--submit"
                         onClick={handleFixedExpenseSubmit}
                         disabled={
                           isFixedExpenseSubmitting ||
@@ -3184,7 +3191,7 @@ export default function HomeClient() {
                           : fixedExpenseFormMode === "edit"
                             ? "수정 저장"
                             : "고정지출 추가"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -3297,7 +3304,7 @@ export default function HomeClient() {
                     </table>
                   </div>
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
           {/* 전체 정보 */}

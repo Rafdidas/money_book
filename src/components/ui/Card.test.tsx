@@ -32,4 +32,16 @@ describe("Card", () => {
     render(<Card className="main-overview--card">내용</Card>);
     expect(screen.getByText("내용").className).toContain("main-overview--card");
   });
+
+  it("추가 HTML 속성을 그대로 전달한다", () => {
+    render(
+      <Card id="x" aria-label="라벨" data-testid="c">
+        내용
+      </Card>,
+    );
+    const card = screen.getByTestId("c");
+    expect(card).toHaveAttribute("id", "x");
+    expect(card).toHaveAttribute("aria-label", "라벨");
+    expect(card.className).toContain("ui-card");
+  });
 });
