@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/Button";
 import { formatWon } from "@/utils/money";
 
 type DetailBulkActionBarProps = {
@@ -23,22 +24,22 @@ export default function DetailBulkActionBar({
         {count}건 선택 · 합계 {formatWon(total)}
       </strong>
       <div className="detail-bulk-actions__buttons">
-        <button
+        <Button
           type="button"
-          className="button button--sm button--subtle"
+          variant="subtle" size="sm"
           disabled={isDeleting}
           onClick={onClear}
         >
           선택 해제
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="button button--sm button--primary button--negative"
+          variant="primary" size="sm" className="button--negative"
           disabled={isDeleting}
           onClick={onDelete}
         >
           {isDeleting ? "삭제 중..." : "선택 삭제"}
-        </button>
+        </Button>
       </div>
     </div>
   );

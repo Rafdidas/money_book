@@ -2343,15 +2343,15 @@ export default function HomeClient() {
       <main className="main column-group">
         <section className="main-header row-group row-group--center row-group--between">
           <h2 className="main-header--title headline--sm">대시보드</h2>
-          <button
+          <Button
             type="button"
-            className="button button--sm button--icon-left button--outline main-header--calendar-button"
+            variant="outline" size="sm" icon="left" className="main-header--calendar-button"
             aria-haspopup="dialog"
             onClick={openCalendarModal}
           >
             <AppIcon name="calendar_month" />
             {formatHeaderDate(selectedDate)}
-          </button>
+          </Button>
         </section>
         <section className="column-group column-group--gap-16">
           <DashboardSummaryCards
@@ -2370,25 +2370,25 @@ export default function HomeClient() {
                       {selectedDateKey.replaceAll("-", ".")} 현황
                     </h4>
                     <div className="main-overview--calendar-nav row-group row-group--center">
-                      <button
+                      <Button
                         type="button"
-                        className="button button--icon-only button--sm button--subtle"
+                        variant="subtle" size="sm" iconOnly
                         aria-label="이전 달"
                         onClick={() => handleOverviewMonthChange(-1)}
                       >
                         <AppIcon name="chevron_left" />
-                      </button>
+                      </Button>
                       <span className="label--lg">
                         {currentYear}.{String(currentMonth + 1).padStart(2, "0")}
                       </span>
-                      <button
+                      <Button
                         type="button"
-                        className="button button--icon-only button--sm button--subtle"
+                        variant="subtle" size="sm" iconOnly
                         aria-label="다음 달"
                         onClick={() => handleOverviewMonthChange(1)}
                       >
                         <AppIcon name="chevron_right" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div className="main-overview--calendar">
@@ -2581,13 +2581,13 @@ export default function HomeClient() {
                         />
                       </label>
                     </div>
-                    <button
+                    <Button
                       type="button"
-                      className="button button--sm button--outline"
+                      variant="outline" size="sm"
                       onClick={() => setIsCategoryManagerOpen(true)}
                     >
                       카테고리 관리
-                    </button>
+                    </Button>
                     {inlineCategory === customCategoryValue ? (
                       <div className="main-overview--field">
                         <label
@@ -2955,16 +2955,16 @@ export default function HomeClient() {
                                   </td>
                                   <td>
                                     <div className="row-group row-group--center row-group--gap-4">
-                                      <button
+                                      <Button
                                         type="button"
-                                        className="button button--xs button--secondary"
+                                        variant="secondary" size="xs"
                                         onClick={() => setMaturingSavingsAccount(account)}
                                         disabled={isSavingsDeleting}
                                       >
                                         {isMaturityEditable
                                           ? "만기 월 납입 수정"
                                           : "만기 처리"}
-                                      </button>
+                                      </Button>
                                       {isPaused ? (
                                         <Badge className="recurring-status">일시정지</Badge>
                                       ) : null}
@@ -2972,7 +2972,7 @@ export default function HomeClient() {
                                   </td>
                                   <td className="recurring-actions-cell">
                                     <span className="recurring-actions">
-                                      <button
+                                      <Button
                                         type="button"
                                         aria-label="적금 메뉴 열기"
                                         aria-controls={`savings-actions-${account.id}`}
@@ -2982,7 +2982,7 @@ export default function HomeClient() {
                                             : "false"
                                         }
                                         aria-haspopup="menu"
-                                        className="button button--icon-only button--sm button--subtle side-menu--more"
+                                        variant="subtle" size="sm" iconOnly className="side-menu--more"
                                         onClick={() =>
                                           setOpenSavingsPauseMenuId((current) =>
                                             current === account.id ? "" : account.id,
@@ -2991,7 +2991,7 @@ export default function HomeClient() {
                                         disabled={isSavingsSkipping}
                                       >
                                         <AppIcon name="more_vert" />
-                                      </button>
+                                      </Button>
                                       {openSavingsPauseMenuId === account.id ? (
                                         <div
                                           className="side-menu--dropdown column-group"
@@ -3232,18 +3232,18 @@ export default function HomeClient() {
                                   ) : null}
                                 </td>
                                 <td>
-                                  <button
+                                  <Button
                                     type="button"
-                                    className="button button--xs button--secondary"
+                                    variant="secondary" size="xs"
                                     onClick={() => handleFixedExpenseEnd(account)}
                                     disabled={isFixedExpenseDeleting || isEnded}
                                   >
                                     {isEnded ? "종료됨" : "종료"}
-                                  </button>
+                                  </Button>
                                 </td>
                                 <td className="recurring-actions-cell">
                                   <span className="recurring-actions">
-                                    <button
+                                    <Button
                                       type="button"
                                       aria-label="고정지출 메뉴 열기"
                                       aria-controls={`fixed-expense-actions-${account.id}`}
@@ -3253,7 +3253,7 @@ export default function HomeClient() {
                                           : "false"
                                       }
                                       aria-haspopup="menu"
-                                      className="button button--icon-only button--sm button--subtle side-menu--more"
+                                      variant="subtle" size="sm" iconOnly className="side-menu--more"
                                       onClick={() =>
                                         setOpenFixedExpensePauseMenuId((current) =>
                                           current === account.id ? "" : account.id,
@@ -3262,7 +3262,7 @@ export default function HomeClient() {
                                       disabled={isFixedExpenseSkipping}
                                     >
                                       <AppIcon name="more_vert" />
-                                    </button>
+                                    </Button>
                                     {openFixedExpensePauseMenuId === account.id ? (
                                       <div
                                         className="side-menu--dropdown column-group"
@@ -3494,14 +3494,14 @@ export default function HomeClient() {
                   {formatHeaderDate(selectedDate)}
                 </h2>
               </div>
-              <button
+              <Button
                 type="button"
-                className="button button--icon-only button--sm button--subtle"
+                variant="subtle" size="sm" iconOnly
                 aria-label="Close calendar"
                 onClick={closeCalendarModal}
               >
                 <AppIcon name="close" />
-              </button>
+              </Button>
             </div>
             <Calendar
               value={selectedDate}
@@ -3517,13 +3517,13 @@ export default function HomeClient() {
               }
             />
             <div className="calendar-picker__footer">
-              <button
+              <Button
                 type="button"
-                className="button button--sm button--outline"
+                variant="outline" size="sm"
                 onClick={() => handleCalendarSelect(today)}
               >
                 오늘
-              </button>
+              </Button>
               <span className="body--sm">{selectedDateKey}</span>
             </div>
           </div>
@@ -3549,9 +3549,9 @@ export default function HomeClient() {
               onToggleFavorite={categoryState.toggleFavorite}
               onUse={handleUseCustomCategory}
             />
-            <button type="button" className="button button--sm button--outline" onClick={() => setIsCategoryManagerOpen(false)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsCategoryManagerOpen(false)}>
               닫기
-            </button>
+            </Button>
           </div>
         </Modal>
       ) : null}
@@ -3573,17 +3573,17 @@ export default function HomeClient() {
               </p>
             </div>
             <div className="row-group row-group--gap-8 row-group--end">
-              <button
+              <Button
                 type="button"
-                className="button button--sm button--outline"
+                variant="outline" size="sm"
                 onClick={() => setMaturingSavingsAccount(null)}
                 disabled={isSavingsDeleting}
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="button button--sm button--secondary"
+                variant="secondary" size="sm"
                 onClick={() => {
                   const account = maturingSavingsAccount;
                   setMaturingSavingsAccount(null);
@@ -3592,10 +3592,10 @@ export default function HomeClient() {
                 disabled={isSavingsDeleting}
               >
                 납입 안 함
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="button button--sm button--primary"
+                variant="primary" size="sm"
                 onClick={() => {
                   const account = maturingSavingsAccount;
                   setMaturingSavingsAccount(null);
@@ -3604,7 +3604,7 @@ export default function HomeClient() {
                 disabled={isSavingsDeleting}
               >
                 납입함
-              </button>
+              </Button>
             </div>
           </div>
         </Modal>

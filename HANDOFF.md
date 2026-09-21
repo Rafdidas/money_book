@@ -1434,3 +1434,9 @@ with a simpler monthly cash-flow summary.
 변경: `Button`에 variant `header-primary/header-ghost/banner`, prop `icon("left"|"right")`, `iconOnly` 추가(레거시 클래스 그대로 출력). `Textarea` 추가(`FormControl.tsx`, `ui-form-control ui-textarea`, invalid/has-value 동일). `.ui-form-control.ui-textarea`: height auto, min-height lg, 패딩 8px/pad-md, 세로 리사이즈.
 검증: npm test 229 통과, lint, build 통과. Playwright는 3001 포트 사용 중이라 미실행.
 남은 일: Task 2 이후 화면별 치환.
+
+## 3차 Task 2: 대시보드 마무리
+
+변경: `_home`의 남은 `.button` 16곳(HomeClient 14, DetailBulkActionBar 2)을 `<Button>`으로 치환. 핸들러/disabled/aria/type 그대로 보존, 삭제 버튼은 `variant="primary"` + `className="button--negative"` 유지. page.scss의 달력 월 이동 28px 규칙에 의도된 아이콘 버튼 크기 예외 주석 추가.
+검증: npm test 229 통과, lint, build 통과. Playwright 28 통과 / 기존 public-auth-demo.spec.ts:51 2건만 실패. 1440/390 라이트/다크 데모 대시보드 육안 확인, 가로 오버플로 없음, 달력 이동 버튼 32x28.
+남은 일: Task 3(분석/투자).

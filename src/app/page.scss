@@ -108,6 +108,7 @@
         gap: 4px;
         color: var(--on-surface);
 
+        // 의도된 아이콘 버튼 크기 예외(달력 월 이동 28px)
         .button {
           width: 28px;
           height: 28px;
