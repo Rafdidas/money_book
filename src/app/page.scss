@@ -51,26 +51,20 @@
         .overview-card {
           overflow: hidden;
 
-          &::before {
-            position: absolute;
-            top: 0;
-            right: 0;
-            left: 0;
-            height: 3px;
-            background: var(--primary-low);
-            content: "";
+          &:nth-child(1) {
+            background-image: linear-gradient(color-mix(in srgb, var(--primary-low) 7%, transparent), transparent);
           }
 
-          &:nth-child(2)::before {
-            background: var(--red-mid);
+          &:nth-child(2) {
+            background-image: linear-gradient(color-mix(in srgb, var(--red-mid) 6%, transparent), transparent);
           }
 
-          &:nth-child(3)::before {
-            background: var(--green-mid);
+          &:nth-child(3) {
+            background-image: linear-gradient(color-mix(in srgb, var(--green-mid) 6%, transparent), transparent);
           }
 
-          &:nth-child(4)::before {
-            background: var(--blue-mid);
+          &:nth-child(4) {
+            background-image: linear-gradient(color-mix(in srgb, var(--blue-mid) 6%, transparent), transparent);
           }
         }
       }
@@ -114,6 +108,7 @@
         gap: 4px;
         color: var(--on-surface);
 
+        // 의도된 아이콘 버튼 크기 예외(달력 월 이동 28px)
         .button {
           width: 28px;
           height: 28px;
@@ -183,7 +178,7 @@
             border-radius: 10px;
             background-color: var(--primary);
 
-            color: var(--on-primary-ultra-high);
+            color: var(--on-primary-ultra-low);
             font-weight: 700;
           }
         }
@@ -203,7 +198,7 @@
         }
         &.is-today.is-selected {
           > span.day-unit {
-            color: var(--on-primary-ultra-high);
+            color: var(--on-primary-ultra-low);
           }
         }
       }
@@ -256,38 +251,6 @@
       }
 
       // 입력폼
-      &--tabs,
-      &--type-toggle {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 4px;
-        padding: 4px;
-        border: 1px solid var(--outline);
-        border-radius: 10px;
-        background: var(--surface-lower);
-
-        &__grid {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-      }
-
-      &--tabs {
-        width: 132px;
-      }
-
-      &--tab,
-      &--type {
-        height: 28px;
-        border-radius: 6px;
-        color: var(--on-surface);
-
-        &.is-active {
-          background: var(--surface-ultra-low);
-          color: var(--on-surface-ultra-high);
-          box-shadow: rgba(9, 11, 17, 0.06) 0 2px 8px;
-        }
-      }
-
       &--form {
         display: flex;
         flex-direction: column;
@@ -297,14 +260,6 @@
         .invest-noti {
           color: var(--on-primary-mid);
         }
-      }
-
-      &--type-toggle {
-        width: 100%;
-      }
-
-      &--type {
-        height: 32px;
       }
 
       &--form-grid {
@@ -391,9 +346,9 @@
 
       &--control {
         width: 100%;
-        height: 36px;
+        height: var(--control-height-md);
         min-width: 0;
-        padding: 7px 10px;
+        padding: 0 var(--control-pad-md);
         border: 1px solid var(--outline);
         border-radius: 6px;
         background: var(--surface-ultra-low);
@@ -405,12 +360,16 @@
 
         &[type="date"] {
           display: block;
-          min-height: 36px;
+          min-height: var(--control-height-md);
           line-height: 20px;
           appearance: none;
           -webkit-appearance: none;
           -webkit-text-fill-color: currentColor;
           color-scheme: light;
+
+          :root[data-theme="dark"] & {
+            color-scheme: dark;
+          }
         }
 
         &[type="date"]::-webkit-date-and-time-value {
@@ -693,12 +652,6 @@
           .grid-col-3,.grid-col-2 {
             grid-template-columns: 1fr !important;
           }
-        }
-
-        &--control,
-        &--type,
-        &--tab {
-          min-height: 28px;
         }
 
         &--custom-category-list {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { TextInput } from "@/components/ui/FormControl";
 import type { CustomCategory, CustomCategoryType } from "@/lib/api/customCategories";
 import { CUSTOM_CATEGORY_FAVORITE_LIMIT, getCategoriesForType } from "@/lib/customCategoryRules";
 
@@ -97,9 +99,9 @@ export default function CategoryManager({
       <form className="category-manager__form" onSubmit={(event) => void submitNewCategory(event)}>
         <label className="category-manager__field">
           <span className="label--md">새 카테고리 이름</span>
-          <input className="category-manager__control" value={newName} onChange={(event) => setNewName(event.target.value)} maxLength={30} aria-invalid={Boolean(formError)} />
+          <TextInput className="category-manager__control" value={newName} onChange={(event) => setNewName(event.target.value)} maxLength={30} aria-invalid={Boolean(formError)} />
         </label>
-        <button type="submit" className="button button--md" disabled={busyKey === `add:${selectedType}`}>{busyKey === `add:${selectedType}` ? "추가 중" : "카테고리 추가"}</button>
+        <Button type="submit" size="md" disabled={busyKey === `add:${selectedType}`}>{busyKey === `add:${selectedType}` ? "추가 중" : "카테고리 추가"}</Button>
       </form>
       {formError ? <p className="category-manager__error" role="alert">{formError}</p> : null}
 
@@ -115,18 +117,18 @@ export default function CategoryManager({
                   <>
                     <label className="category-manager__edit-field">
                       <span className="a11y-hidden">{category.name} 카테고리 이름</span>
-                      <input className="category-manager__control" value={editingName} onChange={(event) => setEditingName(event.target.value)} maxLength={30} />
+                      <TextInput className="category-manager__control" value={editingName} onChange={(event) => setEditingName(event.target.value)} maxLength={30} />
                     </label>
-                    <button type="button" className="button button--sm" onClick={() => void saveRename()} disabled={busyKey === `rename:${category.id}`}>이름 저장</button>
-                    <button type="button" className="button button--sm button--outline" onClick={() => setEditingCategory(null)}>수정 취소</button>
+                    <Button size="sm" onClick={() => void saveRename()} disabled={busyKey === `rename:${category.id}`}>이름 저장</Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingCategory(null)}>수정 취소</Button>
                   </>
                 ) : (
                   <>
                     <span className="category-manager__name">{category.name}</span>
-                    {onUse ? <button type="button" className="button button--sm button--outline" onClick={() => onUse(category)} aria-label={`${category.name} 카테고리 사용`}>사용</button> : null}
-                    <button type="button" className="button button--sm button--outline" onClick={() => { setEditingCategory(category); setEditingName(category.name); }} aria-label={`${category.name} 카테고리 이름 수정`}>수정</button>
-                    <button type="button" className="button button--sm button--outline" aria-pressed={category.isFavorite} aria-label={`${category.name} 자주 쓰기 ${category.isFavorite ? "해제" : "지정"}`} onClick={() => void onToggleFavorite(category)} disabled={disableFavorite || busyKey === `favorite:${category.id}`}>{category.isFavorite ? "자주 씀" : "자주 쓰기"}</button>
-                    <button type="button" className="button button--sm button--outline" onClick={() => setDeleteCandidate(category)} aria-label={`${category.name} 카테고리 삭제`}>삭제</button>
+                    {onUse ? <Button size="sm" variant="outline" onClick={() => onUse(category)} aria-label={`${category.name} 카테고리 사용`}>사용</Button> : null}
+                    <Button size="sm" variant="outline" onClick={() => { setEditingCategory(category); setEditingName(category.name); }} aria-label={`${category.name} 카테고리 이름 수정`}>수정</Button>
+                    <Button size="sm" variant="outline" aria-pressed={category.isFavorite} aria-label={`${category.name} 자주 쓰기 ${category.isFavorite ? "해제" : "지정"}`} onClick={() => void onToggleFavorite(category)} disabled={disableFavorite || busyKey === `favorite:${category.id}`}>{category.isFavorite ? "자주 씀" : "자주 쓰기"}</Button>
+                    <Button size="sm" variant="outline" onClick={() => setDeleteCandidate(category)} aria-label={`${category.name} 카테고리 삭제`}>삭제</Button>
                   </>
                 )}
               </li>
@@ -141,8 +143,8 @@ export default function CategoryManager({
           <p><strong>{deleteCandidate.name}</strong> 카테고리를 삭제할까요?</p>
           <p className="caption--md">기존 거래 내역은 변경되지 않습니다.</p>
           <div className="category-manager__actions">
-            <button type="button" className="button button--sm button--outline" onClick={() => setDeleteCandidate(null)}>취소</button>
-            <button type="button" className="button button--sm" onClick={() => void confirmDelete()} disabled={busyKey === `delete:${deleteCandidate.id}`}>삭제</button>
+            <Button size="sm" variant="outline" onClick={() => setDeleteCandidate(null)}>취소</Button>
+            <Button size="sm" onClick={() => void confirmDelete()} disabled={busyKey === `delete:${deleteCandidate.id}`}>삭제</Button>
           </div>
         </div>
       ) : null}

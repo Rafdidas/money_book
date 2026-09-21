@@ -1,3 +1,122 @@
+# 2026-09-21 2차+3차 공통 UI 통합 정리 (Task 7 최종)
+
+**변경:** 공통 컴포넌트(`src/components/ui`: Button, Card, Badge, Tabs, TextInput/Select/DateField 등)와 컨트롤 높이 토큰(24/32/40/48, `_control-tokens.scss`)을 대시보드·분석·투자·문의·마이페이지·CategoryManager·알림 다이얼로그·공개 CTA·오류 화면에 적용. 레거시 `_input.scss`(`.form-input`, 참조 0)와 죽은 className(`button--negative`, `button--outline`) 삭제.
+
+**의도적 예외:** `auth/*`(자체 히어로: 입력 52/버튼 56), `global-error.tsx`, `Link` 기반 nav·`auth/callback` 링크 버튼, SideMenu 커스텀 버튼, intro 커스텀 CTA, 투자 종목 자동완성 내부 input(`autocomplete__input`), 달력 월 이동 28px 아이콘 버튼, 표 정렬 버튼(`sort-btn`), 캘린더/월 카드 셀 버튼, HomeClient 모달 패널 `.card`(2곳), 죽은 코드 `ExpenseForm/ExpenseList/CalendarView`(미사용).
+
+**검증:** `npm test` 230 통과, lint 통과, build 통과. e2e(desktop+mobile) 28 통과/2 실패(기지: public-auth-demo.spec.ts:51). 8개 라우트 x 1440/390 x 라이트/다크 스윕: 가로 오버플로 0, 콘솔 error 0, 스케일 밖 높이는 위 예외뿐.
+
+**남은 일:** 실계정으로 문의·마이페이지 폼 검증, 실기기 모바일 날짜 선택기, alert/confirm 다이얼로그·드로어 시각 미검증, 다크 모드 로고 텍스트 대비(헤더/사이드바 "머니북가계부"가 어두운 배경에서 거의 안 보임, 본 작업 범위 밖), 미푸시.
+
+# 2026-09-21 Task 7: 표 셀 패딩 토큰화
+
+**Task 7 완료:**
+- `src/styles/_control-tokens.scss`에 두 개의 표 셀 패딩 토큰을 추가했습니다.
+  - `--table-cell-pad-block: 5px`
+  - `--table-cell-pad-inline: 10px`
+- 기존 `src/styles/_table.scss`의 세 곳에서 `padding: 5px 10px;` 리터럴 값을 
+  `padding: var(--table-cell-pad-block) var(--table-cell-pad-inline);`로 치환했습니다
+  (정규 표 thead th 줄 28, tbody td 줄 37, 투자 표 thead th 줄 63).
+- **밀도는 값이 동일하므로 바뀌지 않았습니다** — 순수 중앙화만 수행했으며, 표 스타일 
+  시각적 변화는 없습니다. Task 2·5의 버튼·배지 스케일과는 독립적으로 작동합니다.
+- 테스트 주도 구현:
+  - `src/styles/control-tokens.test.ts`에 신규 테스트 추가 후 RED 확인
+  - 토큰 정의 및 _table.scss 수정 후 4개 테스트 모두 GREEN 확인
+- 검증:
+  - `npm run lint` ✓
+  - `npm run build` ✓
+  - `npx playwright test e2e/dashboard-detail-scroll.spec.ts --project=desktop-chromium --project=mobile-chromium`: 
+    2 passed ✓ (표 내부 세로 오버플로 0 유지, 마지막 행 가시성 확인)
+
+# 2026-09-18 Task 4: Button 공통 컴포넌트
+
+**Task 4 완료:**
+- `src/components/ui/Button.tsx`를 추가했습니다. 기존 `.button` 클래스 체계를
+  그대로 출력하는 얇은 래퍼로, `variant`(default/primary/secondary/outline/
+  outline-primary/subtle/negative), `size`(xs/sm/md/lg), `full` prop과 나머지
+  `ButtonHTMLAttributes`를 받습니다.
+- `Badge.tsx`와 동일한 패턴으로 `motion/react`의 `motion.button`을 사용해
+  `PRESS_TRANSITION`(`src/lib/motion/tokens.ts`) 기반 누름 모션(`whileTap:
+  scale 0.98`)을 추가했고, `useReducedMotionPreference` 또는 `disabled`일 때는
+  비활성화합니다.
+- 전체 `.button` 사용처(~220곳)는 계획대로 이관하지 않았습니다. `HomeClient.tsx`의
+  인라인 입력 폼(추가/수정) 삭제·제출 버튼 2개만 `<Button>`으로 교체했습니다
+  (`main-overview--delete`, `main-overview--submit`, 2666~2692번째 줄 근처).
+  동일한 클래스 패턴을 가진 다른 2쌍(2883/2896, 3158/3171번째 줄 근처)은 브리프
+  범위 밖이라 건드리지 않았습니다.
+- 테스트 주도 구현:
+  - `src/components/ui/Button.test.tsx` 신규 테스트 6개가 `Button` 모듈 부재로
+    실패(`Failed to resolve import "./Button"`) 확인
+  - 구현 후 6개 테스트 통과 확인
+- 검증:
+  - `npm test`: 52 files, 213 tests 통과
+  - `npm run lint`: 통과
+  - `npm run build`: 통과
+  - `npx playwright test --project=desktop-chromium --project=mobile-chromium`:
+    27 passed, 3 failed — 실패 3건은 이 작업 전 `git stash`로 재현해 기존
+    결함(직접입력 저축·투자 버튼 타임아웃 2건, 모바일 컨트롤 높이 40px 기대치
+    2건 중 1건)임을 확인했습니다. Button 이관과 무관합니다.
+- 남은 일: 나머지 `.button` 사용처의 `<Button>` 이관은 이후 태스크에서 범위가
+  정해지면 진행합니다.
+
+# 2026-09-18 Task 3: 반투명 표면 토큰 정의
+
+**Task 3 완료:**
+- `src/styles/_control-tokens.scss`에 반투명 표면 토큰 4개를 라이트·다크 모두 정의했습니다.
+  - `--surface-translucent`: 라이트 color-mix(in srgb, var(--surface-lowest) 78%, transparent) / 다크 70%
+  - `--surface-translucent-strong`: 라이트 88% / 다크 84%
+  - `--surface-border-translucent`: 라이트 62% / 다크 70%
+  - `--surface-shadow-soft`: 라이트 0 2px 8px rgba(9, 11, 17, 0.06) / 다크 0 2px 10px rgba(0, 0, 0, 0.32)
+  - 패턴: `src/app/color_tokens.scss`와 동일하게 `:root` + `[data-theme="dark"]` 블록
+- 테스트 주도 구현:
+  - `src/styles/control-tokens.test.ts` 신규 테스트가 반투명 토큰 부재로 실패 확인
+  - 구현 후 3개 테스트 통과 (컨트롤 높이, 반투명 토큰, backdrop-filter 불포함)
+- 검증: `npm run lint` ✓, `npm run build` ✓
+- 값은 초기값이며, Task 6의 대시보드 카드 리디자인에서 실제 대비를 보고 조정할 수 있습니다.
+
+# 2026-09-18 Task 2: 기존 컨트롤 스타일을 토큰에 연결
+
+**Task 2 완료:**
+- 기존 버튼·입력·배지·달력 높이를 공통 스케일 토큰에 연결했습니다.
+  - `_button.scss`: 기본(md), `--lg`(lg), `--md`(md), `--sm`(sm), `--xs`(badge) 높이를 각각 토큰으로 변경
+  - `_input.scss`: sm/md/lg 변형의 높이와 패딩을 토큰으로 변경
+  - `_badge.scss`: 높이를 `--badge-height` 토큰으로 변경
+  - `_calendar-picker.scss`: 네비게이션 라벨과 화살표 높이를 `--control-height-md` 토큰으로 변경
+- `--xmd`(36px) 정의를 제거하고 유일한 사용처(`src/app/app/invest/page.tsx:1189`)를 `--sm`으로 교체했습니다.
+- TDD 검증:
+  - e2e 테스트 추가 후 실패 확인 (usesScale false)
+  - 구현 후 통과 확인 (usesScale true, button--sm 높이 32px)
+  - `npm run lint` ✓, `npm run build` ✓
+  - `npx playwright test e2e/control-alignment.spec.ts --project=desktop-chromium` 2 passed ✓
+  - 전체 e2e 스펙 14 passed (1 flaky timeout 제외, 구현과 무관)
+- 남은 일: 컴포넌트 이관은 Task 4부터 시작합니다.
+
+# 2026-09-18 공통 컨트롤 높이 토큰 도입
+
+- `src/styles/_control-tokens.scss`에 sm 32 / md 40 / lg 48 높이 스케일과 패딩·반경·배지 높이 토큰을 정의했습니다.
+- 1차 공통 UI가 쓰던 42px 입력과 38px 타입 토글을 md(40px)로, 탭을 sm(32px)으로 맞췄습니다.
+- 검증: `e2e/control-alignment.spec.ts` 신규 테스트가 수정 전 42px로 실패하고 수정 후 통과했습니다. `npm run lint`, `npm run build`, 기존 Playwright 스펙도 통과했습니다.
+- 남은 일: 기존 `.button`·`.form-input`·`.badge`는 아직 리터럴 값을 씁니다. Task 2에서 연결합니다.
+
+# 2026-09-17 공통 모션 UI — 대시보드 강화 적용
+
+- `motion` 기반 공통 UI 레이어를 추가했습니다. `Tabs`, `Badge`, `ToastProvider`, `AnimatedNumber`는 `src/components/ui`에 두고 Sass 토큰 및 `prefers-reduced-motion`을 공유합니다.
+- 대시보드의 추가/수정 전환과 거래 유형(지출·수입·저축·투자)을 강한 파란 선택 배경과 레이아웃 모션이 있는 공통 탭으로 교체했습니다. 기존 도메인 상태·저장 로직은 바꾸지 않았습니다.
+- 직접 입력 저장·삭제에는 비차단 완료 토스트를, 핵심 요약 금액에는 변화 시 숫자 진입 모션을 추가했습니다.
+- React Strict Mode에서 토스트가 중복 생성되던 문제를 ref 기반 ID 발급으로 수정하고 회귀 테스트를 추가했습니다.
+- 프로덕션 DB/데이터 변경 및 배포: 없음.
+- 검증: `npm test`(49개 파일·201개), `npm run lint`, `npm run build` 통과. Playwright의 저장 완료 알림 시나리오는 데스크톱·모바일 2개 통과. 전체 데모 E2E는 기존 시나리오의 종료 대기 현상으로 이 작업에서는 완료 확인하지 못했으므로 다음 작업에서 별도 점검이 필요합니다.
+- 시각 확인: 데모 모드에서 1280×900 및 390×844로 선택 탭·저장 완료 토스트가 잘 보이고, 모바일에서 4개 거래 유형 탭과 폼이 가로 넘침 없이 표시되는 것을 확인했습니다.
+
+# 2026-09-17 공통 폼 컨트롤 강화
+
+- 공통 `TextInput`·`Select`를 `src/components/ui/FormControl.tsx`에 추가했습니다. 네이티브 input/select의 접근성·동작은 유지하면서 공통 클래스, 입력값 강조, `aria-invalid` 오류 상태를 제공합니다.
+- 직접 입력·적금·고정지출 대시보드 폼의 input/select를 새 공통 컨트롤로 교체했습니다.
+- 기본·hover·focus·입력 완료·오류·비활성 상태를 Sass로 통일했습니다. 포커스는 파란 테두리와 4px 글로우로 명확하게 보이고, 컨트롤 높이는 42px으로 모바일 터치에 맞췄습니다.
+- 테스트 주도 구현: FormControl 테스트를 먼저 추가해 공통 클래스, 값 변경, 오류, 입력값 강조를 확인했습니다. 구현 전에는 해당 클래스가 없어 실패했고 구현 후 통과했습니다.
+- 검증: `npm test`(50개 파일·204개), `npm run lint`, `npm run build`, `git diff --check` 통과. 데모 모드에서 1280×900 및 390×844로 금액 인풋의 포커스·입력값 표시와 셀렉트 레이아웃을 확인했습니다.
+- 프로덕션 DB/데이터 변경 및 배포: 없음.
+
 # 2026-09-04 README 제품 소개 개편
 
 - README를 기술 구현·수치 나열 중심 문서에서 제품 소개 중심 문서로 전면 개편했습니다.
@@ -1227,3 +1346,134 @@ with a simpler monthly cash-flow summary.
 - 자동 검증: 수정 전 회귀 테스트 실패 확인, 수정 후 로그인/Providers 테스트 14개 통과. 전체 `npm test` 44개 파일·187개 통과, `npm run lint` 통과, `npm run build` 통과, `git diff --check` 통과.
 - 화면 검증: 로컬 프로덕션 서버 `http://127.0.0.1:3100/auth/login`을 인앱 브라우저로 확인했습니다. 데스크톱 1280×900 및 모바일 390×844에서 가상 로그인 정보로 요청 중 상태·버튼 비활성화·오류 안내·입력값 보존·재시도를 확인했습니다. 가로 오버플로와 로그인 페이지의 콘솔 오류는 없었습니다. 데모 버튼에서 `/app` 대시보드로 정상 전환했습니다.
 - 남은 확인: 실제 계정의 로그인 성공 소요 시간은 측정하지 않았습니다. 성공 후 화면 이동까지의 잠금과 약관 동의 분기는 단위 테스트로 검증했습니다. 운영 배포는 하지 않았습니다.
+
+# 2026-09-08 보완점 코드 검토
+
+- 코드 검토 결과: 적금·고정지출 수정이 정보 갱신 → 기존 예정 내역 취소 → 신규 내역 생성의 개별 요청으로 구성되어 중간 실패 시 일부 변경이 남을 수 있습니다. 트랜잭션 RPC로 묶는 보완이 우선입니다.
+- 대시보드·분석 조회 실패 시 배열을 비워 정상적인 기록 없음 상태와 구분되지 않습니다. 오류 상태와 재시도 동작 보완이 필요합니다.
+- 대시보드의 병렬 조회 5개가 각각 getUser를 호출하고, 문의 배지 조회도 사용자 조회를 중복 수행합니다. 조회 단위 인증 결과 재사용을 검토할 수 있습니다.
+- 검증: 관련 화면과 API 호출 경로를 정적으로 확인했습니다. 구현 변경, 테스트 실행, 브라우저 화면 및 운영 DB 확인은 하지 않았습니다.
+- 남은 일: 위 항목 수정 및 실패 경로 회귀 검증. 이전 기록의 운영 마이그레이션 적용 여부는 현재 확인되지 않았습니다.
+
+# 2026-09-14 대시보드 상세내용 스크롤 수정
+
+- 원인: 상세내용 표 래퍼에 데스크톱 400px, 모바일 360px 높이 제한이 있어 표에 별도 세로 스크롤이 생기고 페이지 끝에서 뒤쪽 내역이 보이지 않았습니다.
+- 수정: 두 높이 제한을 제거해 표의 모든 행이 페이지 높이에 포함되도록 했습니다. 가로 스크롤은 유지합니다.
+- 검증: 수정 전 새 Playwright 회귀 테스트가 데스크톱·모바일에서 각각 95px·135px의 표 내부 세로 오버플로로 실패했고, 수정 후 두 화면 모두 통과했습니다. `npm run lint`와 `npm run build`도 통과했습니다.
+- 화면 확인: 로컬 프로덕션 빌드의 데모 대시보드 2048×1048, 390×844 화면에서 페이지 맨 아래 마지막 행이 보이고 표 내부 세로 오버플로와 페이지 가로 오버플로가 0이며 프레임워크 오류 화면이 없음을 확인했습니다. 로컬 네트워크 제한으로 외부 Lottie 리소스 로드 오류가, Vercel 기능이 없는 로컬 서버에서 Analytics/Speed Insights 스크립트 404가 콘솔에 남습니다. 실제 사용자 데이터로는 확인하지 않았습니다.
+- 배포: 스크롤 수정과 회귀 테스트를 `107218d`로 `origin/main`에 푸시했습니다. GitHub의 Vercel 커밋 상태가 `success`이며 `https://monibuk.com/`에서 HTTP 200을 확인했습니다. 이 HANDOFF 기록에는 이전부터 있던 별도 미커밋 변경이 포함돼 있어 이번 배포 커밋에 넣지 않았습니다.
+
+# 2026-09-14 대시보드 반투명 톤 정리
+
+- 대시보드 화면에만 `dashboard-page` 범위를 추가하고, 파스텔 블루그레이 배경·얇은 전체 테두리·옅은 반투명 카드 표면을 적용했습니다. 개요 카드의 위쪽 단색 선을 제거하고 네 카드에는 미세한 색감 차이만 남겼습니다.
+- 사이드 메뉴, 예상 잔액, 일정 카드, 상세 표, 모바일 상·하단 탐색도 같은 표면 톤으로 맞췄습니다. 다크 모드에서는 어두운 반투명 패널과 로고를 읽을 수 있는 밝은 바탕을 적용했습니다. 모바일 예상 잔액의 `원`이 줄바꿈되지 않도록 했습니다.
+- 검증: `npm run lint`, `npm run build`, 대시보드 상세내역 Playwright 회귀 테스트 2개가 통과했습니다. 로컬 프로덕션 화면 1440×900, 1024×768, 390×844 및 다크 1440×900, 390×844에서 화면 정체성·오류 오버레이 없음·가로 오버플로 0·요약 카드 위쪽 의사 요소 없음·표 내부 세로 오버플로 0을 확인했습니다. 날짜 선택 모달 열기와 모바일 개요 카드 가로 스크롤도 확인했습니다.
+- 남은 일: 실제 사용자 데이터와 외부 폰트·애니메이션 리소스를 이용한 운영 화면은 확인하지 않았고, 이 디자인 변경은 아직 푸시·배포하지 않았습니다. 로컬에서는 외부 Lottie와 Vercel Analytics/Speed Insights 로드 오류만 발생합니다.
+
+# 2026-09-14 창 크기 변경 중 상단 카드 깜빡임 대응
+
+- 사용자 화면에서 창 크기를 조절하는 동안 개요 카드와 일정 목록의 자리는 남지만 내용이 잠시 사라지는 현상이 관찰됐습니다. 로컬 프로덕션 화면에서는 같은 현상을 포착하지 못했으며, 크기 변경에 따른 데이터 재조회나 카드 숨김 스타일은 발견되지 않았습니다.
+- 대시보드 카드·사이드 메뉴·상세 표의 `backdrop-filter: blur(8px)`를 제거했습니다. 투명한 배경색, 전체 테두리와 부드러운 그림자는 유지해 기존 반투명 디자인을 보존했습니다. 브라우저 합성 레이어의 일시적인 그리기 문제를 줄이기 위한 변경입니다.
+- 검증: `npm run lint`, `npm run build` 통과. 로컬 프로덕션에서 1440→1763→1200→800→1763px 연속 크기 변경 시 요약 카드 4개가 계속 표시됐습니다. 밝은 1440/1024/390px와 어두운 1440/390px에서 가로 넘침·프레임워크 오류가 없고 날짜 모달, 모바일 카드 가로 스크롤, 상세 표 마지막 행을 확인했습니다.
+- 남은 확인: 원래의 순간적인 누락은 수정 전에도 자동 캡처에서 재현되지 않아 실제 사용자 브라우저에서 해소됐는지 확인이 필요합니다. 이번 변경은 아직 푸시·배포하지 않았습니다.
+# 2026-09-16 beUI 기반 공통 UI 1차 설계
+
+- beUI의 Tailwind·shadcn 스타일 계층은 도입하지 않고, Motion의 상호작용 패턴을 기존 Sass 토큰으로 포팅하기로 결정했습니다.
+- 공통 UI는 `src/components/ui`에 두며 거래·카테고리·투자 도메인 로직을 포함하지 않습니다. 첫 사용처는 대시보드입니다.
+- 설계: `docs/superpowers/specs/2026-09-16-beui-common-ui-design.md`.
+- 구현 계획: `docs/superpowers/plans/2026-09-16-beui-common-ui-phase-one.md`.
+- `motion`을 추가하고 공통 transition 토큰·reduced-motion 훅, 접근성 Tabs, tone 기반 Badge, 비차단 ToastProvider를 만들었습니다.
+- 대시보드의 일반 내역·적금·고정지출 추가/수정 전환과 일시정지 상태 배지가 첫 공통 UI 소비자입니다. 확인 대화상자는 기존 AppAlertProvider를 유지합니다.
+- TDD: 각 신규 모듈의 import 실패를 먼저 확인한 뒤 구현했습니다. 대상 테스트 5개 파일 17개가 통과했습니다.
+- 검증: `npm test`(48개 파일·199개), `npm run lint`, `npm run build`를 통과했습니다. Playwright의 대시보드 데모 흐름(추가/수정 탭 전환 포함)은 데스크톱 Chromium과 Pixel 5에서 8개 테스트가 모두 통과했습니다.
+- 브라우저 플러그인이 없어 Playwright로 렌더링 검증했습니다. 외부 Lottie 리소스 로드 실패 및 기존 이미지 비율 경고는 네트워크/기존 자산 관련이며, 테스트 실패는 없었습니다.
+- 남은 확장: Input, Select/Combobox, Checkbox, Radio Group, Bottom Sheet, Tooltip, Table을 같은 공통 UI 계층으로 점진 이관합니다. 배포는 하지 않았습니다.
+
+# 2026-09-18 Task 5: Badge 통합 (부분 완료 — 브리프 범위 밖 사용처 발견)
+
+- Badge의 tone을 `neutral | info | success | danger | teal | violet`으로 확장하고, `.ui-badge--teal`/`.ui-badge--violet` 스타일을 추가했습니다. `.ui-badge`의 `border-radius`를 `--control-radius-sm` 토큰에 연결했습니다(값은 기존과 동일한 6px).
+- TDD: `Badge.test.tsx`에 teal/violet 테스트를 먼저 추가했습니다. vitest는 타입을 검사하지 않아 런타임 RED는 재현되지 않았고(문자열 보간이라 타입 확장 전에도 클래스명은 만들어짐), `npm run build`의 TypeScript 검사 단계가 실질적인 타입 RED/GREEN 역할을 했습니다. 구현 후 `npx vitest run src/components/ui/Badge.test.tsx` 2개 테스트 통과.
+- `src/app/app/analysis/page.tsx`(2곳), `src/app/app/inquiries/page.tsx`(3곳), `src/app/app/invest/page.tsx`(6곳 — 브리프에 없던 소비 지점 2곳 포함: 1122번 줄 `limitAccountBadgeClassName` 소비, 1214번 줄 `allocationBadgeClassName` 소비)의 legacy `.badge` 사용처를 `Badge` 컴포넌트로 이전했습니다. invest의 색상 클래스 맵을 `ACCOUNT_BADGE_TONES`/`SECTION_BADGE_TONES` tone 맵으로 교체했습니다.
+- **미완료(Step 6/7 보류)**: `rg 'className="badge|badge--' src`로 확인한 결과 브리프에 없는 `src/app/_home/DashboardScheduleCard.tsx`(2곳)와 `src/app/_home/HomeClient.tsx`(6곳, 캘린더 내역/적금 표/상세 표 항목에서 2회 반복되는 패턴)가 여전히 legacy `.badge`/`badge--*` 클래스를 사용 중입니다. `_badge.scss`를 삭제하면 이 두 파일의 배지가 스타일을 잃습니다. 브리프의 파일 목록에 없는 화면이라 임의로 범위를 넓히지 않고 `_badge.scss` 삭제와 `globals.scss`의 `@use "../styles/badge";` 제거를 보류했습니다.
+- 이 두 파일의 톤 매핑은 모호하지 않습니다(blue→info, green→success, red→danger, violet→violet, teal→teal — 이미 확정된 매핑과 동일). 다음 세션에서 이 두 파일도 함께 이전한 뒤 `_badge.scss`를 삭제하고 Step 7 검증(`rg 'className="badge|badge--' src` 결과 없음)과 `npm test && npm run lint && npm run build`, 화면 육안 확인을 마무리해야 합니다.
+- 검증: `npm test`(52개 파일·214개), `npm run lint`, `npm run build` 모두 통과(단, `_badge.scss`는 아직 존재하는 상태).
+- 커밋: `41223e3` — Badge tone 확장 및 3개 화면 이전만 포함, 스타일 삭제는 포함하지 않음.
+
+# 2026-09-18 Task 5: Badge 통합 완료 (DashboardScheduleCard/HomeClient 이전 + legacy 스타일 삭제)
+
+- 이전 세션에서 보류했던 `src/app/_home/DashboardScheduleCard.tsx`(2곳)와 `src/app/_home/HomeClient.tsx`(6곳)의 legacy `.badge`/`badge--*` 사용처를 `Badge` 컴포넌트로 이전했습니다. 톤 매핑은 이미 확정된 규칙을 그대로 적용했습니다: teal→teal, green→success, red→danger, blue→info, violet→violet. 일시정지 상태 배지(`recurring-status badge`)는 `<Badge className="recurring-status">`로 이전해 기존 `margin-left` 오버라이드를 유지했습니다.
+- `src/styles/_badge.scss`를 삭제하고 `src/app/globals.scss`의 `@use "../styles/badge";`를 제거했습니다.
+- 검증: `rg 'className="badge|badge--' src` 결과 없음(남은 매치는 `ui-badge--*`뿐이며 이는 Badge 컴포넌트 자체 클래스임). `npm test`(52개 파일·214개), `npm run lint`, `npm run build` 모두 통과.
+- 남은 일: 화면 육안 확인(데스크톱/모바일)은 이번 세션에서 진행하지 않았습니다. 다음 세션에서 대시보드 일정 카드, 캘린더 내역, 적금/고정지출 표, 상세 표의 tone별 배지 색상을 데스크톱·모바일 폭에서 확인하는 것을 권장합니다.
+
+# 2026-09-21 Task 6: Card 컴포넌트와 반투명 톤 적용
+
+- `src/components/ui/Card.tsx`(tone default|strong, padding default|compact, as div|section|article)와 `.ui-card` 스타일(`ui.scss`)을 추가하고, 대시보드 개요 카드 4개·예상 잔액 카드·일정 카드에 적용했습니다. 기존 legacy `.card` 클래스는 이 카드들에서 제거했고 `overview-card`(레이아웃 전용)는 유지했습니다.
+- `page.scss`의 개요 카드 위쪽 단색 선(`::before`)을 제거하고, 카드 4개에 6~7% 수준의 미세한 그라디언트 색감만 남겼습니다.
+- 반투명 값은 조정 없이 유지: 라이트 78%/88%, 다크 70%/84%. `backdrop-filter`는 추가하지 않았습니다.
+- TDD: Card.test.tsx로 `Failed to resolve import "./Card"` RED 확인 후 4개 통과.
+- 검증: `npm test`(53개 파일·218개), `npm run lint`, `npm run build` 통과. Playwright 30개 중 28개 통과, 실패 2개는 기존 `e2e/public-auth-demo.spec.ts:51`(저축·투자 직접입력) 타임아웃으로 두 프로젝트 모두 브랜치 기준선에서도 동일합니다.
+- 시각 확인(Playwright 스크린샷, dev 서버): 1440px·390px, 라이트/다크 모두 금액 텍스트가 읽히고 가로 오버플로 0, 모바일 개요 카드 가로 스크롤 유지. 1024px 및 창 크기 연속 변경은 이번에는 확인하지 않았습니다.
+
+# 2026-09-21 Task 8: DateField 컴포넌트
+
+- `src/components/ui/DateField.tsx`(`TextInput type="date"` 래퍼, `onChange`는 문자열)를 추가하고 `HomeClient.tsx`의 날짜 입력 3곳(인라인 추가, 적금 만기일, 고정지출 종료일)을 `DateField`로 이전했습니다. 세 곳 모두 단순 setter라 `onChange={setXxx}`로 옮겼습니다.
+- `ui.scss`에 `.ui-date-field.ui-form-control`(높이/패딩 토큰)을 추가했습니다.
+- TDD: `DateField.test.tsx`로 `Failed to resolve import "./DateField"` RED 확인 후 5개 통과.
+- 높이 실측(임시 Playwright 스크립트, 커밋하지 않음, 프로덕션 빌드): 390px와 1440px 모두 date 입력 3개가 40px(getBoundingClientRect·computed 동일). legacy `.main-overview--control` 규칙과 충돌 없음.
+- 모바일 피커 결정: 네이티브 date 피커를 그대로 유지했습니다(실제 기기 확인은 못 함).
+- 남은 일: `.calendar-picker` 팝오버를 `DateField` 안으로 통합하는 작업은 하지 않았습니다. 실제 모바일 기기에서 네이티브 피커가 어색하면 후속으로 진행하세요.
+
+## 최종 리뷰 수정 (feat/beui-common-ui-phase-two)
+
+변경:
+- Badge: motion 제거, 단순 span (SSR opacity:0/reduced-motion 문제 해소)
+- 다크 모드 date input: `color-scheme: dark` 추가 (`:root[data-theme="dark"]`)
+- page.scss의 레거시 `--tabs/--type-toggle/--tab/--type` 규칙 및 모바일 min-height 28px 항목 제거 (ui.scss가 스타일 담당, 탭 너비 148px)
+- 적금/고정지출 액션 버튼 쌍을 `<Button>`으로 이전
+- 대시보드 남은 `.card` 5곳을 `<Card>`로 전환 (Card는 HTML 속성 pass-through 지원). 패딩 18px -> 16px 수용
+- control-tokens 테스트 강화(라이트/다크 블록 분리, ui.scss backdrop-filter 검사), 죽은 `.ui-date-field.ui-form-control` 삭제
+
+검증: npm test 225 통과, lint, build 통과. Playwright 28 통과 / 기존 public-auth-demo.spec.ts:51 2건만 실패.
+시각: 1440/390, 라이트/다크 모두 가로 오버플로 없음(scrollWidth==clientWidth), `.main-overview--control` 40px, `.ui-tabs__tab` 32px(type-toggle 40px), 탭 폭 148px, 다크에서 date color-scheme=dark.
+
+남은 일: 모바일 네이티브 date picker 실기기 미확인.
+
+## 3차 Task 1: 공통 부품 보강
+
+변경: `Button`에 variant `header-primary/header-ghost/banner`, prop `icon("left"|"right")`, `iconOnly` 추가(레거시 클래스 그대로 출력). `Textarea` 추가(`FormControl.tsx`, `ui-form-control ui-textarea`, invalid/has-value 동일). `.ui-form-control.ui-textarea`: height auto, min-height lg, 패딩 8px/pad-md, 세로 리사이즈.
+검증: npm test 229 통과, lint, build 통과. Playwright는 3001 포트 사용 중이라 미실행.
+남은 일: Task 2 이후 화면별 치환.
+
+## 3차 Task 2: 대시보드 마무리
+
+변경: `_home`의 남은 `.button` 16곳(HomeClient 14, DetailBulkActionBar 2)을 `<Button>`으로 치환. 핸들러/disabled/aria/type 그대로 보존, 삭제 버튼은 `variant="primary"` + `className="button--negative"` 유지. page.scss의 달력 월 이동 28px 규칙에 의도된 아이콘 버튼 크기 예외 주석 추가.
+검증: npm test 229 통과, lint, build 통과. Playwright 28 통과 / 기존 public-auth-demo.spec.ts:51 2건만 실패. 1440/390 라이트/다크 데모 대시보드 육안 확인, 가로 오버플로 없음, 달력 이동 버튼 32x28.
+남은 일: Task 3(분석/투자).
+
+## 2026-09-21 beUI 3차 Task 3: 분석·투자 화면
+
+- 변경: 분석/투자 카드 19곳을 `Card`로, 버튼 11곳을 `Button`으로, 투자 입력 6곳·분석 월 선택 1곳을 `TextInput`/`Select`로 치환. `Card`에 `aside` 추가(+테스트).
+- scss: `analysis-year-control` 리터럴 28px 버튼 규칙 삭제(sm 32px 토큰 적용), `analysis-month-select` 겹치는 높이/테두리 선언 삭제, `invest-summary > .card`를 `.ui-card`로 이전, 표 배지 min-height 예외에 이유 주석.
+- 검증: npm test 230 통과, lint/build 통과, e2e는 기존 실패 2건(public-auth-demo:51)만, 데모 화면 1440/390 라이트·다크 측정(컨트롤 40px, sm 32px, 가로 오버플로 0)과 스크린샷 확인.
+- 남음: Task 4(문의·마이페이지).
+
+## 2026-09-21 beUI 3차 Task 4: 문의·마이페이지
+
+- 변경: 문의 카드 4곳·마이페이지 카드 6곳(Profile/Password/Consent/Withdraw, 데모 안내, 내 카테고리)을 `Card`로, 버튼 8곳을 `Button`으로, input 5곳·textarea 2곳·select 1곳을 `TextInput`/`Textarea`/`Select`로 치환. 새 문의 폼은 `Card`(section) 안에 `<form>`을 두는 구조로 변경.
+- scss 변경 없음(겹치는 레거시 규칙 없음). 기존 vitest 수정 없이 통과.
+- 검증: npm test 230, lint, build 통과. e2e는 기존 public-auth-demo:51 2건만 실패. 데모 모드에서는 안내 카드만 렌더되어 1440/390 라이트·다크로 카드 확인, 가로 오버플로 0.
+- 한계: 실제 폼(입력/버튼/textarea)은 실계정이 필요해 렌더 높이를 측정하지 못함(토큰 규칙상 40px/48px 예상).
+
+## Task 5 공통 폼·모달·CategoryManager (beUI 3차)
+- CategoryManager: 버튼 11개 → `Button`, 입력 2개 → `TextInput`, scss 중복 선언 제거(입력 40px, 추가 버튼 md 40px, sm 32px 측정).
+- AppAlertProvider 확인/취소 버튼 → `Button`(autoFocus, role 유지). SideMenu는 전부 커스텀 클래스 버튼이라 미변경, Modal은 버튼 없음.
+- ExpenseForm/ExpenseList/CalendarView는 어디서도 import되지 않는 죽은 코드라 미변경.
+- 검증: vitest 230 통과, lint, build, e2e 28 통과(기존 실패 2건만).
+- 남은 일: alert/confirm 다이얼로그 화면 육안 미확인.
+
+## 공통 UI 3차 Task 6: 인증·소개·오류 화면 (Button 통일만)
+- 변경: `PublicCta` 데모 버튼, `error.tsx` 다시 시도 버튼을 공통 `Button`으로 치환.
+- 미변경(의도): 로그인/가입/비밀번호 재설정 등 `auth-input`·`auth-submit`·`auth-demo-button`은 인증 전용 커스텀 디자인이라 유지, `IntroCta`(intro-button)·Link 버튼·`global-error.tsx`(전역 CSS 없음)도 유지. 로그인 동작 변경 없음.
+- 검증: npm test 230 통과, lint, build 통과, e2e 28 통과/기존 실패 2건(public-auth-demo:51)만.
+- 남은 일: 없음(인증 폼 입력을 TextInput으로 바꾸려면 auth 디자인 토큰 정리가 선행되어야 함).

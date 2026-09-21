@@ -15,6 +15,7 @@ import { useCustomCategories } from "@/lib/hooks/useCustomCategories";
 import { defaultCategoryOptionsByType } from "@/app/_home/constants";
 import type { CustomCategoryType } from "@/lib/api/customCategories";
 import "./mypage.scss";
+import { Card } from "@/components/ui/Card";
 
 export default function MyPage() {
   const { displayName, displayEmail, isDemoMode, isAuthResolved } = useAppData();
@@ -73,13 +74,13 @@ export default function MyPage() {
         </section>
 
         {isDemoMode ? (
-          <section className="card mypage-demo">
+          <Card as="section" className="mypage-demo">
             <AppIcon name="account_circle" />
             <h3 className="title--sm">마이페이지는 로그인 후 이용할 수 있습니다.</h3>
             <p className="body--sm color-gray">
               데모 모드에는 실제 계정이 없어 정보를 확인하거나 변경할 수 없습니다.
             </p>
-          </section>
+          </Card>
         ) : (
           <div className="mypage-layout">
             {loadError ? (
@@ -95,7 +96,7 @@ export default function MyPage() {
                   <ProfileCard overview={overview} onNameSaved={setName} />
                   <PasswordCard email={overview.email} />
                   <ConsentCard overview={overview} />
-                  <section className="card mypage-card column-group column-group--gap-16">
+                  <Card as="section" className="mypage-card column-group column-group--gap-16">
                     <CategoryManager
                       heading="내 카테고리"
                       categories={categoryState.categories}
@@ -111,7 +112,7 @@ export default function MyPage() {
                       onDelete={categoryState.deleteCategory}
                       onToggleFavorite={categoryState.toggleFavorite}
                     />
-                  </section>
+                  </Card>
                 </div>
                 <WithdrawCard email={overview.email} />
               </>

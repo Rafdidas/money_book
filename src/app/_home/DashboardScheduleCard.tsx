@@ -1,4 +1,6 @@
 import AppIcon from "@/components/common/AppIcon";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
 import { formatWon } from "@/utils/money";
 import type { DashboardScheduleItem } from "./dashboardSummary";
 
@@ -13,11 +15,11 @@ const statusLabel: Record<DashboardScheduleItem["status"], string> = {
   skipped: "건너뜀",
 };
 
-const statusClassName: Record<DashboardScheduleItem["status"], string> = {
-  scheduled: "badge--teal",
-  paid: "badge--green",
-  overdue: "badge--red",
-  skipped: "badge--blue",
+const statusTone: Record<DashboardScheduleItem["status"], BadgeTone> = {
+  scheduled: "teal",
+  paid: "success",
+  overdue: "danger",
+  skipped: "info",
 };
 
 const formatScheduleDate = (dateKey: string) => {
@@ -31,7 +33,7 @@ export default function DashboardScheduleCard({
   const visibleItems = items.slice(0, 6);
 
   return (
-    <section className="card overview-card dashboard-schedule-card column-group column-group--gap-16">
+    <Card as="section" className="overview-card dashboard-schedule-card column-group column-group--gap-16">
       <div className="main-overview--section-header row-group row-group--center row-group--between">
         <div>
           <h4 className="main-overview--title title--sm">이번 달 남은 예정</h4>
@@ -39,7 +41,7 @@ export default function DashboardScheduleCard({
             고정지출과 저축/투자 납입 상태를 확인합니다.
           </p>
         </div>
-        <span className="badge badge--teal">{items.length}건</span>
+        <Badge tone="teal">{items.length}건</Badge>
       </div>
       {visibleItems.length ? (
         <div className="dashboard-schedule-list">
@@ -48,9 +50,9 @@ export default function DashboardScheduleCard({
               key={item.id}
               className={`dashboard-schedule-row dashboard-schedule-row--${item.status}`}
             >
-              <span className={`badge ${statusClassName[item.status]}`}>
+              <Badge tone={statusTone[item.status]}>
                 {statusLabel[item.status]}
-              </span>
+              </Badge>
               <div className="dashboard-schedule-row--content">
                 <strong className="bodyBold--sm">{item.label}</strong>
                 <span className="label--md">
@@ -73,6 +75,6 @@ export default function DashboardScheduleCard({
           <p className="label--md">이번 달 남은 예정 항목이 없습니다.</p>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

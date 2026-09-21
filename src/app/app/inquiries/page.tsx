@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
+import { Badge } from "@/components/ui/Badge";
 import { useAppData } from "@/app/providers";
 import {
   answerInquiry,
@@ -16,6 +17,9 @@ import type { InquiryCursor } from "@/lib/api/inquiries";
 import { INQUIRY_MENU_NOTIFICATION_UPDATED_EVENT } from "@/lib/inquiryMenu";
 import type { Inquiry, InquiryStatus, ProfileRole } from "@/types/inquiry";
 import "./inquiries.scss";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Select, Textarea, TextInput } from "@/components/ui/FormControl";
 
 type InquiryFilter = "ALL" | InquiryStatus;
 
@@ -238,30 +242,31 @@ export default function InquiriesPage() {
             </p>
           </div>
           {isAdmin ? (
-            <span className="badge badge--teal">답변 대기 {pendingCount}건</span>
+            <Badge tone="teal">답변 대기 {pendingCount}건</Badge>
           ) : null}
         </section>
 
         {isDemoMode ? (
-          <section className="card inquiries-demo">
+          <Card as="section" className="inquiries-demo">
             <AppIcon name="support_agent" />
             <h3 className="title--sm">문의하기는 로그인 후 이용할 수 있습니다.</h3>
             <p className="body--sm color-gray">
               데모 모드에서는 실제 문의를 등록하거나 답변을 확인하지 않습니다.
             </p>
-          </section>
+          </Card>
         ) : (
           <div className="inquiries-layout">
             <div className="inquiries-sidebar column-group column-group--gap-16">
               {!isAdmin ? (
-                <form className="card inquiry-form column-group column-group--gap-16" onSubmit={handleCreate}>
+                <Card as="section" className="inquiry-form">
+                <form className="column-group column-group--gap-16" onSubmit={handleCreate}>
                   <div>
                     <h3 className="title--sm">새 문의</h3>
                     <p className="caption--md color-gray">확인 후 문의 목록에서 답변을 안내합니다.</p>
                   </div>
                   <label className="main-overview--field">
                     <span className="label--md">제목</span>
-                    <input
+                    <TextInput
                       className="main-overview--control body--sm"
                       value={title}
                       onChange={(event) => setTitle(event.target.value)}
@@ -273,7 +278,7 @@ export default function InquiriesPage() {
                   </label>
                   <label className="main-overview--field">
                     <span className="label--md">내용</span>
-                    <textarea
+                    <Textarea
                       className="main-overview--control body--sm"
                       value={content}
                       onChange={(event) => setContent(event.target.value)}
@@ -283,20 +288,21 @@ export default function InquiriesPage() {
                     />
                     <span className="caption--md color-gray">{content.length}/5,000</span>
                   </label>
-                  <button className="button button--primary button--md" disabled={isSubmitting}>
+                  <Button variant="primary" size="md" disabled={isSubmitting}>
                     {isSubmitting ? "등록 중" : "문의 등록"}
-                  </button>
+                  </Button>
                 </form>
+                </Card>
               ) : null}
 
-              <section className="card inquiries-list-section column-group column-group--gap-12">
+              <Card as="section" className="inquiries-list-section column-group column-group--gap-12">
                 <div className="row-group row-group--center row-group--between">
                   <div>
                     <h3 className="title--sm">{isAdmin ? "전체 문의" : "나의 문의"}</h3>
                     <p className="caption--md color-gray">{inquiries.length}건</p>
                   </div>
                   {isAdmin ? (
-                    <select
+                    <Select
                       className="main-overview--control body--sm"
                       value={filter}
                       onChange={(event) => setFilter(event.target.value as InquiryFilter)}
@@ -305,7 +311,7 @@ export default function InquiriesPage() {
                       <option value="ALL">전체</option>
                       <option value="PENDING">답변 전</option>
                       <option value="ANSWERED">답변 완료</option>
-                    </select>
+                    </Select>
                   ) : null}
                 </div>
                 <div className="inquiries-list">
@@ -320,9 +326,9 @@ export default function InquiriesPage() {
                         onClick={() => setSelectedInquiryId(inquiry.id)}
                       >
                         <div className="row-group row-group--center row-group--between">
-                          <span className={`badge ${inquiry.status === "ANSWERED" ? "badge--teal" : "badge--blue"}`}>
+                          <Badge tone={inquiry.status === "ANSWERED" ? "teal" : "info"}>
                             {statusLabel[inquiry.status]}
-                          </span>
+                          </Badge>
                           <span className="caption--md color-gray">{formatDateTime(inquiry.created_at)}</span>
                         </div>
                         <strong className="label--lg">{inquiry.title}</strong>
@@ -337,27 +343,28 @@ export default function InquiriesPage() {
                     </p>
                   )}
                 </div>
-              </section>
+              </Card>
                 {hasMore ? (
-                  <button
-                    className="button button--secondary button--md"
+                  <Button
+                    variant="secondary"
+                    size="md"
                     type="button"
                     disabled={isLoadingMore}
                     onClick={loadMoreInquiries}
                   >
                     {isLoadingMore ? "불러오는 중" : "더 보기"}
-                  </button>
+                  </Button>
                 ) : null}
             </div>
 
-            <section className="card inquiry-detail column-group column-group--gap-20">
+            <Card as="section" className="inquiry-detail column-group column-group--gap-20">
               {selectedInquiry ? (
                 <>
                   <header className="inquiry-detail--header column-group column-group--gap-8">
                     <div className="row-group row-group--center row-group--between">
-                      <span className={`badge ${selectedInquiry.status === "ANSWERED" ? "badge--teal" : "badge--blue"}`}>
+                      <Badge tone={selectedInquiry.status === "ANSWERED" ? "teal" : "info"}>
                         {statusLabel[selectedInquiry.status]}
-                      </span>
+                      </Badge>
                       <span className="caption--md color-gray">{formatDateTime(selectedInquiry.created_at)}</span>
                     </div>
                     <h3 className="title--md">{selectedInquiry.title}</h3>
@@ -381,7 +388,7 @@ export default function InquiriesPage() {
                       </div>
                       <label className="main-overview--field">
                         <span className="label--md">답변 제목</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           value={answerTitle}
                           onChange={(event) => setAnswerTitle(event.target.value)}
@@ -391,7 +398,7 @@ export default function InquiriesPage() {
                       </label>
                       <label className="main-overview--field">
                         <span className="label--md">답변 내용</span>
-                        <textarea
+                        <Textarea
                           className="main-overview--control body--sm"
                           value={answerContent}
                           onChange={(event) => setAnswerContent(event.target.value)}
@@ -399,9 +406,9 @@ export default function InquiriesPage() {
                           required
                         />
                       </label>
-                      <button className="button button--primary button--md" disabled={isSubmitting}>
+                      <Button variant="primary" size="md" disabled={isSubmitting}>
                         {isSubmitting ? "저장 중" : "답변 저장"}
-                      </button>
+                      </Button>
                     </form>
                   ) : (
                     <section className="inquiry-answer column-group column-group--gap-8">
@@ -428,7 +435,7 @@ export default function InquiriesPage() {
                   <p className="body--sm color-gray">문의를 선택하면 상세 내용을 확인할 수 있습니다.</p>
                 </div>
               )}
-            </section>
+            </Card>
           </div>
         )}
       </main>

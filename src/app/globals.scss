@@ -1,4 +1,5 @@
 @use "../app/color_tokens.scss";
+@use "../styles/control-tokens";
 @use "../components/common/checkbox";
 @use "../components/common/header";
 @use "../components/common/footer";
@@ -12,10 +13,9 @@
 @use "../components/chart/expense-pie-chart";
 @use "../components/category-manager";
 @use "../styles/typography";
-@use "../styles/input";
 @use "../styles/autocomplete";
 @use "../styles/button";
-@use "../styles/badge";
+@use "../components/ui/ui";
 @use "../styles/legal-links";
 @use "./page";
 @use "./analysis/analysis";

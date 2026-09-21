@@ -6,6 +6,10 @@ import MonthlyFlowChart from "@/components/chart/MonthlyFlowChart";
 import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Select } from "@/components/ui/FormControl";
 import { useAppData } from "@/app/providers";
 import {
   getMoneyBookEntriesByYear,
@@ -308,30 +312,30 @@ export default function AnalysisPage() {
             </p>
           </div>
           <div className="analysis-year-control row-group row-group--center">
-            <button
+            <Button
               type="button"
-              className="button button--icon-only button--sm button--subtle"
+              variant="subtle" iconOnly size="sm"
               aria-label="이전 해"
               onClick={() => setSelectedYear((prev) => prev - 1)}
             >
               <AppIcon name="chevron_left" />
-            </button>
+            </Button>
             <strong className="analysis-year-control--label title--sm">
               {selectedYear}
             </strong>
-            <button
+            <Button
               type="button"
-              className="button button--icon-only button--sm button--subtle"
+              variant="subtle" iconOnly size="sm"
               aria-label="다음 해"
               onClick={() => setSelectedYear((prev) => prev + 1)}
             >
               <AppIcon name="chevron_right" />
-            </button>
+            </Button>
           </div>
         </section>
 
         <section className="analysis-content column-group column-group--gap-16">
-          <section className="card analysis-yearly-summary column-group column-group--gap-16">
+          <Card as="section" className="analysis-yearly-summary column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <div>
                 <h3 className="main-overview--title title--sm">
@@ -366,11 +370,11 @@ export default function AnalysisPage() {
                 </strong>
               </div>
             </div>
-          </section>
+          </Card>
           <div className="main-overview column-group column-group--gap-16">
             <h3 className="main-common-title title--md">월별 개요</h3>
             <div className="main-overview-analysis-card row-group row-group--stretch row-group--gap-16">
-              <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
+              <Card as="article" className="analysis-summary-card column-group column-group--center column-group--gap-8">
                 <h4 className="analysis-card--title title--sm">
                   {monthNames[selectedMonth]} 남은 돈
                 </h4>
@@ -381,8 +385,8 @@ export default function AnalysisPage() {
                   수입 {formatCurrency(monthlyIncome)} - 유출{" "}
                   {formatCurrency(monthlyOutflow)}
                 </p>
-              </article>
-              <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
+              </Card>
+              <Card as="article" className="analysis-summary-card column-group column-group--center column-group--gap-8">
                 <h4 className="analysis-card--title title--sm">
                   {monthNames[selectedMonth]} 지출
                 </h4>
@@ -394,8 +398,8 @@ export default function AnalysisPage() {
                     ? `지출 ${monthlyExpenseCount.toLocaleString()}건`
                     : `전월 대비 ${formatSignedCurrency(expenseDiff)}`}
                 </p>
-              </article>
-              <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
+              </Card>
+              <Card as="article" className="analysis-summary-card column-group column-group--center column-group--gap-8">
                 <h4 className="analysis-card--title title--sm">저축/투자</h4>
                 <strong className="analysis-card--value title--lg">
                   {formatCurrency(monthlyAssetMove)}
@@ -404,8 +408,8 @@ export default function AnalysisPage() {
                   저축 {formatCurrency(monthlySavings)} · 투자{" "}
                   {formatCurrency(monthlyInvestment)}
                 </p>
-              </article>
-              <article className="card analysis-summary-card column-group column-group--center column-group--gap-8">
+              </Card>
+              <Card as="article" className="analysis-summary-card column-group column-group--center column-group--gap-8">
                 <h4 className="analysis-card--title title--sm">최대 지출</h4>
                 <strong className="analysis-card--value title--lg">
                   {topCategory ? topCategory[0] : "데이터 없음"}
@@ -415,20 +419,20 @@ export default function AnalysisPage() {
                     ? formatCurrency(topCategory[1])
                     : "기록된 지출이 없습니다."}
                 </p>
-              </article>
+              </Card>
             </div>
           </div>
 
-          <section className="card analysis-month-panel column-group column-group--gap-16">
+          <Card as="section" className="analysis-month-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <h4 className="main-overview--title title--sm">월 선택</h4>
-              <span className="badge badge--teal">
+              <Badge tone="teal">
                 {monthNames[selectedMonth]} · {getMonthStateLabel(selectedMonthState)}
-              </span>
+              </Badge>
             </div>
             <label className="analysis-month-select-field">
               {/* <span className="label--md">월</span> */}
-              <select
+              <Select
                 className="analysis-month-select bodyBold--sm"
                 value={selectedMonth}
                 onChange={(event) => setSelectedMonth(Number(event.target.value))}
@@ -438,7 +442,7 @@ export default function AnalysisPage() {
                     {label} · {getMonthStateLabel(monthlyBreakdown[index].monthState)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <div className="analysis-month-selector">
               {monthNames.map((label, index) => (
@@ -453,9 +457,9 @@ export default function AnalysisPage() {
                 </button>
               ))}
             </div>
-          </section>
+          </Card>
 
-          <section className="card analysis-flow-summary-panel column-group column-group--gap-16">
+          <Card as="section" className="analysis-flow-summary-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <div>
                 <h4 className="main-overview--title title--sm">
@@ -524,9 +528,9 @@ export default function AnalysisPage() {
                 </p>
               ) : null}
             </div>
-          </section>
+          </Card>
 
-          <section className="card analysis-chart-panel column-group column-group--gap-16">
+          <Card as="section" className="analysis-chart-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <div>
                 <h4 className="main-overview--title title--sm">월별 분석 그래프</h4>
@@ -548,9 +552,9 @@ export default function AnalysisPage() {
             <div className="analysis-chart-wrap">
               <MonthlyFlowChart data={chartBreakdown} currentMonth={selectedMonth} />
             </div>
-          </section>
+          </Card>
 
-          <section className="card analysis-category-panel column-group column-group--gap-16">
+          <Card as="section" className="analysis-category-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <div>
                 <h4 className="main-overview--title title--sm">
@@ -605,9 +609,9 @@ export default function AnalysisPage() {
                 </div>
               </div>
             )}
-          </section>
+          </Card>
 
-          <section className="card analysis-year-panel column-group column-group--gap-16">
+          <Card as="section" className="analysis-year-panel column-group column-group--gap-16">
             <div className="main-overview--section-header row-group row-group--center row-group--between">
               <h4 className="main-overview--title title--sm">1월부터 12월까지</h4>
               <span className="label--md analysis-section--meta">
@@ -638,9 +642,9 @@ export default function AnalysisPage() {
                   >
                     <div className="analysis-month-card--header row-group row-group--center row-group--between">
                       <strong className="bodyBold--md">{item.label}</strong>
-                      <span className="badge badge--teal">
+                      <Badge tone="teal">
                         {getMonthStateLabel(item.monthState)}
-                      </span>
+                      </Badge>
                     </div>
                     <div className="analysis-month-card--highlight">
                       <span className="analysis-card--meta label--md">
@@ -698,7 +702,7 @@ export default function AnalysisPage() {
                 );
               })}
             </div>
-          </section>
+          </Card>
         </section>
       </main>
       {!isAuthResolved || isAnalysisLoading ? (

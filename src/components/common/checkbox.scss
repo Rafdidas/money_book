@@ -39,8 +39,7 @@
 
 // 화면에서는 감추되 포커스는 받을 수 있어야 한다.
 // display:none이나 visibility:hidden을 쓰면 키보드로 도달할 수 없다.
-// `.checkbox`로 한 단계 더 좁히는 이유: `_input.scss`의 전역
-// `input[type="checkbox"]`가 클래스 하나보다 우선순위가 높아 크기를 덮어쓴다.
+// `.checkbox`로 한 단계 더 좁혀 다른 전역 규칙보다 우선하게 한다.
 .checkbox .checkbox__input {
   position: absolute;
   width: 1px;

@@ -36,6 +36,18 @@ test("데모 체험은 운영 DB 로그인 없이 대시보드로 진입한다",
     .toBe("true");
 });
 
+test("직접 입력 저장 성공은 페이지를 막지 않는 완료 알림을 표시한다", async ({ page }) => {
+  await page.goto("/auth/login");
+  await page.getByRole("button", { name: "데모 체험하기" }).click();
+
+  const form = page.locator(".main-overview--form-card");
+  await form.getByLabel("금액").fill("15000");
+  await form.getByLabel("메모").fill("토스트 확인용 내역");
+  await form.getByRole("button", { name: "내역 추가" }).click();
+
+  await expect(page.getByRole("status")).toContainText("내역을 추가했습니다");
+});
+
 test("직접입력 저축·투자를 새로고침 후에도 구분하고 추천 삭제는 내역과 입력을 보존한다", async ({
   page,
 }) => {

@@ -15,6 +15,13 @@ import AppIcon from "@/components/common/AppIcon";
 import Checkbox from "@/components/common/Checkbox";
 import SideMenu from "@/components/common/SideMenu";
 import Loading from "@/components/loading/Loading";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { DateField } from "@/components/ui/DateField";
+import { Select, TextInput } from "@/components/ui/FormControl";
+import { Tabs } from "@/components/ui/Tabs";
+import { useToast } from "@/components/ui/ToastProvider";
 import { useAppData } from "@/app/providers";
 import { useCustomCategories } from "@/lib/hooks/useCustomCategories";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
@@ -250,6 +257,7 @@ export default function HomeClient() {
     isAuthResolved,
   } = useAppData();
   const { alert, confirm } = useAppAlert();
+  const { toast } = useToast();
   const categoryState = useCustomCategories({
     isDemoMode,
     enabled: isAuthResolved,
@@ -2283,6 +2291,9 @@ export default function HomeClient() {
         }
       }
       setSelectedDate(new Date(`${payload.date}T00:00:00`));
+      toast(inlineFormMode === "edit" ? "내역을 수정했습니다." : "내역을 추가했습니다.", {
+        tone: "success",
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "저장 중 오류가 발생했습니다.";
       alert(message);
@@ -2302,6 +2313,7 @@ export default function HomeClient() {
     try {
       setIsInlineDeleting(true);
       await handleDelete(selectedInlineExpense.id);
+      toast("내역을 삭제했습니다.", { tone: "info" });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "삭제 중 오류가 발생했습니다.";
@@ -2331,15 +2343,15 @@ export default function HomeClient() {
       <main className="main column-group">
         <section className="main-header row-group row-group--center row-group--between">
           <h2 className="main-header--title headline--sm">대시보드</h2>
-          <button
+          <Button
             type="button"
-            className="button button--sm button--icon-left button--outline main-header--calendar-button"
+            variant="outline" size="sm" icon="left" className="main-header--calendar-button"
             aria-haspopup="dialog"
             onClick={openCalendarModal}
           >
             <AppIcon name="calendar_month" />
             {formatHeaderDate(selectedDate)}
-          </button>
+          </Button>
         </section>
         <section className="column-group column-group--gap-16">
           <DashboardSummaryCards
@@ -2351,32 +2363,32 @@ export default function HomeClient() {
             <h3 className="main-common-title title--md">등록 / 수정</h3>
             <div className="row-group row-group--stretch row-group--gap-16">
               {/* 달력 */}
-              <div className="card overview-card main-overview--calendar-card column-group--center ">
+              <Card as="div" className="overview-card main-overview--calendar-card column-group--center">
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">
                       {selectedDateKey.replaceAll("-", ".")} 현황
                     </h4>
                     <div className="main-overview--calendar-nav row-group row-group--center">
-                      <button
+                      <Button
                         type="button"
-                        className="button button--icon-only button--sm button--subtle"
+                        variant="subtle" size="sm" iconOnly
                         aria-label="이전 달"
                         onClick={() => handleOverviewMonthChange(-1)}
                       >
                         <AppIcon name="chevron_left" />
-                      </button>
+                      </Button>
                       <span className="label--lg">
                         {currentYear}.{String(currentMonth + 1).padStart(2, "0")}
                       </span>
-                      <button
+                      <Button
                         type="button"
-                        className="button button--icon-only button--sm button--subtle"
+                        variant="subtle" size="sm" iconOnly
                         aria-label="다음 달"
                         onClick={() => handleOverviewMonthChange(1)}
                       >
                         <AppIcon name="chevron_right" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div className="main-overview--calendar">
@@ -2429,16 +2441,16 @@ export default function HomeClient() {
                             className="calendar-content--item row-group row-group--center row-group--gap-16"
                           >
                             <p className="calendar-content--sort">
-                              <span
-                                className={`badge ${
+                              <Badge
+                                tone={
                                   isInvestment
-                                    ? "badge--violet"
+                                    ? "violet"
                                     : isSavings
-                                      ? "badge--blue"
+                                      ? "info"
                                       : isIncome
-                                        ? "badge--green"
-                                        : "badge--red"
-                                }`}
+                                        ? "success"
+                                        : "danger"
+                                }
                               >
                                 {isInvestment
                                   ? "투자"
@@ -2447,8 +2459,8 @@ export default function HomeClient() {
                                     : isIncome
                                       ? "수입"
                                       : "지출"}
-                              </span>
-                              {isPaused ? <span className="badge">일시정지</span> : null}
+                              </Badge>
+                              {isPaused ? <Badge>일시정지</Badge> : null}
                             </p>
                             <div className="row-group row-group--center row-group--gap-8">
                               <p className="calendar-content--num label--lg">
@@ -2467,42 +2479,28 @@ export default function HomeClient() {
                     </ul>
                   </div>
                 </div>
-              </div>
+              </Card>
               {/* 입력, 수정 */}
-              <div className="card overview-card main-overview--form-card column-group--center ">
+              <Card as="div" className="overview-card main-overview--form-card column-group--center">
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">내역 추가/수정</h4>
-                    <div
-                      className="main-overview--tabs"
-                      role="tablist"
-                      aria-label="내역 입력 모드"
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={inlineFormMode === "create"}
-                        className={`main-overview--tab bodyBold--sm ${inlineFormMode === "create" ? "is-active" : ""}`}
-                        onClick={() => handleInlineModeChange("create")}
-                      >
-                        추가
-                      </button>
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={inlineFormMode === "edit"}
-                        className={`main-overview--tab bodyBold--sm ${inlineFormMode === "edit" ? "is-active" : ""}`}
-                        onClick={() => handleInlineModeChange("edit")}
-                      >
-                        수정
-                      </button>
-                    </div>
+                    <Tabs<InlineFormMode>
+                      ariaLabel="내역 입력 모드"
+                      className="main-overview--tabs bodyBold--sm"
+                      items={[
+                        { value: "create", label: "추가" },
+                        { value: "edit", label: "수정" },
+                      ]}
+                      value={inlineFormMode}
+                      onValueChange={handleInlineModeChange}
+                    />
                   </div>
                   <div className="main-overview--form">
                     {inlineFormMode === "edit" ? (
                       <label className="main-overview--field">
                         <span className="label--md">이번 달 수정할 직접 입력 내역</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={inlineEditingId}
                           onChange={(event) => setInlineEditingId(event.target.value)}
@@ -2518,39 +2516,21 @@ export default function HomeClient() {
                               </option>
                             ))
                           )}
-                        </select>
+                        </Select>
                       </label>
                     ) : null}
-                    <div className="main-overview--type-toggle main-overview--type-toggle__grid">
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "expense" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("expense")}
-                      >
-                        지출
-                      </button>
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "income" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("income")}
-                      >
-                        수입
-                      </button>
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "savings" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("savings")}
-                      >
-                        저축
-                      </button>
-                      <button
-                        type="button"
-                        className={`main-overview--type bodyBold--sm ${activeInlineTabType === "investment" ? "is-active" : ""}`}
-                        onClick={() => handleInlineTypeChange("investment")}
-                      >
-                        투자
-                      </button>
-                    </div>
+                    <Tabs<InlineEntryType>
+                      ariaLabel="내역 유형"
+                      className="main-overview--type-toggle main-overview--type-toggle__grid bodyBold--sm"
+                      items={[
+                        { value: "expense", label: "지출" },
+                        { value: "income", label: "수입" },
+                        { value: "savings", label: "저축" },
+                        { value: "investment", label: "투자" },
+                      ]}
+                      value={activeInlineTabType}
+                      onValueChange={handleInlineTypeChange}
+                    />
                     {inlineType === "investment" ? (
                       <p className="label--md invest-noti">
                         투자금은 현재 주가와 무관하게, 투자한 금액을 기록하기 위한
@@ -2560,7 +2540,7 @@ export default function HomeClient() {
                     {inlineFormMode === "edit" ? (
                       <label className="main-overview--field">
                         <span className="label--md">대카테고리 변경</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={inlineType}
                           onChange={(event) =>
@@ -2573,13 +2553,13 @@ export default function HomeClient() {
                           <option value="income">수입</option>
                           <option value="savings">저축</option>
                           <option value="investment">투자</option>
-                        </select>
+                        </Select>
                       </label>
                     ) : null}
                     <div className="main-overview--form-grid">
                       <label className="main-overview--field">
                         <span className="label--md">카테고리</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={inlineCategory}
                           onChange={(event) => setInlineCategory(event.target.value)}
@@ -2590,25 +2570,24 @@ export default function HomeClient() {
                             </option>
                           ))}
                           <option value={customCategoryValue}>직접 입력</option>
-                        </select>
+                        </Select>
                       </label>
                       <label className="main-overview--field">
                         <span className="label--md">날짜</span>
-                        <input
+                        <DateField
                           className="main-overview--control body--sm"
-                          type="date"
                           value={inlineDate}
-                          onChange={(event) => setInlineDate(event.target.value)}
+                          onChange={setInlineDate}
                         />
                       </label>
                     </div>
-                    <button
+                    <Button
                       type="button"
-                      className="button button--sm button--outline"
+                      variant="outline" size="sm"
                       onClick={() => setIsCategoryManagerOpen(true)}
                     >
                       카테고리 관리
-                    </button>
+                    </Button>
                     {inlineCategory === customCategoryValue ? (
                       <div className="main-overview--field">
                         <label
@@ -2645,7 +2624,7 @@ export default function HomeClient() {
                             ))}
                           </div>
                         ) : null}
-                        <input
+                        <TextInput
                           id="inline-custom-category"
                           className="main-overview--control body--sm"
                           type="text"
@@ -2660,7 +2639,7 @@ export default function HomeClient() {
                     <div className="main-overview--form-grid">
                       <label className="main-overview--field">
                         <span className="label--md">금액</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           inputMode="numeric"
@@ -2673,7 +2652,7 @@ export default function HomeClient() {
                       </label>
                       <label className="main-overview--field">
                         <span className="label--md">메모</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           placeholder="간단한 메모"
@@ -2684,9 +2663,10 @@ export default function HomeClient() {
                     </div>
                     <div className="main-overview--actions row-group row-group--center row-group--gap-8">
                       {inlineFormMode === "edit" ? (
-                        <button
-                          type="button"
-                          className="button button--outline button--md main-overview--delete"
+                        <Button
+                          variant="outline"
+                          size="md"
+                          className="main-overview--delete"
                           onClick={handleInlineDelete}
                           disabled={
                             isInlineSubmitting ||
@@ -2695,11 +2675,13 @@ export default function HomeClient() {
                           }
                         >
                           {isInlineDeleting ? "삭제 중..." : "삭제"}
-                        </button>
+                        </Button>
                       ) : null}
-                      <button
-                        type="button"
-                        className="button button--primary button--md button--full main-overview--submit"
+                      <Button
+                        variant="primary"
+                        size="md"
+                        full
+                        className="main-overview--submit"
                         onClick={handleInlineSubmit}
                         disabled={
                           isInlineSubmitting ||
@@ -2712,13 +2694,13 @@ export default function HomeClient() {
                           : inlineFormMode === "edit"
                             ? "수정 저장"
                             : "내역 추가"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
               {/* 카테고리 지출 비율 */}
-              <div className="card overview-card main-overview--category-rate-card column-group column-group--gap-16">
+              <Card as="div" className="overview-card main-overview--category-rate-card column-group column-group--gap-16">
                 <div className="column-group column-group--gap-16">
                   <h4 className="main-overview--title title--sm">카테고리 지출 비율</h4>
                   <div className="graph-section">
@@ -2763,47 +2745,31 @@ export default function HomeClient() {
                     )}
                   </ul>
                 </div>
-              </div>
+              </Card>
             </div>
             <h3 className="main-common-title title--md">특수지출</h3>
             <div className="row-group row-group--stretch row-group--gap-16">
               {/* 적금 */}
-              <div className="main-overview--savings card overview-card column-group column-group--gap-8">
+              <Card as="div" className="main-overview--savings overview-card column-group column-group--gap-8">
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">적금 추가/수정</h4>
-                    <div
-                      className="main-overview--tabs"
-                      role="tablist"
-                      aria-label="내역 입력 모드"
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={savingsFormMode === "create"}
-                        className={`main-overview--tab bodyBold--sm ${savingsFormMode === "create" ? "is-active" : ""}`}
-                        onClick={() => handleSavingsModeChange("create")}
-                      >
-                        추가
-                      </button>
-                      {savingsAccounts.length ? (
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={savingsFormMode === "edit"}
-                          className={`main-overview--tab bodyBold--sm ${savingsFormMode === "edit" ? "is-active" : ""}`}
-                          onClick={() => handleSavingsModeChange("edit")}
-                        >
-                          수정
-                        </button>
-                      ) : null}
-                    </div>
+                    <Tabs<InlineFormMode>
+                      ariaLabel="내역 입력 모드"
+                      className="main-overview--tabs bodyBold--sm"
+                      items={savingsAccounts.length ? [
+                        { value: "create", label: "추가" },
+                        { value: "edit", label: "수정" },
+                      ] : [{ value: "create", label: "추가" }]}
+                      value={savingsFormMode}
+                      onValueChange={handleSavingsModeChange}
+                    />
                   </div>
                   <div className="main-overview--form">
                     {savingsFormMode === "edit" ? (
                       <label className="main-overview--field">
                         <span className="form-label label--md">수정할 적금</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={savingsEditingId}
                           onChange={(event) => setSavingsEditingId(event.target.value)}
@@ -2819,7 +2785,7 @@ export default function HomeClient() {
                               </option>
                             ))
                           )}
-                        </select>
+                        </Select>
                       </label>
                     ) : null}
                     <div className="grid-col-3">
@@ -2838,7 +2804,7 @@ export default function HomeClient() {
                             </Checkbox>
                           ) : null}
                         </div>
-                        <input
+                        <TextInput
                           id="savings-payment-amount"
                           className="main-overview--control body--sm"
                           type="text"
@@ -2852,7 +2818,7 @@ export default function HomeClient() {
                       </div>
                       <label className="main-overview--field flex-fill">
                         <span className="form-label label--md">납입일</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={savingsPaymentDay}
                           onChange={(event) => setSavingsPaymentDay(event.target.value)}
@@ -2865,7 +2831,7 @@ export default function HomeClient() {
                               </option>
                             );
                           })}
-                        </select>
+                        </Select>
                       </label>
                       <div className="main-overview--field  flex-fill">
                         <div className="row-group row-group--center row-group--between">
@@ -2880,12 +2846,11 @@ export default function HomeClient() {
                             만기일 없음
                           </Checkbox>
                         </div>
-                        <input
+                        <DateField
                           id="savings-maturity-date"
                           className="main-overview--control body--sm"
-                          type="date"
                           value={savingsMaturityDate}
-                          onChange={(event) => setSavingsMaturityDate(event.target.value)}
+                          onChange={setSavingsMaturityDate}
                           disabled={savingsHasNoMaturity}
                         />
                       </div>
@@ -2893,7 +2858,7 @@ export default function HomeClient() {
                     <div className="row-group row-group--center row-group--gap-8">
                       <label className="main-overview--field  flex-fill">
                         <span className="form-label label--md">현재 금액</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           inputMode="numeric"
@@ -2906,7 +2871,7 @@ export default function HomeClient() {
                       </label>
                       <label className="main-overview--field  flex-fill">
                         <span className="form-label label--md">적금 이름</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           placeholder="카테고리로 사용 될 이름"
@@ -2917,9 +2882,10 @@ export default function HomeClient() {
                     </div>
                     <div className="main-overview--actions row-group row-group--center row-group--gap-8">
                       {savingsFormMode === "edit" ? (
-                        <button
-                          type="button"
-                          className="button button--outline button--md main-overview--delete"
+                        <Button
+                          variant="outline"
+                          size="md"
+                          className="main-overview--delete"
                           onClick={handleSavingsDelete}
                           disabled={
                             isSavingsSubmitting ||
@@ -2928,11 +2894,13 @@ export default function HomeClient() {
                           }
                         >
                           {isSavingsDeleting ? "삭제 중..." : "삭제"}
-                        </button>
+                        </Button>
                       ) : null}
-                      <button
-                        type="button"
-                        className="button button--primary button--md button--full main-overview--submit"
+                      <Button
+                        variant="primary"
+                        size="md"
+                        full
+                        className="main-overview--submit"
                         onClick={handleSavingsSubmit}
                         disabled={
                           isSavingsSubmitting ||
@@ -2945,7 +2913,7 @@ export default function HomeClient() {
                           : savingsFormMode === "edit"
                             ? "수정 저장"
                             : "적금 추가"}
-                      </button>
+                      </Button>
                     </div>
                     <div className="savings--list table--wrap table--wrap__invest">
                       <table className="table table--invest savings--table">
@@ -2974,7 +2942,7 @@ export default function HomeClient() {
                               return (
                                 <tr key={account.id}>
                                   <td>
-                                    <span className="badge badge--blue">적금</span>
+                                    <Badge tone="info">적금</Badge>
                                   </td>
                                   <td>{account.name}</td>
                                   <td>{formatCompactWon(account.monthlyPayment)}</td>
@@ -2987,24 +2955,24 @@ export default function HomeClient() {
                                   </td>
                                   <td>
                                     <div className="row-group row-group--center row-group--gap-4">
-                                      <button
+                                      <Button
                                         type="button"
-                                        className="button button--xs button--secondary"
+                                        variant="secondary" size="xs"
                                         onClick={() => setMaturingSavingsAccount(account)}
                                         disabled={isSavingsDeleting}
                                       >
                                         {isMaturityEditable
                                           ? "만기 월 납입 수정"
                                           : "만기 처리"}
-                                      </button>
+                                      </Button>
                                       {isPaused ? (
-                                        <span className="recurring-status badge">일시정지</span>
+                                        <Badge className="recurring-status">일시정지</Badge>
                                       ) : null}
                                     </div>
                                   </td>
                                   <td className="recurring-actions-cell">
                                     <span className="recurring-actions">
-                                      <button
+                                      <Button
                                         type="button"
                                         aria-label="적금 메뉴 열기"
                                         aria-controls={`savings-actions-${account.id}`}
@@ -3014,7 +2982,7 @@ export default function HomeClient() {
                                             : "false"
                                         }
                                         aria-haspopup="menu"
-                                        className="button button--icon-only button--sm button--subtle side-menu--more"
+                                        variant="subtle" size="sm" iconOnly className="side-menu--more"
                                         onClick={() =>
                                           setOpenSavingsPauseMenuId((current) =>
                                             current === account.id ? "" : account.id,
@@ -3023,7 +2991,7 @@ export default function HomeClient() {
                                         disabled={isSavingsSkipping}
                                       >
                                         <AppIcon name="more_vert" />
-                                      </button>
+                                      </Button>
                                       {openSavingsPauseMenuId === account.id ? (
                                         <div
                                           className="side-menu--dropdown column-group"
@@ -3066,44 +3034,28 @@ export default function HomeClient() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
               {/* 고정지출 */}
-              <div className="main-overview--fix card overview-card column-group column-group--top column-group--gap-8">
+              <Card as="div" className="main-overview--fix overview-card column-group column-group--top column-group--gap-8">
                 <div className="column-group column-group--gap-16">
                   <div className="main-overview--section-header row-group row-group--center row-group--between">
                     <h4 className="main-overview--title title--sm">고정지출</h4>
-                    <div
-                      className="main-overview--tabs"
-                      role="tablist"
-                      aria-label="고정지출 입력 모드"
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={fixedExpenseFormMode === "create"}
-                        className={`main-overview--tab bodyBold--sm ${fixedExpenseFormMode === "create" ? "is-active" : ""}`}
-                        onClick={() => handleFixedExpenseModeChange("create")}
-                      >
-                        추가
-                      </button>
-                      {fixedExpenseAccounts.length ? (
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={fixedExpenseFormMode === "edit"}
-                          className={`main-overview--tab bodyBold--sm ${fixedExpenseFormMode === "edit" ? "is-active" : ""}`}
-                          onClick={() => handleFixedExpenseModeChange("edit")}
-                        >
-                          수정
-                        </button>
-                      ) : null}
-                    </div>
+                    <Tabs<InlineFormMode>
+                      ariaLabel="고정지출 입력 모드"
+                      className="main-overview--tabs bodyBold--sm"
+                      items={fixedExpenseAccounts.length ? [
+                        { value: "create", label: "추가" },
+                        { value: "edit", label: "수정" },
+                      ] : [{ value: "create", label: "추가" }]}
+                      value={fixedExpenseFormMode}
+                      onValueChange={handleFixedExpenseModeChange}
+                    />
                   </div>
                   <div className="main-overview--form">
                     {fixedExpenseFormMode === "edit" ? (
                       <label className="main-overview--field">
                         <span className="form-label label--md">수정할 고정지출</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={fixedExpenseEditingId}
                           onChange={(event) =>
@@ -3121,7 +3073,7 @@ export default function HomeClient() {
                               </option>
                             ))
                           )}
-                        </select>
+                        </Select>
                       </label>
                     ) : null}
                     <div className="grid-col-2">
@@ -3140,7 +3092,7 @@ export default function HomeClient() {
                             </Checkbox>
                           ) : null}
                         </div>
-                        <input
+                        <TextInput
                           id="fixed-expense-amount"
                           className="main-overview--control body--sm"
                           type="text"
@@ -3165,12 +3117,11 @@ export default function HomeClient() {
                             종료일 설정 안함
                           </Checkbox>
                         </div>
-                        <input
+                        <DateField
                           id="fixed-expense-end-date"
                           className="main-overview--control body--sm"
-                          type="date"
                           value={fixedExpenseEndDate}
-                          onChange={(event) => setFixedExpenseEndDate(event.target.value)}
+                          onChange={setFixedExpenseEndDate}
                           disabled={fixedExpenseHasNoEndDate}
                         />
                       </div>
@@ -3178,7 +3129,7 @@ export default function HomeClient() {
                     <div className="grid-col-2">
                       <label className="main-overview--field flex-fill">
                         <span className="form-label label--md">지출일</span>
-                        <select
+                        <Select
                           className="main-overview--control body--sm"
                           value={fixedExpensePaymentDay}
                           onChange={(event) =>
@@ -3193,11 +3144,11 @@ export default function HomeClient() {
                               </option>
                             );
                           })}
-                        </select>
+                        </Select>
                       </label>
                       <label className="main-overview--field  flex-fill">
                         <span className="form-label label--md">지출명</span>
-                        <input
+                        <TextInput
                           className="main-overview--control body--sm"
                           type="text"
                           placeholder="지출명"
@@ -3208,9 +3159,10 @@ export default function HomeClient() {
                     </div>
                     <div className="main-overview--actions row-group row-group--center row-group--gap-8">
                       {fixedExpenseFormMode === "edit" ? (
-                        <button
-                          type="button"
-                          className="button button--outline button--md main-overview--delete"
+                        <Button
+                          variant="outline"
+                          size="md"
+                          className="main-overview--delete"
                           onClick={handleFixedExpenseDelete}
                           disabled={
                             isFixedExpenseSubmitting ||
@@ -3219,11 +3171,13 @@ export default function HomeClient() {
                           }
                         >
                           {isFixedExpenseDeleting ? "삭제 중..." : "삭제"}
-                        </button>
+                        </Button>
                       ) : null}
-                      <button
-                        type="button"
-                        className="button button--primary button--md button--full main-overview--submit"
+                      <Button
+                        variant="primary"
+                        size="md"
+                        full
+                        className="main-overview--submit"
                         onClick={handleFixedExpenseSubmit}
                         disabled={
                           isFixedExpenseSubmitting ||
@@ -3237,7 +3191,7 @@ export default function HomeClient() {
                           : fixedExpenseFormMode === "edit"
                             ? "수정 저장"
                             : "고정지출 추가"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -3274,22 +3228,22 @@ export default function HomeClient() {
                                     ? "기한 없음"
                                     : formatDetailDate(account.endDate)}
                                   {isPaused ? (
-                                    <span className="recurring-status badge">일시정지</span>
+                                    <Badge className="recurring-status">일시정지</Badge>
                                   ) : null}
                                 </td>
                                 <td>
-                                  <button
+                                  <Button
                                     type="button"
-                                    className="button button--xs button--secondary"
+                                    variant="secondary" size="xs"
                                     onClick={() => handleFixedExpenseEnd(account)}
                                     disabled={isFixedExpenseDeleting || isEnded}
                                   >
                                     {isEnded ? "종료됨" : "종료"}
-                                  </button>
+                                  </Button>
                                 </td>
                                 <td className="recurring-actions-cell">
                                   <span className="recurring-actions">
-                                    <button
+                                    <Button
                                       type="button"
                                       aria-label="고정지출 메뉴 열기"
                                       aria-controls={`fixed-expense-actions-${account.id}`}
@@ -3299,7 +3253,7 @@ export default function HomeClient() {
                                           : "false"
                                       }
                                       aria-haspopup="menu"
-                                      className="button button--icon-only button--sm button--subtle side-menu--more"
+                                      variant="subtle" size="sm" iconOnly className="side-menu--more"
                                       onClick={() =>
                                         setOpenFixedExpensePauseMenuId((current) =>
                                           current === account.id ? "" : account.id,
@@ -3308,7 +3262,7 @@ export default function HomeClient() {
                                       disabled={isFixedExpenseSkipping}
                                     >
                                       <AppIcon name="more_vert" />
-                                    </button>
+                                    </Button>
                                     {openFixedExpensePauseMenuId === account.id ? (
                                       <div
                                         className="side-menu--dropdown column-group"
@@ -3350,7 +3304,7 @@ export default function HomeClient() {
                     </table>
                   </div>
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
           {/* 전체 정보 */}
@@ -3475,16 +3429,16 @@ export default function HomeClient() {
 
                             <td>{item.category}</td>
                             <td>
-                              <span
-                                className={`badge ${
+                              <Badge
+                                tone={
                                   isInvestment
-                                    ? "badge--violet"
+                                    ? "violet"
                                     : isSavings
-                                      ? "badge--blue"
+                                      ? "info"
                                       : isIncome
-                                        ? "badge--green"
-                                        : "badge--red"
-                                }`}
+                                        ? "success"
+                                        : "danger"
+                                }
                               >
                                 {isInvestment
                                   ? "투자"
@@ -3493,9 +3447,9 @@ export default function HomeClient() {
                                     : isIncome
                                       ? "수입"
                                       : "지출"}
-                              </span>
+                              </Badge>
                               {isPaused ? (
-                                <span className="recurring-status badge">일시정지</span>
+                                <Badge className="recurring-status">일시정지</Badge>
                               ) : null}
                             </td>
                             <td>{formatCurrency(item.amount)}</td>
@@ -3540,14 +3494,14 @@ export default function HomeClient() {
                   {formatHeaderDate(selectedDate)}
                 </h2>
               </div>
-              <button
+              <Button
                 type="button"
-                className="button button--icon-only button--sm button--subtle"
+                variant="subtle" size="sm" iconOnly
                 aria-label="Close calendar"
                 onClick={closeCalendarModal}
               >
                 <AppIcon name="close" />
-              </button>
+              </Button>
             </div>
             <Calendar
               value={selectedDate}
@@ -3563,13 +3517,13 @@ export default function HomeClient() {
               }
             />
             <div className="calendar-picker__footer">
-              <button
+              <Button
                 type="button"
-                className="button button--sm button--outline"
+                variant="outline" size="sm"
                 onClick={() => handleCalendarSelect(today)}
               >
                 오늘
-              </button>
+              </Button>
               <span className="body--sm">{selectedDateKey}</span>
             </div>
           </div>
@@ -3595,9 +3549,9 @@ export default function HomeClient() {
               onToggleFavorite={categoryState.toggleFavorite}
               onUse={handleUseCustomCategory}
             />
-            <button type="button" className="button button--sm button--outline" onClick={() => setIsCategoryManagerOpen(false)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsCategoryManagerOpen(false)}>
               닫기
-            </button>
+            </Button>
           </div>
         </Modal>
       ) : null}
@@ -3619,17 +3573,17 @@ export default function HomeClient() {
               </p>
             </div>
             <div className="row-group row-group--gap-8 row-group--end">
-              <button
+              <Button
                 type="button"
-                className="button button--sm button--outline"
+                variant="outline" size="sm"
                 onClick={() => setMaturingSavingsAccount(null)}
                 disabled={isSavingsDeleting}
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="button button--sm button--secondary"
+                variant="secondary" size="sm"
                 onClick={() => {
                   const account = maturingSavingsAccount;
                   setMaturingSavingsAccount(null);
@@ -3638,10 +3592,10 @@ export default function HomeClient() {
                 disabled={isSavingsDeleting}
               >
                 납입 안 함
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="button button--sm button--primary"
+                variant="primary" size="sm"
                 onClick={() => {
                   const account = maturingSavingsAccount;
                   setMaturingSavingsAccount(null);
@@ -3650,7 +3604,7 @@ export default function HomeClient() {
                 disabled={isSavingsDeleting}
               >
                 납입함
-              </button>
+              </Button>
             </div>
           </div>
         </Modal>

@@ -25,7 +25,7 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      padding: 5px 10px;
+      padding: var(--table-cell-pad-block) var(--table-cell-pad-inline);
       background-color: var(--surface-lowest);
       font-size: 15px;
       font-weight: 500;
@@ -34,12 +34,12 @@
   }
   tbody {
     td {
-      padding: 5px 10px;
+      padding: var(--table-cell-pad-block) var(--table-cell-pad-inline);
       background-color: var(--surface-ultra-low);
       font-size: 14px;
       text-align: center;
       white-space: nowrap;
-      
+
     }
     tr {
       &:hover {
@@ -60,7 +60,7 @@
         position: sticky;
         top: 0;
         z-index: 20;
-        padding: 5px 10px;
+        padding: var(--table-cell-pad-block) var(--table-cell-pad-inline);
         background-color: var(--surface-lowest);
         border-bottom: 1px solid var(--outline-lower);
         font-size: 14px;

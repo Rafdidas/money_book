@@ -11,6 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/Button";
 
 type DialogType = "alert" | "confirm";
 
@@ -201,22 +202,24 @@ export default function AppAlertProvider({ children }: { children: ReactNode }) 
                     }`}
                   >
                     {dialog.type === "confirm" ? (
-                      <button
-                        type="button"
-                        className="button button--md button--outline app-alert__button"
+                      <Button
+                        variant="outline"
+                        size="md"
+                        className="app-alert__button"
                         onClick={() => closeDialog(false)}
                       >
                         {dialog.cancelText}
-                      </button>
+                      </Button>
                     ) : null}
-                    <button
-                      type="button"
-                      className="button button--md button--primary app-alert__button"
+                    <Button
+                      variant="primary"
+                      size="md"
+                      className="app-alert__button"
                       onClick={() => closeDialog(true)}
                       autoFocus
                     >
                       {dialog.confirmText}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </section>

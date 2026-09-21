@@ -381,7 +381,8 @@
     left: 10px;
     z-index: 80;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     min-height: 66px;
     padding: 6px;
     overflow: hidden;
@@ -529,6 +530,16 @@
 
 // 다크모드 — 모바일 헤더/하단 네비는 화이트 글래스를 하드코딩하므로 별도 보정
 [data-theme="dark"] {
+  // 로고 글자가 어두운 색이라 다크 배경에서 읽히지 않는다 — 밝은 바탕을 깐다
+  .side-menu--brand img,
+  .mobile-app-header--brand img,
+  .mobile-drawer--header > img {
+    box-sizing: content-box;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.92);
+  }
+
   .mobile-app-header {
     background: color-mix(in srgb, var(--surface-ultra-low) 86%, transparent);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);

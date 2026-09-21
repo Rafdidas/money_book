@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppIcon from "@/components/common/AppIcon";
 import SideMenu from "@/components/common/SideMenu";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Select, TextInput } from "@/components/ui/FormControl";
 import { useAppData } from "@/app/providers";
 import {
   DEMO_INVESTMENT_OWNER_KEY,
@@ -120,15 +124,15 @@ const investmentAccountLabel: Record<InvestmentAccountType, string> = {
   ISA: "ISA",
   PENSION: "연금저축",
 };
-const limitAccountBadgeClassName: Record<LimitAccountType, string> = {
-  ISA: "badge--violet",
-  PENSION: "badge--green",
+const ACCOUNT_BADGE_TONES: Record<LimitAccountType, BadgeTone> = {
+  ISA: "violet",
+  PENSION: "success",
 };
-const allocationBadgeClassName: Record<string, string> = {
-  "종목별 비중": "badge--blue",
-  "계좌별 배분": "badge--violet",
-  "시장별 배분": "badge--green",
-  "통화별 배분": "badge--teal",
+const SECTION_BADGE_TONES: Record<string, BadgeTone> = {
+  "종목별 비중": "info",
+  "계좌별 배분": "violet",
+  "시장별 배분": "success",
+  "통화별 배분": "teal",
 };
 const limitAccountTypes: LimitAccountType[] = ["ISA", "PENSION"];
 const formatSignedPercent = (value: number) =>
@@ -1014,18 +1018,18 @@ export default function InvestPage() {
             </p>
           </div>
           <div className="invest-header--actions row-group row-group--center row-group--gap-8">
-            <button
+            <Button
               type="button"
-              className="button button--md button--outline refresh-btn"
+              variant="outline" size="md" className="refresh-btn"
               onClick={() => refreshStockQuotes()}
               disabled={isStockRefreshing || !stockSymbols.length || isDemoMode}
             >
               <AppIcon name="refresh" />
               {isStockRefreshing ? "업데이트 중" : "최근 종가 업데이트"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="button button--primary button--md"
+              variant="primary" size="md"
               onClick={() => {
                 if (isStockPanelOpen) {
                   setIsStockPanelOpen(false);
@@ -1035,13 +1039,13 @@ export default function InvestPage() {
               }}
             >
               {isStockPanelOpen ? "입력 닫기" : "+ 종목 추가"}
-            </button>
+            </Button>
           </div>
         </section>
 
         <section className="main-overview invest-overview column-group column-group--gap-16">
           <div className="invest-summary">
-            <article className="card invest-summary--primary">
+            <Card as="article" className="invest-summary--primary">
               <span className="label--md color-gray">총 평가금액</span>
               <strong className="invest-summary--major title--lg">
                 {investmentTotals.isValuationReady
@@ -1057,14 +1061,14 @@ export default function InvestPage() {
                       : "최근 거래일 종가 기준 평가"
                   : "최근 종가 업데이트 후 표시"}
               </span>
-            </article>
-            <article className="card invest-summary--item">
+            </Card>
+            <Card as="article" className="invest-summary--item">
               <span className="label--md color-gray">총 투자금액</span>
               <strong className="title--md">
                 {formatWon(investmentTotals.totalCost)}
               </strong>
-            </article>
-            <article className="card invest-summary--item">
+            </Card>
+            <Card as="article" className="invest-summary--item">
               <span className="label--md color-gray">총 평가손익</span>
               <strong
                 className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.totalProfit) : ""}`}
@@ -1073,8 +1077,8 @@ export default function InvestPage() {
                   ? formatSignedWon(investmentTotals.totalProfit)
                   : "-"}
               </strong>
-            </article>
-            <article className="card invest-summary--item">
+            </Card>
+            <Card as="article" className="invest-summary--item">
               <span className="label--md color-gray">총 수익률</span>
               <strong
                 className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.totalProfitRate) : ""}`}
@@ -1083,8 +1087,8 @@ export default function InvestPage() {
                   ? formatSignedPercent(investmentTotals.totalProfitRate)
                   : "-"}
               </strong>
-            </article>
-            <article className="card invest-summary--item">
+            </Card>
+            <Card as="article" className="invest-summary--item">
               <span className="label--md color-gray">전일 대비</span>
               <strong
                 className={`title--md ${investmentTotals.isValuationReady ? getChangeClassName(investmentTotals.dailyProfit) : ""}`}
@@ -1100,7 +1104,7 @@ export default function InvestPage() {
                   ? `전일 대비 ${formatSignedPercent(investmentTotals.dailyProfitRate)}`
                   : "최근 종가 업데이트 후 표시"}
               </span>
-            </article>
+            </Card>
           </div>
 
           <section className="invest-limits column-group column-group--gap-8">
@@ -1114,14 +1118,14 @@ export default function InvestPage() {
             </div>
             <div className="invest-limits--grid">
               {accountLimitSummaries.map((limit) => (
-                <article key={limit.accountType} className="card invest-limit-card">
+                <Card as="article" key={limit.accountType} className="invest-limit-card">
                   <div className="row-group row-group--center row-group--between">
                     <h4 className="title--sm">
                       {investmentAccountLabel[limit.accountType]}
                     </h4>
-                    <span className={`badge ${limitAccountBadgeClassName[limit.accountType]}`}>
+                    <Badge tone={ACCOUNT_BADGE_TONES[limit.accountType]}>
                       {limitYear}년
-                    </span>
+                    </Badge>
                   </div>
                   <div className="invest-limit-card--numbers">
                     <div>
@@ -1170,7 +1174,7 @@ export default function InvestPage() {
                         </span>
                       </div>
 
-                      <input
+                      <TextInput
                         className="main-overview--control body--sm"
                         type="text"
                         inputMode="numeric"
@@ -1184,15 +1188,15 @@ export default function InvestPage() {
                         }
                       />
                     </label>
-                    <button
+                    <Button
                       type="button"
-                      className="button button--outline button--xmd"
+                      variant="outline" size="md"
                       onClick={() => handleAccountLimitSave(limit.accountType)}
                     >
                       저장
-                    </button>
+                    </Button>
                   </div>
-                </article>
+                </Card>
               ))}
             </div>
           </section>
@@ -1206,15 +1210,13 @@ export default function InvestPage() {
             </div>
             <div className="invest-allocation--grid">
               {portfolioAllocations.map((allocation) => (
-                <article key={allocation.title} className="card invest-allocation-card">
+                <Card as="article" key={allocation.title} className="invest-allocation-card">
                   <div className="row-group row-group--center row-group--between">
                     <h4 className="title--sm">{allocation.title}</h4>
                     {investmentTotals.isValuationReady ? (
-                      <span
-                        className={`badge ${allocationBadgeClassName[allocation.title] ?? "badge--teal"}`}
-                      >
+                      <Badge tone={SECTION_BADGE_TONES[allocation.title] ?? "teal"}>
                         {allocation.items.length.toLocaleString()}개
-                      </span>
+                      </Badge>
                     ) : null}
                   </div>
                   {investmentTotals.isValuationReady && allocation.items.length ? (
@@ -1260,13 +1262,13 @@ export default function InvestPage() {
                         : "종목을 추가하면 비중을 표시합니다."}
                     </p>
                   )}
-                </article>
+                </Card>
               ))}
             </div>
           </section>
 
           <div className={`invest-layout ${isStockPanelOpen ? "has-panel" : ""}`}>
-            <section className="card invest-holdings column-group column-group--gap-16">
+            <Card as="section" className="invest-holdings column-group column-group--gap-16">
               <div className="main-overview--section-header row-group row-group--center row-group--between">
                 <div>
                   <h3 className="main-overview--title title--sm">보유 종목</h3>
@@ -1285,9 +1287,9 @@ export default function InvestPage() {
                     </p>
                   ) : null}
                 </div>
-                <span className="badge badge--violet">
+                <Badge tone="violet">
                   {investmentSummaries.length.toLocaleString()}개 보유
-                </span>
+                </Badge>
               </div>
               <div className="table--wrap table--wrap__invest">
                 <table className="table table--invest invest-holdings--table">
@@ -1383,9 +1385,9 @@ export default function InvestPage() {
                                   {stock.symbol} · {stock.market} ·{" "}
                                   {stock.quantity.toLocaleString()}주
                                 </span>
-                                <span className="badge badge--blue caption--md">
+                                <Badge tone="info" className="caption--md">
                                   {investmentAccountLabel[stock.accountType]}
-                                </span>
+                                </Badge>
                               </div>
                             </td>
                             <td className="tr">
@@ -1450,9 +1452,9 @@ export default function InvestPage() {
                         {investmentAccountLabel[selectedSummary.accountType]}
                       </p>
                     </div>
-                    <span className="badge badge--blue">
+                    <Badge tone="info">
                       보유 기록 {selectedPurchaseRecords.length}건
-                    </span>
+                    </Badge>
                   </div>
                   <div className="invest-detail--daily">
                     <div>
@@ -1527,31 +1529,31 @@ export default function InvestPage() {
                           ) : null}
                         </div>
                         <div className="row-group row-group--center row-group--gap-4">
-                          <button
+                          <Button
                             type="button"
-                            className="button button--outline button--xs"
+                            variant="outline" size="xs"
                             onClick={() => startStockEdit(stock)}
                           >
                             수정
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
-                            className="button button--negative button--outline button--xs"
+                            variant="negative" size="xs"
                             onClick={() => handleStockDelete(stock)}
                             disabled={deletingStockId === stock.id}
                           >
                             {deletingStockId === stock.id ? "삭제 중" : "삭제"}
-                          </button>
+                          </Button>
                         </div>
                       </article>
                     ))}
                   </div>
                 </section>
               ) : null}
-            </section>
+            </Card>
 
             {isStockPanelOpen ? (
-              <aside className="card invest-editor column-group column-group--gap-16">
+              <Card as="aside" className="invest-editor column-group column-group--gap-16">
                 <div className="main-overview--section-header row-group row-group--center row-group--between">
                   <div>
                     <h3 className="main-overview--title title--sm">
@@ -1563,16 +1565,16 @@ export default function InvestPage() {
                         : "현재 보유 중인 종목을 기록합니다."}
                     </p>
                   </div>
-                  <span className="badge badge--green">KRW</span>
+                  <Badge tone="success">KRW</Badge>
                 </div>
                 {editingStockId ? (
-                  <button
+                  <Button
                     type="button"
-                    className="button button--outline button--sm button--full"
+                    variant="outline" size="sm" full
                     onClick={startStockCreate}
                   >
                     새 종목 추가로 전환
-                  </button>
+                  </Button>
                 ) : null}
                 <div className="main-overview--form">
                   <div className="main-overview--field">
@@ -1646,7 +1648,7 @@ export default function InvestPage() {
                   </div>
                   <label className="main-overview--field">
                     <span className="label--md">계좌 구분</span>
-                    <select
+                    <Select
                       className="main-overview--control body--sm"
                       value={stockAccountType}
                       onChange={(event) =>
@@ -1656,11 +1658,11 @@ export default function InvestPage() {
                       <option value="GENERAL">일반계좌</option>
                       <option value="ISA">ISA</option>
                       <option value="PENSION">연금저축</option>
-                    </select>
+                    </Select>
                   </label>
                   <label className="main-overview--field">
                     <span className="label--md">구매일 (선택)</span>
-                    <input
+                    <TextInput
                       className="main-overview--control body--sm"
                       type="date"
                       value={stockPurchaseDate}
@@ -1670,7 +1672,7 @@ export default function InvestPage() {
                   <div className="grid-col-2">
                     <label className="main-overview--field">
                       <span className="label--md">수량</span>
-                      <input
+                      <TextInput
                         className="main-overview--control body--sm"
                         type="text"
                         inputMode="decimal"
@@ -1683,7 +1685,7 @@ export default function InvestPage() {
                     </label>
                     <label className="main-overview--field">
                       <span className="label--md">평균 매입단가</span>
-                      <input
+                      <TextInput
                         className="main-overview--control body--sm"
                         type="text"
                         inputMode="decimal"
@@ -1697,7 +1699,7 @@ export default function InvestPage() {
                   </div>
                   <label className="main-overview--field">
                     <span className="label--md">메모</span>
-                    <input
+                    <TextInput
                       className="main-overview--control body--sm"
                       type="text"
                       placeholder="선택 입력"
@@ -1705,9 +1707,9 @@ export default function InvestPage() {
                       onChange={(event) => setStockMemo(event.target.value)}
                     />
                   </label>
-                  <button
+                  <Button
                     type="button"
-                    className="button button--primary button--md button--full main-overview--submit"
+                    variant="primary" size="md" full className="main-overview--submit"
                     onClick={handleStockSubmit}
                     disabled={isStockSubmitting}
                   >
@@ -1716,9 +1718,9 @@ export default function InvestPage() {
                       : editingStockId
                         ? "수정 저장"
                         : "종목 추가"}
-                  </button>
+                  </Button>
                 </div>
-              </aside>
+              </Card>
             ) : null}
           </div>
         </section>
