@@ -37,7 +37,7 @@
     grid-template-columns: minmax(220px, 1.35fr) repeat(4, minmax(132px, 1fr));
     gap: 12px;
 
-    > .card {
+    > .ui-card {
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -231,6 +231,7 @@
         background: var(--surface-lowest);
       }
 
+      // 표 셀 안에서 배지가 줄바꿈될 수 있어 고정 높이 대신 min-height로 예외 처리
       .ui-badge {
         align-self: flex-start;
         min-height: 22px;

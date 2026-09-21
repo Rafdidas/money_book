@@ -1440,3 +1440,10 @@ with a simpler monthly cash-flow summary.
 변경: `_home`의 남은 `.button` 16곳(HomeClient 14, DetailBulkActionBar 2)을 `<Button>`으로 치환. 핸들러/disabled/aria/type 그대로 보존, 삭제 버튼은 `variant="primary"` + `className="button--negative"` 유지. page.scss의 달력 월 이동 28px 규칙에 의도된 아이콘 버튼 크기 예외 주석 추가.
 검증: npm test 229 통과, lint, build 통과. Playwright 28 통과 / 기존 public-auth-demo.spec.ts:51 2건만 실패. 1440/390 라이트/다크 데모 대시보드 육안 확인, 가로 오버플로 없음, 달력 이동 버튼 32x28.
 남은 일: Task 3(분석/투자).
+
+## 2026-09-21 beUI 3차 Task 3: 분석·투자 화면
+
+- 변경: 분석/투자 카드 19곳을 `Card`로, 버튼 11곳을 `Button`으로, 투자 입력 6곳·분석 월 선택 1곳을 `TextInput`/`Select`로 치환. `Card`에 `aside` 추가(+테스트).
+- scss: `analysis-year-control` 리터럴 28px 버튼 규칙 삭제(sm 32px 토큰 적용), `analysis-month-select` 겹치는 높이/테두리 선언 삭제, `invest-summary > .card`를 `.ui-card`로 이전, 표 배지 min-height 예외에 이유 주석.
+- 검증: npm test 230 통과, lint/build 통과, e2e는 기존 실패 2건(public-auth-demo:51)만, 데모 화면 1440/390 라이트·다크 측정(컨트롤 40px, sm 32px, 가로 오버플로 0)과 스크린샷 확인.
+- 남음: Task 4(문의·마이페이지).

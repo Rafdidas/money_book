@@ -4,7 +4,7 @@ type CardProps = Omit<HTMLAttributes<HTMLElement>, "className" | "children"> & {
   children: ReactNode;
   tone?: "default" | "strong";
   padding?: "default" | "compact";
-  as?: "div" | "section" | "article";
+  as?: "div" | "section" | "article" | "aside";
   className?: string;
 };
 

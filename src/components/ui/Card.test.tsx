@@ -23,6 +23,11 @@ describe("Card", () => {
     expect(card.className).toContain("ui-card--compact");
   });
 
+  it("as 로 aside 요소를 지원한다", () => {
+    render(<Card as="aside">내용</Card>);
+    expect(screen.getByText("내용").tagName).toBe("ASIDE");
+  });
+
   it("as 로 요소를 바꾼다", () => {
     render(<Card as="section">내용</Card>);
     expect(screen.getByText("내용").tagName).toBe("SECTION");
