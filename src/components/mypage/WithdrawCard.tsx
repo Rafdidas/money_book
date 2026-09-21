@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { deleteAccount } from "@/lib/api/account";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { TextInput } from "@/components/ui/FormControl";
 
 export default function WithdrawCard({ email }: { email: string }) {
   const router = useRouter();
@@ -43,7 +46,7 @@ export default function WithdrawCard({ email }: { email: string }) {
   return (
     <section className="mypage-withdraw">
       {isOpen ? (
-        <div className="card mypage-card column-group column-group--gap-16">
+        <Card className="mypage-card column-group column-group--gap-16">
           <div>
             <h3 className="title--sm mypage-card--title">회원 탈퇴</h3>
             <p className="caption--md mypage-card--description">
@@ -68,7 +71,7 @@ export default function WithdrawCard({ email }: { email: string }) {
               <label htmlFor="mypage-withdraw-password" className="label--md">
                 비밀번호
               </label>
-              <input
+              <TextInput
                 id="mypage-withdraw-password"
                 className="main-overview--control body--sm"
                 type="password"
@@ -90,16 +93,13 @@ export default function WithdrawCard({ email }: { email: string }) {
             </div>
 
             <div className="row-group row-group--gap-8">
-              <button
-                type="submit"
-                className="button button--negative button--primary button--md"
-                disabled={isSubmitting}
-              >
+              <Button type="submit" variant="negative" size="md" disabled={isSubmitting}>
                 {isSubmitting ? "처리 중..." : "탈퇴하기"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="button button--secondary button--md"
+                variant="secondary"
+                size="md"
                 disabled={isSubmitting}
                 onClick={() => {
                   setIsOpen(false);
@@ -108,10 +108,10 @@ export default function WithdrawCard({ email }: { email: string }) {
                 }}
               >
                 취소
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
       ) : (
         <button
           type="button"

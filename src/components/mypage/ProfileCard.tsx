@@ -3,6 +3,9 @@
 import { FormEvent, useState } from "react";
 
 import { updateDisplayName, type AccountOverview } from "@/lib/api/account";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { TextInput } from "@/components/ui/FormControl";
 
 const formatDate = (value: string) =>
   new Date(value).toLocaleDateString("ko-KR", {
@@ -49,7 +52,7 @@ export default function ProfileCard({ overview, onNameSaved }: ProfileCardProps)
   };
 
   return (
-    <section className="card mypage-card column-group column-group--gap-16">
+    <Card as="section" className="mypage-card column-group column-group--gap-16">
       <div>
         <h3 className="title--sm mypage-card--title">내 정보</h3>
         <p className="caption--md mypage-card--description">
@@ -62,7 +65,7 @@ export default function ProfileCard({ overview, onNameSaved }: ProfileCardProps)
           <label htmlFor="mypage-name" className="label--md">
             이름
           </label>
-          <input
+          <TextInput
             id="mypage-name"
             className="main-overview--control body--sm"
             type="text"
@@ -100,10 +103,10 @@ export default function ProfileCard({ overview, onNameSaved }: ProfileCardProps)
           <p className="body--sm mypage-readonly">{formatDate(overview.createdAt)}</p>
         </div>
 
-        <button type="submit" className="button button--primary button--md" disabled={isSaving}>
+        <Button type="submit" variant="primary" size="md" disabled={isSaving}>
           {isSaving ? "저장 중..." : "저장"}
-        </button>
+        </Button>
       </form>
-    </section>
+    </Card>
   );
 }

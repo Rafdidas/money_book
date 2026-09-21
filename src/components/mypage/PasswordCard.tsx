@@ -4,6 +4,9 @@ import { FormEvent, useState } from "react";
 
 import { changePassword } from "@/lib/api/account";
 import { PASSWORD_MISMATCH_MESSAGE, getPasswordError } from "@/lib/auth/password";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { TextInput } from "@/components/ui/FormControl";
 
 export default function PasswordCard({ email }: { email: string }) {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -77,7 +80,7 @@ export default function PasswordCard({ email }: { email: string }) {
   };
 
   return (
-    <section className="card mypage-card column-group column-group--gap-16">
+    <Card as="section" className="mypage-card column-group column-group--gap-16">
       <div>
         <h3 className="title--sm mypage-card--title">비밀번호 변경</h3>
         <p className="caption--md mypage-card--description">
@@ -90,7 +93,7 @@ export default function PasswordCard({ email }: { email: string }) {
           <label htmlFor="mypage-current-password" className="label--md">
             현재 비밀번호
           </label>
-          <input
+          <TextInput
             id="mypage-current-password"
             className="main-overview--control body--sm"
             type="password"
@@ -115,7 +118,7 @@ export default function PasswordCard({ email }: { email: string }) {
           <label htmlFor="mypage-new-password" className="label--md">
             새 비밀번호
           </label>
-          <input
+          <TextInput
             id="mypage-new-password"
             className="main-overview--control body--sm"
             type="password"
@@ -141,7 +144,7 @@ export default function PasswordCard({ email }: { email: string }) {
           <label htmlFor="mypage-confirm-password" className="label--md">
             새 비밀번호 확인
           </label>
-          <input
+          <TextInput
             id="mypage-confirm-password"
             className="main-overview--control body--sm"
             type="password"
@@ -167,10 +170,10 @@ export default function PasswordCard({ email }: { email: string }) {
           ) : null}
         </div>
 
-        <button type="submit" className="button button--primary button--md" disabled={isSubmitting}>
+        <Button type="submit" variant="primary" size="md" disabled={isSubmitting}>
           {isSubmitting ? "변경 중..." : "비밀번호 변경"}
-        </button>
+        </Button>
       </form>
-    </section>
+    </Card>
   );
 }

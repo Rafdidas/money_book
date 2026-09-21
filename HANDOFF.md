@@ -1447,3 +1447,10 @@ with a simpler monthly cash-flow summary.
 - scss: `analysis-year-control` 리터럴 28px 버튼 규칙 삭제(sm 32px 토큰 적용), `analysis-month-select` 겹치는 높이/테두리 선언 삭제, `invest-summary > .card`를 `.ui-card`로 이전, 표 배지 min-height 예외에 이유 주석.
 - 검증: npm test 230 통과, lint/build 통과, e2e는 기존 실패 2건(public-auth-demo:51)만, 데모 화면 1440/390 라이트·다크 측정(컨트롤 40px, sm 32px, 가로 오버플로 0)과 스크린샷 확인.
 - 남음: Task 4(문의·마이페이지).
+
+## 2026-09-21 beUI 3차 Task 4: 문의·마이페이지
+
+- 변경: 문의 카드 4곳·마이페이지 카드 6곳(Profile/Password/Consent/Withdraw, 데모 안내, 내 카테고리)을 `Card`로, 버튼 8곳을 `Button`으로, input 5곳·textarea 2곳·select 1곳을 `TextInput`/`Textarea`/`Select`로 치환. 새 문의 폼은 `Card`(section) 안에 `<form>`을 두는 구조로 변경.
+- scss 변경 없음(겹치는 레거시 규칙 없음). 기존 vitest 수정 없이 통과.
+- 검증: npm test 230, lint, build 통과. e2e는 기존 public-auth-demo:51 2건만 실패. 데모 모드에서는 안내 카드만 렌더되어 1440/390 라이트·다크로 카드 확인, 가로 오버플로 0.
+- 한계: 실제 폼(입력/버튼/textarea)은 실계정이 필요해 렌더 높이를 측정하지 못함(토큰 규칙상 40px/48px 예상).

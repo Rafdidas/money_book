@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import type { AccountOverview } from "@/lib/api/account";
+import { Card } from "@/components/ui/Card";
 
 const formatDateTime = (value: string | null) => {
   if (!value) {
@@ -32,7 +33,7 @@ const describeConsent = (version: string | null, agreedAt: string | null) => {
 
 export default function ConsentCard({ overview }: { overview: AccountOverview }) {
   return (
-    <section className="card mypage-card column-group column-group--gap-16">
+    <Card as="section" className="mypage-card column-group column-group--gap-16">
       <div>
         <h3 className="title--sm mypage-card--title">약관 동의 현황</h3>
         <p className="caption--md mypage-card--description">
@@ -64,6 +65,6 @@ export default function ConsentCard({ overview }: { overview: AccountOverview })
           {overview.ageConfirmedAt ? `${formatDateTime(overview.ageConfirmedAt)} 확인` : "기록 없음"}
         </p>
       </div>
-    </section>
+    </Card>
   );
 }
