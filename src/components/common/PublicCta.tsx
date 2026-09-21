@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppData } from "@/app/providers";
+import { Button } from "@/components/ui/Button";
 import { enableDemoMode } from "@/lib/demo";
 
 type PublicCtaProps = {
@@ -56,17 +57,13 @@ export default function PublicCta({ variant }: PublicCtaProps) {
       >
         무료로 시작하기
       </Link>
-      <button
-        type="button"
-        className={
-          variant === "header"
-            ? "button button--outline-primary button--sm"
-            : "button button--lg button--outline-primary"
-        }
+      <Button
+        variant="outline-primary"
+        size={variant === "header" ? "sm" : "lg"}
         onClick={handleDemoLogin}
       >
         {variant === "header" ? "데모 버전" : "데모 버전 체험하기"}
-      </button>
+      </Button>
     </>
   );
 }

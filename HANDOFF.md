@@ -1461,3 +1461,9 @@ with a simpler monthly cash-flow summary.
 - ExpenseForm/ExpenseList/CalendarView는 어디서도 import되지 않는 죽은 코드라 미변경.
 - 검증: vitest 230 통과, lint, build, e2e 28 통과(기존 실패 2건만).
 - 남은 일: alert/confirm 다이얼로그 화면 육안 미확인.
+
+## 공통 UI 3차 Task 6: 인증·소개·오류 화면 (Button 통일만)
+- 변경: `PublicCta` 데모 버튼, `error.tsx` 다시 시도 버튼을 공통 `Button`으로 치환.
+- 미변경(의도): 로그인/가입/비밀번호 재설정 등 `auth-input`·`auth-submit`·`auth-demo-button`은 인증 전용 커스텀 디자인이라 유지, `IntroCta`(intro-button)·Link 버튼·`global-error.tsx`(전역 CSS 없음)도 유지. 로그인 동작 변경 없음.
+- 검증: npm test 230 통과, lint, build 통과, e2e 28 통과/기존 실패 2건(public-auth-demo:51)만.
+- 남은 일: 없음(인증 폼 입력을 TextInput으로 바꾸려면 auth 디자인 토큰 정리가 선행되어야 함).
