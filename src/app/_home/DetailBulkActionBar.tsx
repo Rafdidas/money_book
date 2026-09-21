@@ -34,7 +34,7 @@ export default function DetailBulkActionBar({
         </Button>
         <Button
           type="button"
-          variant="primary" size="sm" className="button--negative"
+          variant="primary" size="sm"
           disabled={isDeleting}
           onClick={onDelete}
         >

@@ -1,3 +1,13 @@
+# 2026-09-21 2차+3차 공통 UI 통합 정리 (Task 7 최종)
+
+**변경:** 공통 컴포넌트(`src/components/ui`: Button, Card, Badge, Tabs, TextInput/Select/DateField 등)와 컨트롤 높이 토큰(24/32/40/48, `_control-tokens.scss`)을 대시보드·분석·투자·문의·마이페이지·CategoryManager·알림 다이얼로그·공개 CTA·오류 화면에 적용. 레거시 `_input.scss`(`.form-input`, 참조 0)와 죽은 className(`button--negative`, `button--outline`) 삭제.
+
+**의도적 예외:** `auth/*`(자체 히어로: 입력 52/버튼 56), `global-error.tsx`, `Link` 기반 nav·`auth/callback` 링크 버튼, SideMenu 커스텀 버튼, intro 커스텀 CTA, 투자 종목 자동완성 내부 input(`autocomplete__input`), 달력 월 이동 28px 아이콘 버튼, 표 정렬 버튼(`sort-btn`), 캘린더/월 카드 셀 버튼, HomeClient 모달 패널 `.card`(2곳), 죽은 코드 `ExpenseForm/ExpenseList/CalendarView`(미사용).
+
+**검증:** `npm test` 230 통과, lint 통과, build 통과. e2e(desktop+mobile) 28 통과/2 실패(기지: public-auth-demo.spec.ts:51). 8개 라우트 x 1440/390 x 라이트/다크 스윕: 가로 오버플로 0, 콘솔 error 0, 스케일 밖 높이는 위 예외뿐.
+
+**남은 일:** 실계정으로 문의·마이페이지 폼 검증, 실기기 모바일 날짜 선택기, alert/confirm 다이얼로그·드로어 시각 미검증, 다크 모드 로고 텍스트 대비(헤더/사이드바 "머니북가계부"가 어두운 배경에서 거의 안 보임, 본 작업 범위 밖), 미푸시.
+
 # 2026-09-21 Task 7: 표 셀 패딩 토큰화
 
 **Task 7 완료:**

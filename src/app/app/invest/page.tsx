@@ -1538,7 +1538,7 @@ export default function InvestPage() {
                           </Button>
                           <Button
                             type="button"
-                            variant="negative" size="xs" className="button--outline"
+                            variant="negative" size="xs"
                             onClick={() => handleStockDelete(stock)}
                             disabled={deletingStockId === stock.id}
                           >
