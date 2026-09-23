@@ -1483,3 +1483,4 @@ with a simpler monthly cash-flow summary.
 - 9월 11일 500,000원 적금이 9월 23일에 예정으로 남아 합계에서 빠지는 사례를 회귀 테스트로 추가했습니다.
 - 검증: 대상 Vitest 6개 및 전체 `npm test` 231개 통과, `npm run lint` 통과, `npm run build` 통과.
 - 남음: 로그인 계정의 실제 데이터 화면은 로컬에서 재현하지 못했습니다.
+- 배포: `5cc87da`를 `origin/main`에 푸시했습니다. GitHub의 Vercel 커밋 상태 `success`, `https://monibuk.com/` HTTP 200을 확인했습니다.
