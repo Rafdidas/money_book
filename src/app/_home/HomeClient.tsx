@@ -24,6 +24,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useAppData } from "@/app/providers";
 import { useCustomCategories } from "@/lib/hooks/useCustomCategories";
+import { getEffectiveSavingsPaymentStatus } from "@/lib/savingsPaymentStatus";
 import { useAppAlert } from "@/components/app-alert/AppAlertProvider";
 import { DEMO_USER_ID, readDemoExpenses, writeDemoExpenses } from "@/lib/demo";
 import "@/lib/chart";
@@ -559,11 +560,11 @@ export default function HomeClient() {
           category: savingsCategory,
           memo: account?.name ?? "적금",
           date: payment.payment_date,
-          status: payment.status,
+          status: getEffectiveSavingsPaymentStatus(payment, todayKey),
           created_at: payment.created_at,
         };
       }),
-    [activeStoredSavingsPayments, storedSavingsAccountMap],
+    [activeStoredSavingsPayments, storedSavingsAccountMap, todayKey],
   );
   const pausedStoredSavingsExpenseItems = useMemo<DashboardExpense[]>(
     () =>

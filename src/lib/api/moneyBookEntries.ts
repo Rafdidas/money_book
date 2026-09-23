@@ -8,6 +8,8 @@ import {
   getSavingsPaymentsByRange,
 } from "@/lib/api/savings";
 import type { Expense } from "@/types/expense";
+import { getEffectiveSavingsPaymentStatus } from "@/lib/savingsPaymentStatus";
+import { formatDate } from "@/utils/date";
 import type {
   FixedExpensePayment,
   FixedExpenseRule,
@@ -127,7 +129,7 @@ const mapSavingsPaymentToEntry = (
   category: "📩적금",
   memo: account?.name ?? "적금",
   date: payment.payment_date,
-  status: payment.status,
+  status: getEffectiveSavingsPaymentStatus(payment, formatDate(new Date())),
   originId: payment.savings_account_id,
 });
 

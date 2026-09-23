@@ -64,4 +64,25 @@ describe("money-book durable expense entry mapping", () => {
       ]),
     );
   });
+
+  it("납입일이 지난 적금은 완료로, 미래 납입은 예정으로 집계한다", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 23));
+    try {
+      getExpensesByRange.mockResolvedValue([]);
+      getSavingsPaymentsByRange.mockResolvedValue([
+        { id: "past", savings_account_id: "account-1", amount: 500_000, payment_date: "2026-09-11", status: "scheduled" },
+        { id: "future", savings_account_id: "account-1", amount: 500_000, payment_date: "2026-10-11", status: "scheduled" },
+      ]);
+
+      const entries = await getMoneyBookEntriesByRange("2026-09-01", "2026-10-31");
+
+      expect(entries).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: "past", status: "paid" }),
+        expect.objectContaining({ id: "future", status: "scheduled" }),
+      ]));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

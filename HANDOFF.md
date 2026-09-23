@@ -1477,3 +1477,9 @@ with a simpler monthly cash-flow summary.
 - 미변경(의도): 로그인/가입/비밀번호 재설정 등 `auth-input`·`auth-submit`·`auth-demo-button`은 인증 전용 커스텀 디자인이라 유지, `IntroCta`(intro-button)·Link 버튼·`global-error.tsx`(전역 CSS 없음)도 유지. 로그인 동작 변경 없음.
 - 검증: npm test 230 통과, lint, build 통과, e2e 28 통과/기존 실패 2건(public-auth-demo:51)만.
 - 남은 일: 없음(인증 폼 입력을 TextInput으로 바꾸려면 auth 디자인 토큰 정리가 선행되어야 함).
+## 2026-09-23 적금 납입일 자동 집계
+
+- 저장된 적금 납입 상태가 `scheduled`여도 납입일이 오늘 또는 이전이면 화면에서 `paid`로 해석하도록 공통 함수(`src/lib/savingsPaymentStatus.ts`)를 추가했습니다. 대시보드와 월별 분석 내역 모두 이 기준을 사용합니다. 미래 납입과 취소·건너뜀 상태는 그대로 유지합니다.
+- 9월 11일 500,000원 적금이 9월 23일에 예정으로 남아 합계에서 빠지는 사례를 회귀 테스트로 추가했습니다.
+- 검증: 대상 Vitest 6개 및 전체 `npm test` 231개 통과, `npm run lint` 통과, `npm run build` 통과.
+- 남음: 로그인 계정의 실제 데이터 화면은 로컬에서 재현하지 못했습니다.
