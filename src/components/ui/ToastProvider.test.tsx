@@ -1,8 +1,14 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { StrictMode } from "react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { StrictMode, type ReactNode } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ToastProvider, useToast } from "./ToastProvider";
+
+// Keep timer assertions independent of the exit animation's animation frames.
+vi.mock("motion/react", async (importOriginal) => ({
+  ...await importOriginal<typeof import("motion/react")>(),
+  AnimatePresence: ({ children }: { children: ReactNode }) => children,
+}));
 
 function ToastTrigger() {
   const { toast } = useToast();
@@ -11,6 +17,26 @@ function ToastTrigger() {
 }
 
 describe("ToastProvider", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("dismisses each toast after 10 seconds without extending earlier toasts", () => {
+    vi.useFakeTimers();
+    render(<ToastProvider><ToastTrigger /></ToastProvider>);
+
+    fireEvent.click(screen.getByRole("button", { name: "알림 표시" }));
+    act(() => vi.advanceTimersByTime(5_000));
+    fireEvent.click(screen.getByRole("button", { name: "알림 표시" }));
+    act(() => vi.advanceTimersByTime(4_999));
+    expect(screen.getAllByRole("status")).toHaveLength(2);
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+
+    // The remaining toast has its own expiration, independent of the first.
+    act(() => vi.advanceTimersByTime(5_000));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("renders non-blocking status feedback when requested", () => {
     render(
       <ToastProvider>

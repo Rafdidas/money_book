@@ -1477,6 +1477,13 @@ with a simpler monthly cash-flow summary.
 - 미변경(의도): 로그인/가입/비밀번호 재설정 등 `auth-input`·`auth-submit`·`auth-demo-button`은 인증 전용 커스텀 디자인이라 유지, `IntroCta`(intro-button)·Link 버튼·`global-error.tsx`(전역 CSS 없음)도 유지. 로그인 동작 변경 없음.
 - 검증: npm test 230 통과, lint, build 통과, e2e 28 통과/기존 실패 2건(public-auth-demo:51)만.
 - 남은 일: 없음(인증 폼 입력을 TextInput으로 바꾸려면 auth 디자인 토큰 정리가 선행되어야 함).
+## 2026-10-15 토스트 자동 닫힘
+
+- 변경: 공통 ToastProvider의 알림이 각각 표시된 시점부터 10초 뒤 자동으로 닫히도록 수정했습니다. 연속 등록해도 이전 알림의 만료 시간이 연장되지 않으며 수동 닫기와 기존 퇴장 애니메이션은 유지됩니다. 알림 제거 및 Provider 해제 시 타이머를 정리합니다.
+- 검증: ToastProvider 대상 Vitest 4개 통과(연속 알림의 독립적인 10초 만료 포함), `npm run lint`, `npm run build` 통과. 최초 테스트는 샌드박스 임시 파일 EPERM으로 실행되지 않아 일반 권한으로 재실행했습니다.
+- 남음: 실제 브라우저에서 데스크톱·모바일 확인 및 배포는 수행하지 않았습니다. 스타일·레이아웃 변경은 없습니다.
+- 배포 준비: 전체 `npm test` 54개 파일·232개 테스트 통과. 사용자 요청으로 이번 토스트 변경만 `main`에 커밋·푸시하여 Vercel 자동 배포를 진행합니다.
+
 ## 2026-09-23 적금 납입일 자동 집계
 
 - 저장된 적금 납입 상태가 `scheduled`여도 납입일이 오늘 또는 이전이면 화면에서 `paid`로 해석하도록 공통 함수(`src/lib/savingsPaymentStatus.ts`)를 추가했습니다. 대시보드와 월별 분석 내역 모두 이 기준을 사용합니다. 미래 납입과 취소·건너뜀 상태는 그대로 유지합니다.

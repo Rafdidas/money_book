@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { PANEL_TRANSITION } from "@/lib/motion/tokens";
 import { useReducedMotionPreference } from "@/lib/motion/useReducedMotion";
@@ -15,6 +15,7 @@ type ToastOptions = {
 type ToastItem = Required<ToastOptions> & {
   id: number;
   message: string;
+  expiresAt: number;
 };
 
 type ToastContextValue = {
@@ -23,6 +24,7 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 const maximumVisibleToasts = 3;
+const toastDurationMs = 10_000;
 
 export function useToast() {
   const context = useContext(ToastContext);
@@ -42,12 +44,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((current) => current.filter((item) => item.id !== id));
   }, []);
 
+  useEffect(() => {
+    const timers = toasts.map((item) =>
+      window.setTimeout(() => dismiss(item.id), Math.max(0, item.expiresAt - Date.now())),
+    );
+
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [toasts, dismiss]);
+
   const toast = useCallback((message: string, options: ToastOptions = {}) => {
     const id = nextIdRef.current;
     nextIdRef.current += 1;
+    const expiresAt = Date.now() + toastDurationMs;
     setToasts((current) => [
       ...current.slice(-(maximumVisibleToasts - 1)),
-      { id, message, tone: options.tone ?? "neutral" },
+      { id, message, tone: options.tone ?? "neutral", expiresAt },
     ]);
   }, []);
 
