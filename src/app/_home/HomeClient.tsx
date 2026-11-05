@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DateField } from "@/components/ui/DateField";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { Select, TextInput } from "@/components/ui/FormControl";
 import { Tabs } from "@/components/ui/Tabs";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -71,8 +72,11 @@ import DashboardScheduleCard from "./DashboardScheduleCard";
 import DashboardSummaryCards from "./DashboardSummaryCards";
 import DetailBulkActionBar from "./DetailBulkActionBar";
 import {
+  filterDetailItemsByCategories,
   getDashboardMonthlySummary,
   getDashboardScheduleSummary,
+  getDetailFilterCategories,
+  getDetailFilterSummary,
 } from "./dashboardSummary";
 import {
   getDetailBulkSelectionSummary,
@@ -311,6 +315,10 @@ export default function HomeClient() {
   const [isFixedExpenseSkipping, setIsFixedExpenseSkipping] = useState(false);
   const [openFixedExpensePauseMenuId, setOpenFixedExpensePauseMenuId] = useState("");
   const [detailSort, setDetailSort] = useState<DetailSort>(null);
+  const [detailCategoryFilter, setDetailCategoryFilter] = useState<{
+    monthKey: string;
+    categories: string[];
+  }>({ monthKey: "", categories: [] });
   const [selectedDetailIds, setSelectedDetailIds] = useState<Set<string>>(() => new Set());
   const [isDetailBulkDeleting, setIsDetailBulkDeleting] = useState(false);
 
@@ -758,9 +766,24 @@ export default function HomeClient() {
         }),
     [inlineEditListType, monthlyEditableExpenses],
   );
+  const detailCategoryOptions = useMemo(
+    () =>
+      getDetailFilterCategories(displayMonthlyExpenses).map((category) => ({
+        value: category,
+        label: category,
+      })),
+    [displayMonthlyExpenses],
+  );
+  const selectedDetailCategories = useMemo(() => {
+    if (detailCategoryFilter.monthKey !== selectedMonthStartKey) return [];
+    const available = new Set(detailCategoryOptions.map((option) => option.value));
+    return detailCategoryFilter.categories.filter((category) => available.has(category));
+  }, [detailCategoryFilter, detailCategoryOptions, selectedMonthStartKey]);
   const detailItems = useMemo(
     () => {
-      const items = [...displayMonthlyExpenses];
+      const items = [
+        ...filterDetailItemsByCategories(displayMonthlyExpenses, selectedDetailCategories),
+      ];
 
       return items.sort((left, right) => {
         if (detailSort) {
@@ -792,8 +815,9 @@ export default function HomeClient() {
         return right.created_at.localeCompare(left.created_at);
       });
     },
-    [detailSort, displayMonthlyExpenses],
+    [detailSort, displayMonthlyExpenses, selectedDetailCategories],
   );
+  const detailFilterSummary = useMemo(() => getDetailFilterSummary(detailItems), [detailItems]);
   const selectableDetailIds = useMemo(
     () => new Set(getSelectableDetailIds(detailItems, monthlyEditableExpenses)),
     [detailItems, monthlyEditableExpenses],
@@ -816,6 +840,10 @@ export default function HomeClient() {
     });
   }, [selectableDetailIds]);
 
+  const handleDetailCategoryFilterChange = (categories: string[]) => {
+    setDetailCategoryFilter({ monthKey: selectedMonthStartKey, categories });
+    setSelectedDetailIds(new Set());
+  };
   const handleDetailSort = (key: DetailSortKey) => {
     setDetailSort((prev) => {
       if (!prev || prev.key !== key) return { key, direction: "asc" };
@@ -3311,6 +3339,32 @@ export default function HomeClient() {
           {/* 전체 정보 */}
           <h3 className="main-common-title title--md">상세내용</h3>
           <div className="main-detail">
+            <div className="detail-filter">
+              <MultiSelect
+                ariaLabel="상세내용 분류 필터"
+                options={detailCategoryOptions}
+                value={selectedDetailCategories}
+                onValueChange={handleDetailCategoryFilterChange}
+                placeholder="전체 분류"
+                emptyText="일치하는 분류가 없습니다."
+              />
+              <p className="detail-filter__summary" aria-live="polite">
+                <span>
+                  총 <strong>{detailFilterSummary.count.toLocaleString()}</strong>건
+                </span>
+                <span className="detail-filter__income">
+                  수입 <strong>{formatWon(detailFilterSummary.income)}</strong>
+                </span>
+                <span className="detail-filter__expense">
+                  지출 <strong>{formatWon(detailFilterSummary.expense)}</strong>
+                </span>
+                {detailFilterSummary.savings ? (
+                  <span className="detail-filter__savings">
+                    저축 <strong>{formatWon(detailFilterSummary.savings)}</strong>
+                  </span>
+                ) : null}
+              </p>
+            </div>
             <div className="row-group row-group--flex row-group--top row-group--gap-16">
               <div className="table--wrap">
                 <table className="table detail-table">

@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { DashboardEntry } from "@/app/_home/dashboardSummary";
 import {
+  filterDetailItemsByCategories,
   getDashboardMonthlySummary,
+  getDetailFilterCategories,
+  getDetailFilterSummary,
   getDashboardScheduleSummary,
 } from "@/app/_home/dashboardSummary";
 
@@ -132,5 +135,45 @@ describe("getDashboardScheduleSummary", () => {
     expect(summary.scheduledExpense).toBe(100_000);
     expect(summary.scheduledSavingsInvestment).toBe(200_000);
     expect(summary.expectedRemaining).toBe(700_000);
+  });
+});
+
+describe("상세내용 카테고리 필터", () => {
+  const items: DashboardEntry[] = [
+    entry({ id: "food-1", amount: 12_000, type: "expense", category: "🍚식비", date: "2026-07-02" }),
+    entry({ id: "salary", amount: 3_000_000, type: "income", category: "급여", date: "2026-07-01" }),
+    entry({ id: "food-2", amount: 8_000, type: "expense", category: "🍚식비", date: "2026-07-03" }),
+    entry({ id: "saving", amount: 400_000, type: "expense", category: "적금", entry_type: "savings", date: "2026-07-04" }),
+    entry({ id: "stock", amount: 100_000, type: "expense", category: "📈주식", entry_type: "investment", date: "2026-07-05" }),
+    entry({ id: "paused", amount: 50_000, type: "expense", category: "🍚식비", date: "2026-07-06", status: "cancelled" }),
+  ];
+
+  it("내역에 있는 카테고리만 중복 없이 앞쪽 이모지를 빼고 가나다순으로 돌려준다", () => {
+    expect(getDetailFilterCategories(items)).toEqual(["급여", "🍚식비", "적금", "📈주식"]);
+  });
+
+  it("선택이 없으면 전체를, 있으면 선택한 카테고리의 합집합을 돌려준다", () => {
+    expect(filterDetailItemsByCategories(items, [])).toBe(items);
+    expect(filterDetailItemsByCategories(items, ["🍚식비", "급여"]).map((item) => item.id)).toEqual([
+      "food-1",
+      "salary",
+      "food-2",
+      "paused",
+    ]);
+  });
+
+  it("건수는 보이는 행 기준, 금액은 실제 반영된 내역만 수입·지출·저축으로 나눠 합산한다", () => {
+    expect(getDetailFilterSummary(items)).toEqual({
+      count: 6,
+      income: 3_000_000,
+      expense: 20_000,
+      savings: 500_000,
+    });
+    expect(getDetailFilterSummary(filterDetailItemsByCategories(items, ["🍚식비"]))).toEqual({
+      count: 3,
+      income: 0,
+      expense: 20_000,
+      savings: 0,
+    });
   });
 });

@@ -185,3 +185,43 @@ export const getDashboardScheduleSummary = (
     items,
   };
 };
+
+export type DetailFilterSummary = {
+  count: number;
+  income: number;
+  expense: number;
+  savings: number;
+};
+
+const getCategorySortKey = (category: string) =>
+  category.replace(/^[^\p{L}\p{N}]+/u, "");
+
+export const getDetailFilterCategories = (items: DashboardClassifiableEntry[]) =>
+  [...new Set(items.map((item) => item.category))].sort((left, right) =>
+    getCategorySortKey(left).localeCompare(getCategorySortKey(right), "ko"),
+  );
+
+export const filterDetailItemsByCategories = <T extends DashboardClassifiableEntry>(
+  items: T[],
+  categories: readonly string[],
+) => {
+  if (!categories.length) return items;
+  const selected = new Set(categories);
+  return items.filter((item) => selected.has(item.category));
+};
+
+export const getDetailFilterSummary = (
+  items: DashboardEntry[],
+): DetailFilterSummary =>
+  items.reduce<DetailFilterSummary>(
+    (summary, item) => {
+      summary.count += 1;
+      if (!isActualEntry(item)) return summary;
+      if (item.type === "income") summary.income += item.amount;
+      else if (isDashboardSavingsItem(item) || isDashboardInvestmentItem(item))
+        summary.savings += item.amount;
+      else summary.expense += item.amount;
+      return summary;
+    },
+    { count: 0, income: 0, expense: 0, savings: 0 },
+  );

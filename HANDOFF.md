@@ -1491,3 +1491,13 @@ with a simpler monthly cash-flow summary.
 - 검증: 대상 Vitest 6개 및 전체 `npm test` 231개 통과, `npm run lint` 통과, `npm run build` 통과.
 - 남음: 로그인 계정의 실제 데이터 화면은 로컬에서 재현하지 못했습니다.
 - 배포: `5cc87da`를 `origin/main`에 푸시했습니다. GitHub의 Vercel 커밋 상태 `success`, `https://monibuk.com/` HTTP 200을 확인했습니다.
+
+## 2026-11-05 대시보드 상세내용 카테고리 필터 설계
+
+- 설계 확정: `docs/superpowers/specs/2026-11-05-dashboard-detail-filter-design.md`. 제목 → Multi Select 필터 → `총 N건 · 수입 · 지출` 요약 → 테이블.
+- beUI Multi Select를 Sass+motion으로 포팅. Center Morph Modal·Date Range Picker는 별도 작업.
+- 구현: 공통 `src/components/ui/MultiSelect.tsx`(검색·칩·키보드·combobox ARIA·reduced-motion, 모바일은 "첫 칩 외 N개" 축약), `dashboardSummary.ts`에 `getDetailFilterCategories`(앞쪽 이모지 무시 가나다순)·`filterDetailItemsByCategories`·`getDetailFilterSummary` 추가. HomeClient 상세내용에 필터·요약 연결, 필터 변경 시 일괄 삭제 선택 초기화, 월이 바뀌면 필터 초기화.
+- 요약 규칙: 건수는 보이는 행 전체, 금액은 예정·건너뜀·일시정지 제외(대시보드 요약 카드와 같은 기준), 적금·투자는 "저축"으로 분리.
+- 검증: npm test 241 통과, lint, build 통과. 데모 모드로 데스크톱·모바일(375px) 육안 확인(전체 합계가 요약 카드와 일치, 식비+교통비 필터 3건·166,000원).
+- 추가: 요약 줄에 `padding: 0 5px`.
+- 남음: e2e 미실행. Center Morph Modal·Date Range Picker는 별도 작업.
